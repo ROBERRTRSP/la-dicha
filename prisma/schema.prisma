@@ -1,0 +1,224 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+enum UserRole {
+  ADMIN
+  CAJERO
+  JUGADOR
+}
+
+enum BetTypeCode {
+  QUINIELA
+  PALE
+  TRIPLETA
+  SUPER_PALE
+}
+
+enum DrawStatus {
+  OPEN
+  CLOSING_SOON
+  CLOSED
+  WAITING_RESULT
+  RESULT_AVAILABLE
+}
+
+enum TicketStatus {
+  ACTIVE
+  CANCELED
+  WINNER
+  LOSER
+  PAID
+}
+
+enum TicketItemStatus {
+  PENDING
+  WINNER
+  LOSER
+  PAID
+}
+
+model User {
+  id           String        @id @default(cuid())
+  username     String        @unique
+  passwordHash String
+  fullName     String
+  phone        String?
+  role         UserRole      @default(JUGADOR)
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  wallet            Wallet?
+  tickets           Ticket[]
+  rouletteBets      RouletteBet[]
+  roulettePlayerPromo RoulettePlayerPromo?
+}
+
+model Wallet {
+  id        String              @id @default(cuid())
+  userId    String              @unique
+  balance   Float               @default(0)
+  user      User                @relation(fields: [userId], references: [id])
+  txns      WalletTransaction[]
+  updatedAt DateTime            @updatedAt
+}
+
+model WalletTransaction {
+  id            String   @id @default(cuid())
+  walletId      String
+  type          String
+  amount        Float
+  balanceBefore Float
+  balanceAfter  Float
+  note          String?
+  createdAt     DateTime @default(now())
+  wallet        Wallet   @relation(fields: [walletId], references: [id])
+}
+
+model Lottery {
+  id        String     @id @default(cuid())
+  code      String     @unique
+  name      String
+  logoUrl   String?
+  category  String     @default("DOMINICANA")
+  drawTime  String
+  timezone  String     @default("America/Santo_Domingo")
+  closeMin  Int        @default(15)
+  active    Boolean    @default(true)
+  schedules Schedule[]
+  draws     Draw[]
+}
+
+model Schedule {
+  id         String  @id @default(cuid())
+  lotteryId  String
+  daysOfWeek String  @default("0,1,2,3,4,5,6")
+  drawTime   String
+  closeMin   Int     @default(15)
+  active     Boolean @default(true)
+  lottery    Lottery @relation(fields: [lotteryId], references: [id])
+}
+
+model Draw {
+  id         String      @id @default(cuid())
+  lotteryId  String
+  drawDate   DateTime
+  drawTime   String
+  closesAt   DateTime
+  status     DrawStatus  @default(OPEN)
+  lottery    Lottery     @relation(fields: [lotteryId], references: [id])
+  items      TicketItem[]
+  result     Result?
+  createdAt  DateTime    @default(now())
+
+  @@unique([lotteryId, drawDate])
+}
+
+model SuperPaleConfig {
+  id          String  @id @default(cuid())
+  code        String  @unique
+  name        String
+  lotteryAId  String
+  lotteryBId  String
+  active      Boolean @default(true)
+}
+
+model Ticket {
+  id               String       @id @default(cuid())
+  ticketNumber     String       @unique
+  verificationCode String       @unique
+  userId           String
+  totalAmount      Float
+  balanceBefore    Float
+  balanceAfter     Float
+  status           TicketStatus @default(ACTIVE)
+  closedAt         DateTime?
+  createdAt        DateTime     @default(now())
+  user             User         @relation(fields: [userId], references: [id])
+  items            TicketItem[]
+}
+
+model TicketItem {
+  id                String           @id @default(cuid())
+  ticketId          String
+  drawId            String
+  lotteryName       String
+  betType           BetTypeCode
+  numbers           String
+  amount            Float
+  superPaleName     String?
+  status            TicketItemStatus @default(PENDING)
+  prizeAmount       Float?
+  ticket            Ticket           @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  draw              Draw             @relation(fields: [drawId], references: [id])
+}
+
+model Result {
+  id        String   @id @default(cuid())
+  drawId    String   @unique
+  first     String
+  second    String
+  third     String
+  confirmed Boolean  @default(true)
+  createdAt DateTime @default(now())
+  draw      Draw     @relation(fields: [drawId], references: [id])
+}
+
+model RouletteSettings {
+  id                      String   @id @default("default")
+  active                  Boolean  @default(true)
+  minBetAmount            Float    @default(1)
+  maxBetAmount            Float    @default(100)
+  maxStraightBet          Float    @default(20)
+  maxOutsideBet           Float    @default(50)
+  maxPayoutPerSpin        Float    @default(500)
+  maxDailyPayoutPerPlayer Float    @default(2000)
+  maxExposurePerNumber    Float    @default(180)
+  maxExposurePerSpin      Float    @default(800)
+  houseReserve            Float    @default(10000)
+  maxRiskPercentOfReserve Float    @default(15)
+  welcomeBonusEnabled     Boolean  @default(false)
+  welcomeBonusAmount      Float    @default(5)
+  cashbackEnabled         Boolean  @default(false)
+  cashbackPercent         Float    @default(5)
+  freeSpinsEnabled        Boolean  @default(false)
+  freeSpinsPerDay         Int      @default(1)
+  trialCreditsEnabled     Boolean  @default(false)
+  trialCreditAmount       Float    @default(10)
+  rankingEnabled          Boolean  @default(true)
+  promoBannerMessage      String?
+  positiveSpinMessage     String?
+  updatedAt               DateTime @updatedAt
+}
+
+model RoulettePlayerPromo {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  welcomeBonusClaimed Boolean  @default(false)
+  trialCreditClaimed  Boolean  @default(false)
+  freeSpinsUsedToday  Int      @default(0)
+  freeSpinsDate       String?
+  user                User     @relation(fields: [userId], references: [id])
+}
+
+model RouletteBet {
+  id             String   @id @default(cuid())
+  userId         String
+  betType        String
+  betChoice      String
+  amount         Float
+  winningNumber  Int
+  payout         Float    @default(0)
+  profit         Float
+  balanceBefore  Float
+  balanceAfter   Float
+  result         String
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id])
+}
