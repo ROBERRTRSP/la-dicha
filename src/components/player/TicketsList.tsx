@@ -49,7 +49,6 @@ export function TicketsList({ tickets }: { tickets: TicketFeedItem[] }) {
           cartLines={active.cartLines}
           onClose={() => setActive(null)}
           onCanceled={() => router.refresh()}
-          onCollected={() => router.refresh()}
         />
       )}
     </>

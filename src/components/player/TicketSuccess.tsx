@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { TicketReceipt } from "@/components/player/TicketReceipt";
+import { PrintButton } from "@/components/player/PrintButton";
 import { formatThermalReceipt, type ReceiptData } from "@/lib/ticket-receipt";
 
 type TicketData = {
@@ -13,6 +14,7 @@ type TicketData = {
   balanceBefore?: number;
   balanceAfter: number;
   createdAt: string;
+  customerName?: string | null;
   items: {
     betType: string;
     numbers: string;
@@ -28,19 +30,25 @@ export function TicketSuccess({
   ticket,
   qrDataUrl,
   onNewBet,
+  cashSale,
+  newBetLabel = "Volver a jugar",
 }: {
   ticket: TicketData;
   qrDataUrl?: string;
   onNewBet: () => void;
+  cashSale?: boolean;
+  newBetLabel?: string;
 }) {
   const receiptData: ReceiptData = {
     ticketNumber: ticket.ticketNumber,
     verificationCode: ticket.verificationCode,
     createdAt: ticket.createdAt,
     totalAmount: ticket.totalAmount,
-    balanceBefore: ticket.balanceBefore,
-    balanceAfter: ticket.balanceAfter,
+    balanceBefore: cashSale ? undefined : ticket.balanceBefore,
+    balanceAfter: cashSale ? undefined : ticket.balanceAfter,
     status: "ACTIVE",
+    paymentMethod: cashSale ? "CASH" : "WALLET",
+    playerName: ticket.customerName?.trim() || undefined,
     items: ticket.items,
   };
 
@@ -65,17 +73,21 @@ export function TicketSuccess({
     <div className="ticket-success-screen">
       <div className="ticket-success-scroll">
         <p className="text-center text-[11px] text-[#444] font-bold mb-3 no-print receipt-counter-label">
-          *** TICKET GENERADO ***
+          {cashSale ? "*** VENTA EN EFECTIVO ***" : "*** TICKET GENERADO ***"}
         </p>
         <TicketReceipt data={receiptData} qrDataUrl={qrDataUrl} />
       </div>
 
       <div className="ticket-success-actions no-print">
-        <button type="button" onClick={shareWhatsApp} className="receipt-action-btn primary">
-          Compartir WhatsApp
-        </button>
+        {cashSale ? (
+          <PrintButton className="receipt-action-btn primary" />
+        ) : (
+          <button type="button" onClick={shareWhatsApp} className="receipt-action-btn primary">
+            Compartir WhatsApp
+          </button>
+        )}
         <button type="button" onClick={onNewBet} className="receipt-action-btn ghost">
-          Volver a jugar
+          {newBetLabel}
         </button>
       </div>
     </div>

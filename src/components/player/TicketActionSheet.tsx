@@ -23,7 +23,6 @@ export function TicketActionSheet({
   cartLines,
   onClose,
   onCanceled,
-  onCollected,
 }: {
   open: boolean;
   ticketId: string;
@@ -34,7 +33,6 @@ export function TicketActionSheet({
   cartLines: CartLine[];
   onClose: () => void;
   onCanceled: () => void;
-  onCollected?: () => void;
 }) {
   const router = useRouter();
   const [msLeft, setMsLeft] = useState(() => cancelTicketMsLeft(createdAt));
@@ -61,24 +59,6 @@ export function TicketActionSheet({
     sessionStorage.setItem(REPEAT_CART_KEY, JSON.stringify(cartLines));
     onClose();
     router.push("/jugar");
-  }
-
-  async function handleCollect() {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch(`/api/tickets/${ticketId}/collect`, {
-        method: "POST",
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "No se pudo cobrar.");
-      onCollected?.();
-      onClose();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al cobrar.");
-    } finally {
-      setLoading(false);
-    }
   }
 
   async function handleCancel() {
@@ -156,14 +136,11 @@ export function TicketActionSheet({
           )}
 
           {status === "WINNER" && (
-            <button
-              type="button"
-              className="ticket-sheet-btn ticket-sheet-btn--primary"
-              onClick={handleCollect}
-              disabled={loading}
-            >
-              Cobrar premio
-            </button>
+            <p className="ticket-sheet-hint ticket-sheet-hint--winner">
+              ¡Felicidades! Tienes premio. Preséntate en ventanilla con este
+              ticket y tu cajero te pagará en efectivo. El premio no se suma al
+              saldo de la app.
+            </p>
           )}
 
           {status === "CANCELED" && (
@@ -174,7 +151,8 @@ export function TicketActionSheet({
 
           {status === "PAID" && (
             <p className="ticket-sheet-hint">
-              Premio cobrado. Se eliminará del historial después de 7 días.
+              Premio pagado en ventanilla. Se eliminará del historial después de
+              7 días.
             </p>
           )}
         </div>

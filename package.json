@@ -6,7 +6,7 @@
     "dev": "next dev -H 0.0.0.0",
     "postinstall": "prisma generate",
     "build": "prisma generate && next build",
-    "vercel-build": "prisma generate && prisma db push --skip-generate && tsx prisma/seed.ts && next build",
+    "vercel-build": "prisma generate && prisma db push --skip-generate && tsx prisma/seed.ts && node scripts/fetch-logos.mjs && next build",
     "start": "next start",
     "lint": "next lint",
     "db:push": "prisma db push",

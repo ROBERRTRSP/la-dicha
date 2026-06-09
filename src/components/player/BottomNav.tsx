@@ -7,9 +7,15 @@ import { ART } from "@/lib/visual-assets";
 import { cn } from "@/lib/utils";
 
 const tabs = [
-  { href: "/jugar", label: "Jugar", art: ART.nav.jugar },
-  { href: "/tickets", label: "Tickets", art: ART.nav.tickets },
-  { href: "/resultados", label: "Resultados", art: ART.nav.resultados },
+  { href: "/jugar", label: "Jugar", art: ART.nav.jugar, match: ["/jugar"] },
+  { href: "/ruleta", label: "Ruleta", art: ART.ruletaChip, match: ["/ruleta"] },
+  { href: "/tickets", label: "Tickets", art: ART.nav.tickets, match: ["/tickets"] },
+  {
+    href: "/resultados",
+    label: "Resultados",
+    art: ART.nav.resultados,
+    match: ["/resultados"],
+  },
 ];
 
 export function BottomNav() {
@@ -17,11 +23,8 @@ export function BottomNav() {
 
   return (
     <nav className="bottom-nav">
-      {tabs.map(({ href, label, art }) => {
-        const active =
-          href === "/jugar"
-            ? pathname.startsWith("/jugar") || pathname.startsWith("/ruleta")
-            : pathname.startsWith(href);
+      {tabs.map(({ href, label, art, match }) => {
+        const active = match.some((prefix) => pathname.startsWith(prefix));
         return (
           <Link
             key={href}

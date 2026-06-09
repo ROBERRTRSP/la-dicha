@@ -1,19 +1,22 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { addMinutes, format, setHours, setMinutes, startOfDay } from "date-fns";
-import { toZonedTime } from "date-fns-tz";
+import {
+  closesAtForDraw,
+  computeDrawStatus,
+  drawAtInTz,
+  LOTTERY_CLOSE_MINUTES,
+} from "../src/lib/lottery-schedule";
+import { dayStartInTz } from "../src/lib/timezone";
 
 const prisma = new PrismaClient();
-const TZ = "America/Santo_Domingo";
 
 /** Horarios según loteriasdominicanas.com */
 const LOTTERIES = [
   { code: "LP_DIA", name: "La Primera Día", time: "12:00", category: "DOMINICANA" },
   { code: "LOTEDOM", name: "Quiniela LoteDom", time: "12:00", category: "DOMINICANA" },
   { code: "LS_DIA", name: "La Suerte 12:30", time: "12:30", category: "DOMINICANA" },
-  { code: "GANAMAS", name: "Gana Más", time: "12:30", category: "DOMINICANA" },
   { code: "QREAL", name: "Quiniela Real", time: "12:55", category: "DOMINICANA" },
-  { code: "NAC_TARDE", name: "Lotería Nacional Tarde", time: "14:30", category: "DOMINICANA" },
+  { code: "GANAMAS", name: "Gana Más", time: "14:30", category: "DOMINICANA" },
   { code: "LS_TARDE", name: "La Suerte 18:00", time: "18:00", category: "DOMINICANA" },
   { code: "LOTEKA", name: "Quiniela Loteka", time: "19:55", category: "DOMINICANA" },
   { code: "LP_NOCHE", name: "La Primera Noche", time: "20:00", category: "DOMINICANA" },
@@ -31,11 +34,6 @@ const LOTTERIES = [
   { code: "NY_PM", name: "New York Noche", time: "22:30", category: "EXTRANJERA" },
 ];
 
-function parseTime(time: string, base: Date) {
-  const [h, m] = time.split(":").map(Number);
-  return setMinutes(setHours(base, h), m);
-}
-
 async function main() {
   const activeCodes = new Set(LOTTERIES.map((l) => l.code));
   await prisma.lottery.updateMany({
@@ -45,13 +43,14 @@ async function main() {
 
   for (const lot of LOTTERIES) {
     const logoUrl = `/logos/${lot.code}.png`;
-    await prisma.lottery.upsert({
+    const lottery = await prisma.lottery.upsert({
       where: { code: lot.code },
       update: {
         name: lot.name,
         drawTime: lot.time,
         category: lot.category,
         logoUrl,
+        closeMin: LOTTERY_CLOSE_MINUTES,
         active: true,
       },
       create: {
@@ -60,30 +59,40 @@ async function main() {
         logoUrl,
         drawTime: lot.time,
         category: lot.category,
+        closeMin: LOTTERY_CLOSE_MINUTES,
         active: true,
         schedules: {
           create: {
             drawTime: lot.time,
             daysOfWeek: "0,1,2,3,4,5,6",
-            closeMin: 15,
+            closeMin: LOTTERY_CLOSE_MINUTES,
           },
         },
       },
     });
+    await prisma.schedule.updateMany({
+      where: { lotteryId: lottery.id },
+      data: { drawTime: lot.time, closeMin: LOTTERY_CLOSE_MINUTES },
+    });
   }
 
-  const now = toZonedTime(new Date(), TZ);
-  const today = startOfDay(now);
+  await prisma.lottery.updateMany({
+    where: { active: true },
+    data: { closeMin: LOTTERY_CLOSE_MINUTES },
+  });
+  await prisma.schedule.updateMany({
+    data: { closeMin: LOTTERY_CLOSE_MINUTES },
+  });
+
+  const now = new Date();
+  const today = dayStartInTz(now);
 
   for (const lot of LOTTERIES) {
     const lottery = await prisma.lottery.findUnique({ where: { code: lot.code } });
     if (!lottery) continue;
-    const drawAt = parseTime(lot.time, today);
-    const closesAt = addMinutes(drawAt, -15);
-    let status: "OPEN" | "CLOSING_SOON" | "CLOSED" = "OPEN";
-    if (now >= drawAt) status = "CLOSED";
-    else if (now >= addMinutes(closesAt, -10)) status = "CLOSING_SOON";
-    else if (now >= closesAt) status = "CLOSED";
+    const drawAt = drawAtInTz(lot.time, today);
+    const closesAt = closesAtForDraw(lot.time, today, LOTTERY_CLOSE_MINUTES);
+    const status = computeDrawStatus(now, drawAt, closesAt);
 
     await prisma.draw.upsert({
       where: { lotteryId_drawDate: { lotteryId: lottery.id, drawDate: today } },
@@ -133,6 +142,18 @@ async function main() {
   });
 
   await prisma.user.upsert({
+    where: { username: "mostrador" },
+    update: { active: true },
+    create: {
+      username: "mostrador",
+      passwordHash: pwd,
+      fullName: "Venta Mostrador",
+      role: "JUGADOR",
+      wallet: { create: { balance: 0 } },
+    },
+  });
+
+  await prisma.user.upsert({
     where: { username: "admin" },
     update: {},
     create: {
@@ -143,35 +164,43 @@ async function main() {
     },
   });
 
+  const superPales = [
+    {
+      code: "SP_REAL_GANAMAS",
+      name: "Súper Palé Real + Gana Más",
+      lotteryA: "QREAL",
+      lotteryB: "GANAMAS",
+    },
+    {
+      code: "SP_NAC_LEIDSA",
+      name: "Súper Palé Nacional + Leidsa",
+      lotteryA: "NAC_NOCHE",
+      lotteryB: "LEIDSA",
+    },
+  ];
+
+  for (const sp of superPales) {
+    const lotA = await prisma.lottery.findUnique({ where: { code: sp.lotteryA } });
+    const lotB = await prisma.lottery.findUnique({ where: { code: sp.lotteryB } });
+    if (!lotA || !lotB) continue;
+    await prisma.superPaleConfig.upsert({
+      where: { code: sp.code },
+      update: { name: sp.name, lotteryAId: lotA.id, lotteryBId: lotB.id, active: true },
+      create: {
+        code: sp.code,
+        name: sp.name,
+        lotteryAId: lotA.id,
+        lotteryBId: lotB.id,
+        active: true,
+      },
+    });
+  }
+
   await prisma.rouletteSettings.upsert({
     where: { id: "default" },
     update: { active: true },
     create: { id: "default", active: true },
   });
-
-  const draws = await prisma.draw.findMany({
-    where: { drawDate: today },
-    take: 4,
-    include: { lottery: true },
-  });
-
-  for (const draw of draws.slice(0, 3)) {
-    const existing = await prisma.result.findUnique({ where: { drawId: draw.id } });
-    if (!existing) {
-      await prisma.result.create({
-        data: {
-          drawId: draw.id,
-          first: String(Math.floor(Math.random() * 100)).padStart(2, "0"),
-          second: String(Math.floor(Math.random() * 100)).padStart(2, "0"),
-          third: String(Math.floor(Math.random() * 100)).padStart(2, "0"),
-        },
-      });
-      await prisma.draw.update({
-        where: { id: draw.id },
-        data: { status: "RESULT_AVAILABLE" },
-      });
-    }
-  }
 
   await prisma.rouletteSettings.upsert({
     where: { id: "default" },

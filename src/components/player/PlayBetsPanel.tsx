@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { betTypeLabel } from "@/lib/bet-parser";
 import { formatMoney } from "@/lib/utils";
-import type { CartLine } from "@/lib/tickets";
+import { cartLineTotal, type CartLine } from "@/lib/tickets";
 
 function shortLotteryName(name: string) {
   return name
@@ -61,11 +61,11 @@ export function PlayBetsPanel({
                 <span>{line.numbers}</span>
               </p>
               <p className="play-bet-lottery">
-                {formatCartLotteries(line.lotteryNames)}
+                {line.superPaleName ?? formatCartLotteries(line.lotteryNames)}
               </p>
             </div>
             <p className="play-bet-amount">
-              {formatMoney(line.amount * line.drawIds.length)}
+              {formatMoney(cartLineTotal(line))}
             </p>
             <button
               type="button"

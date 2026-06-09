@@ -202,6 +202,14 @@ body {
   padding: 8px;
 }
 
+.ticket-sheet-hint--winner {
+  color: #0f766e;
+  background: #f0fdfa;
+  border-radius: 10px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
 .ticket-sheet-foot {
   font-size: 10px;
   color: #94a3b8;
@@ -414,6 +422,14 @@ body {
   color: var(--emerald);
 }
 
+.results-order-hint {
+  font-size: 10px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin: 0 2px 8px;
+  letter-spacing: 0.02em;
+}
+
 .results-list {
   list-style: none;
   margin: 0;
@@ -429,6 +445,17 @@ body {
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   overflow: hidden;
+}
+
+.results-list--timeline {
+  gap: 6px;
+}
+
+.results-row--timeline {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .results-card {
@@ -539,7 +566,7 @@ body {
   bottom: 0;
   z-index: 50;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   background: white;
   border-top: 1px solid #e2e8f0;
   padding-bottom: var(--safe-bottom);
@@ -553,7 +580,7 @@ body {
   justify-content: center;
   gap: 2px;
   min-height: 64px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: #64748b;
   transition: color 0.15s;
@@ -566,7 +593,17 @@ body {
   flex-direction: column;
   overflow: hidden;
   background: var(--bg);
-  padding-bottom: calc(118px + var(--safe-bottom));
+  padding-bottom: calc(64px + var(--safe-bottom) + 62px);
+}
+
+.play-screen--has-bets {
+  padding-bottom: calc(64px + var(--safe-bottom) + 112px + 96px);
+}
+
+.play-screen-top {
+  flex-shrink: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .play-header {
@@ -708,8 +745,8 @@ body {
 }
 
 .play-lottery-strip {
-  shrink: 0;
-  padding: 6px 0 4px;
+  flex-shrink: 0;
+  padding: 4px 0 2px;
   background: white;
   border-bottom: 1px solid #e2e8f0;
 }
@@ -747,9 +784,9 @@ body {
 .play-lottery-chip {
   position: relative;
   flex-shrink: 0;
-  width: 132px;
-  min-height: 58px;
-  padding: 6px 8px;
+  width: 124px;
+  min-height: 52px;
+  padding: 5px 7px;
   border-radius: 12px;
   border: 2px solid #e2e8f0;
   background: white;
@@ -785,6 +822,18 @@ body {
 .play-lottery-chip--ruleta.disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.play-lottery-chip--super {
+  border-color: #a78bfa;
+  background: #faf5ff;
+  min-width: 168px;
+}
+
+.play-lottery-chip-duo {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .play-lottery-chip-art {
@@ -893,18 +942,22 @@ body {
   color: var(--emerald);
 }
 
+.play-pad {
+  flex-shrink: 0;
+  margin-top: auto;
+}
+
 .play-keypad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(4, 52px);
   gap: 5px;
   padding: 6px 12px;
-  align-content: stretch;
-  flex: 1;
-  min-height: 0;
+  flex: none;
 }
 
 .play-key {
-  min-height: 0;
+  min-height: 52px;
   border-radius: 12px;
   background: white;
   border: 1px solid #e2e8f0;
@@ -949,15 +1002,21 @@ body {
 }
 
 .play-bets-panel {
-  margin: 0 12px 4px;
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  z-index: 59;
+  bottom: calc(64px + var(--safe-bottom) + 108px);
+  margin: 0;
   background: white;
   border: 1px solid #cbd5e1;
   border-radius: 10px;
-  shrink: 0;
-  max-height: 120px;
+  flex-shrink: 0;
+  max-height: 92px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 -4px 16px rgba(30, 58, 95, 0.08);
 }
 
 .play-bets-header {
@@ -1119,7 +1178,7 @@ body {
 
 .play-added-toast {
   position: fixed;
-  bottom: calc(150px + var(--safe-bottom));
+  bottom: calc(200px + var(--safe-bottom));
   left: 50%;
   transform: translateX(-50%);
   z-index: 80;
@@ -1185,7 +1244,32 @@ body {
 }
 
 .admin-login-screen {
-  background: #1e3a5f;
+  background: linear-gradient(160deg, #1e3a5f 0%, #0f172a 100%);
+}
+
+.cajero-login-screen {
+  background: linear-gradient(160deg, #0f766e 0%, #1e3a5f 100%);
+}
+
+.admin-login-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 1rem;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.admin-login-input::placeholder {
+  color: #94a3b8;
+}
+
+.admin-login-input:focus {
+  outline: none;
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2);
 }
 
 .login-screen-bg,
@@ -1224,7 +1308,7 @@ body {
 }
 
 .play-visual-banner {
-  height: 56px;
+  height: 44px;
 }
 
 .roulette-visual-banner {
@@ -1696,8 +1780,20 @@ body.ticket-success-open {
 .roulette-hero--focus {
   flex: 1;
   justify-content: center;
-  min-height: min(72vh, 560px);
+  min-height: min(78vh, 620px);
   padding: 20px 0 28px;
+  animation: roulette-hero-in 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes roulette-hero-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .roulette-spin-status {
@@ -1737,6 +1833,15 @@ body.ticket-success-open {
   margin-top: 4px;
 }
 
+.roulette-spin-done-hint {
+  margin: 12px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
 /* Wheel layers */
 .rw-stage {
   width: 100%;
@@ -1746,7 +1851,7 @@ body.ticket-success-open {
 }
 
 .roulette-hero--focus .rw-stage {
-  transform: scale(1.04);
+  transform: scale(1.08);
   transition: transform 0.35s ease;
 }
 
@@ -2166,6 +2271,34 @@ body.ticket-success-open {
   color: #94a3b8;
 }
 
+.roulette-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.roulette-repeat-btn {
+  min-height: 52px;
+  border-radius: 14px;
+  border: 2px solid rgba(251, 191, 36, 0.45);
+  background: rgba(15, 23, 42, 0.35);
+  color: #fde68a;
+  font-size: 14px;
+  font-weight: 700;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+}
+
+.roulette-repeat-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.roulette-repeat-btn:not(:disabled):active {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: #fbbf24;
+}
+
 .roulette-spin-btn {
   display: flex;
   align-items: center;
@@ -2259,7 +2392,7 @@ body.ticket-success-open {
 
 .admin-header-user {
   font-size: 13px;
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 .admin-content {
@@ -2318,7 +2451,8 @@ body.ticket-success-open {
   flex-direction: column;
   gap: 6px;
   font-size: 12px;
-  color: #475569;
+  color: #334155;
+  font-weight: 600;
 }
 
 .admin-field--full {
@@ -2331,12 +2465,15 @@ body.ticket-success-open {
   min-height: 44px;
 }
 
-.admin-field input[type="number"],
-.admin-field input[type="text"] {
+.admin-field input,
+.admin-field select,
+.admin-field textarea {
   min-height: 40px;
   padding: 8px 10px;
   border-radius: 8px;
   border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
   font-size: 14px;
 }
 
@@ -2466,7 +2603,8 @@ body.ticket-success-open {
 
 .admin-stat-label {
   font-size: 12px;
-  color: #64748b;
+  color: #475569;
+  font-weight: 600;
   margin-bottom: 6px;
 }
 
@@ -2613,15 +2751,15 @@ body.ticket-success-open {
   display: flex;
   min-height: 100dvh;
   width: 100%;
-  background: #0a0e17;
-  color: #e8ecf4;
+  background: #f1f5f9;
 }
 
 .staff-nav {
   width: 240px;
   flex-shrink: 0;
+  color: #e8ecf4;
   background: linear-gradient(180deg, #111827 0%, #0d1117 100%);
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
   padding: 1.25rem 0;
@@ -2642,7 +2780,7 @@ body.ticket-success-open {
 
 .staff-nav-brand p {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #94a3b8;
   margin: 0.25rem 0 0;
 }
 
@@ -2661,14 +2799,14 @@ body.ticket-success-open {
   padding: 0.6rem 0.75rem;
   border-radius: 8px;
   font-size: 0.875rem;
-  color: #9ca3af;
+  color: #cbd5e1;
   text-decoration: none;
   transition: background 0.15s, color 0.15s;
 }
 
 .staff-nav-link:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #e8ecf4;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
 }
 
 .staff-nav-link--active {
@@ -2687,9 +2825,9 @@ body.ticket-success-open {
   width: 100%;
   padding: 0.55rem;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   background: transparent;
-  color: #9ca3af;
+  color: #cbd5e1;
   font-size: 0.8rem;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
@@ -2706,6 +2844,210 @@ body.ticket-success-open {
   overflow-y: auto;
   padding: 1.5rem 2rem;
   background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* Tema claro unificado — todo el contenido del panel */
+.staff-main h1,
+.staff-main h2,
+.staff-main h3,
+.staff-main p,
+.staff-main li,
+.staff-main td,
+.staff-main th,
+.staff-main label,
+.staff-main strong {
+  color: inherit;
+}
+
+.staff-main .admin-page-title {
+  color: #0f172a;
+}
+
+.staff-main .admin-subtitle {
+  color: #1e293b;
+}
+
+.staff-main .admin-ruleta-sub {
+  color: #475569;
+  line-height: 1.55;
+}
+
+.staff-main .admin-ruleta-sub a {
+  color: #0f766e;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.staff-main .admin-ruleta-sub a:hover {
+  color: #0d9488;
+}
+
+.staff-main .admin-field > span {
+  color: #334155;
+  font-weight: 600;
+}
+
+.staff-main .admin-stat-label {
+  color: #475569;
+  font-weight: 600;
+}
+
+.staff-main .admin-stat-value {
+  color: #0f172a;
+}
+
+.staff-main .admin-stat-hint {
+  color: #64748b;
+}
+
+.staff-main .admin-loading,
+.staff-main .admin-empty {
+  color: #475569;
+}
+
+.staff-main .admin-table th {
+  background: #e2e8f0;
+  color: #1e293b;
+  font-weight: 700;
+}
+
+.staff-main .admin-table td {
+  color: #1e293b;
+  background: #fff;
+}
+
+.staff-main .admin-table tbody tr:hover td {
+  background: #f8fafc;
+}
+
+.staff-main .admin-table td.lose {
+  color: #64748b;
+}
+
+.staff-main .admin-exposure-list li,
+.staff-main .admin-rank-list li {
+  color: #1e293b;
+  border-bottom-color: #e2e8f0;
+}
+
+.staff-main .admin-exposure-list li span:last-child,
+.staff-main .admin-rank-list li span:last-child {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.staff-main .admin-rank-list li {
+  color: #1e293b;
+}
+
+.staff-main .admin-rank-label {
+  color: #475569;
+}
+
+.staff-main .admin-field input,
+.staff-main .admin-field select,
+.staff-main .admin-field textarea {
+  background: #fff;
+  color: #0f172a;
+  border: 1px solid #94a3b8;
+}
+
+.staff-main .admin-field input::placeholder,
+.staff-main .admin-field textarea::placeholder {
+  color: #94a3b8;
+}
+
+.staff-main .admin-field input:focus,
+.staff-main .admin-field select:focus,
+.staff-main .admin-field textarea:focus {
+  outline: none;
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.18);
+}
+
+.staff-main .admin-toggle {
+  color: #334155;
+  border-color: #94a3b8;
+  font-weight: 700;
+}
+
+.staff-main .admin-toggle.on {
+  color: #0f766e;
+  border-color: #0d9488;
+  background: #ccfbf1;
+}
+
+.staff-main .admin-risk-alerts .admin-subtitle {
+  color: #78350f;
+  margin-top: 0;
+}
+
+.staff-main .admin-save-btn:hover:not(:disabled) {
+  background: #0f766e;
+}
+
+.staff-main .admin-save-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.staff-main .admin-save-msg {
+  color: #0f766e;
+  font-weight: 600;
+}
+
+.staff-main .admin-stat-card {
+  border-color: #cbd5e1;
+}
+
+.staff-main .admin-table-wrap {
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.staff-nav--admin .staff-nav-title {
+  color: #fde68a;
+}
+
+.staff-nav--admin .staff-nav-link.active,
+.staff-nav--admin .staff-nav-link--active {
+  background: rgba(245, 200, 66, 0.18);
+  color: #fde68a;
+}
+
+.staff-nav--cajero .staff-nav-link.active,
+.staff-nav--cajero .staff-nav-link--active {
+  background: rgba(45, 212, 191, 0.18);
+  color: #5eead4;
+}
+
+.staff-main .staff-form {
+  max-width: none;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.staff-main .staff-form .admin-subtitle {
+  margin-top: 0;
+}
+
+.staff-main .staff-form-row label {
+  color: #334155;
+  font-weight: 600;
+}
+
+.staff-main .staff-form .staff-input,
+.staff-main .staff-form .staff-select,
+.staff-main .staff-form .staff-textarea {
+  background: #fff;
+  border: 1px solid #94a3b8;
+  color: #0f172a;
 }
 
 .staff-nav-title {
@@ -2717,7 +3059,7 @@ body.ticket-success-open {
 
 .staff-nav-role {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #94a3b8;
   margin: 0.25rem 0 0;
 }
 
@@ -2729,33 +3071,39 @@ body.ticket-success-open {
 
 .staff-nav-user {
   font-size: 0.8rem;
-  color: #9ca3af;
+  color: #cbd5e1;
   margin: 0 0 0.5rem;
+  font-weight: 500;
 }
 
 .staff-nav-link.active,
 .staff-nav-link--active {
-  background: rgba(245, 200, 66, 0.12);
-  color: #f5c842;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .staff-nav--cajero .staff-nav-title {
-  color: #2dd4bf;
-}
-
-.staff-nav--cajero .staff-nav-link.active,
-.staff-nav--cajero .staff-nav-link--active {
-  background: rgba(45, 212, 191, 0.12);
-  color: #2dd4bf;
+  color: #5eead4;
 }
 
 .staff-main .staff-select,
 .staff-main .staff-input,
 .staff-main .staff-textarea {
   background: #fff;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #94a3b8;
   color: #0f172a;
+}
+
+.staff-main .staff-select option {
+  color: #0f172a;
+  background: #fff;
+}
+
+.staff-main .staff-select:focus,
+.staff-main .staff-input:focus,
+.staff-main .staff-textarea:focus {
+  outline: none;
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.18);
 }
 
 .staff-search {
@@ -2765,42 +3113,69 @@ body.ticket-success-open {
   flex-wrap: wrap;
 }
 
-.staff-search-input {
+.staff-main .staff-search-input {
   flex: 1;
   min-width: 200px;
   padding: 0.55rem 0.75rem;
   border-radius: 8px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #94a3b8;
   background: #fff;
   color: #0f172a;
   font-size: 0.875rem;
 }
 
-.staff-error {
-  color: #dc2626;
-  font-size: 0.85rem;
-  margin-bottom: 1rem;
+.staff-main .staff-search-input::placeholder {
+  color: #94a3b8;
 }
 
-.staff-ticket-card {
+.staff-main .staff-search-input:focus {
+  outline: none;
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.18);
+}
+
+.staff-main .staff-error {
+  color: #b91c1c;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding: 0.65rem 0.85rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+}
+
+.staff-main .staff-ticket-card {
   background: #fff;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #cbd5e1;
   border-radius: 12px;
   padding: 1.25rem;
   margin-top: 1rem;
+  color: #1e293b;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
-.staff-ticket-items {
+.staff-main .staff-ticket-card p {
+  color: #334155;
+  margin: 0.35rem 0;
+}
+
+.staff-main .staff-ticket-card strong {
+  color: #0f172a;
+}
+
+.staff-main .staff-ticket-items {
   margin: 0.75rem 0;
   padding-left: 1.25rem;
   font-size: 0.85rem;
   color: #475569;
 }
 
-.staff-hint {
-  font-size: 0.85rem;
-  color: #64748b;
+.staff-main .staff-hint {
+  font-size: 0.9rem;
+  color: #475569;
   margin: 0;
+  font-weight: 500;
 }
 
 .staff-quick-amounts {
@@ -2809,14 +3184,14 @@ body.ticket-success-open {
   flex-wrap: wrap;
 }
 
-.staff-quick-chip {
+.staff-main .staff-quick-chip {
   padding: 0.45rem 0.9rem;
   border-radius: 999px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #94a3b8;
   background: #fff;
-  color: #334155;
+  color: #1e293b;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
 }
 
@@ -2826,16 +3201,57 @@ body.ticket-success-open {
   color: #fff;
 }
 
-.staff-page-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0 0 0.25rem;
-  color: #f9fafb;
+.staff-mode-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
-.staff-page-sub {
+.staff-main .staff-mode-btn {
+  flex: 1;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  border: 2px solid #94a3b8;
+  background: #fff;
+  color: #1e293b;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.staff-mode-btn.active {
+  background: #0d9488;
+  border-color: #0d9488;
+  color: #fff;
+}
+
+.staff-mode-btn--subtract.active {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.staff-btn--danger {
+  background: linear-gradient(135deg, #ef4444, #b91c1c) !important;
+}
+
+.staff-pending-table {
+  margin-bottom: 1.5rem;
+}
+
+.staff-main .staff-row-selected td {
+  background: #ecfdf5 !important;
+}
+
+.staff-main .staff-page-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0 0 0.25rem;
+  color: #0f172a;
+}
+
+.staff-main .staff-page-sub {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #475569;
   margin: 0 0 1.5rem;
 }
 
@@ -3043,6 +3459,24 @@ body.ticket-success-open {
   padding: 0;
 }
 
+.staff-main .staff-link-btn {
+  color: #0f766e;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-underline-offset: 2px;
+}
+
+.staff-main .staff-link-btn:hover {
+  color: #0d9488;
+}
+
+.admin-table-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
 .staff-search-row {
   display: flex;
   gap: 0.5rem;
@@ -3107,4 +3541,133 @@ body.ticket-success-open {
   .staff-main {
     padding: 1rem;
   }
+}
+
+/* ── Cajero: venta en mostrador ── */
+.cajero-sell-cta {
+  display: block;
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0d9488, #1e3a5f);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  text-align: center;
+}
+
+.cajero-sell-cta:hover {
+  opacity: 0.95;
+}
+
+.admin-stat-hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.cajero-sell-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.cajero-sell-sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.cajero-sell-back {
+  color: #1e3a5f;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.cajero-sell-customer {
+  margin-bottom: 1rem;
+}
+
+.cajero-sell-play {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  padding: 1rem;
+  margin-bottom: 5rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.cajero-sell-play .play-bets-panel {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  margin-top: 12px;
+  max-height: 180px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.cajero-sell-play .play-lottery-strip {
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 8px;
+}
+
+.cajero-sell-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+  background: #fff;
+  border-top: 1px solid #e2e8f0;
+  box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
+}
+
+@media (min-width: 900px) {
+  .staff-shell--cajero .cajero-sell-bar {
+    left: 220px;
+  }
+}
+
+.cajero-sell-total {
+  margin: 0 0 0.5rem;
+  text-align: center;
+  color: #1e3a5f;
+}
+
+.cajero-sell-btn {
+  width: 100%;
+}
+
+.cajero-sell-toast {
+  position: fixed;
+  bottom: 5.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0d9488;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  z-index: 50;
+}
+
+.cajero-sell-error {
+  position: fixed;
+  bottom: 5.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #dc2626;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  z-index: 50;
+  max-width: 90vw;
+  text-align: center;
 }

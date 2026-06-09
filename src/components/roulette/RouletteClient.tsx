@@ -95,6 +95,7 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
     maxOutsideBet: 50,
   });
   const [dailyLimitReached, setDailyLimitReached] = useState(false);
+  const [lastPlayedBets, setLastPlayedBets] = useState<SelectedBet[]>([]);
   const [pendingResult, setPendingResult] = useState<{
     winningNumber: number;
     won: boolean;
@@ -122,31 +123,17 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
     pendingResultRef.current = pendingResult;
   }, [pendingResult]);
 
-  const focusMode = spinning || showingResult;
-
-  const scrollToWheel = useCallback(() => {
-    const scroll = scrollRef.current;
-    const hero = heroRef.current;
-    if (!scroll || !hero) return;
-
-    requestAnimationFrame(() => {
-      const scrollTop = scroll.scrollTop;
-      const heroRect = hero.getBoundingClientRect();
-      const scrollRect = scroll.getBoundingClientRect();
-      const heroCenter =
-        scrollTop + (heroRect.top - scrollRect.top) + heroRect.height / 2;
-      const targetScroll = heroCenter - scroll.clientHeight / 2;
-
-      scroll.scrollTo({
-        top: Math.max(0, targetScroll),
-        behavior: "smooth",
-      });
-    });
-  }, []);
+  /** Vista de giro: ruleta a pantalla completa; al terminar, vuelve el selector. */
+  const spinView = spinning || showingResult;
 
   const totalStake = useMemo(
     () => selectedBets.reduce((sum, b) => sum + b.amount, 0),
     [selectedBets]
+  );
+
+  const lastPlayedStake = useMemo(
+    () => lastPlayedBets.reduce((sum, b) => sum + b.amount, 0),
+    [lastPlayedBets]
   );
 
   const historyPills = history;
@@ -196,10 +183,6 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
     };
   }, []);
 
-  useEffect(() => {
-    if (focusMode) scrollToWheel();
-  }, [focusMode, scrollToWheel]);
-
   function toggleBet(betType: RouletteBetType, betChoice: string) {
     if (spinning) return;
     setError("");
@@ -229,6 +212,17 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
   function clearBets() {
     if (spinning) return;
     setSelectedBets([]);
+    setError("");
+  }
+
+  function repeatLastBets() {
+    if (spinning || showingResult || lastPlayedBets.length === 0) return;
+    if (lastPlayedStake > balance) {
+      setError("Saldo insuficiente para repetir la jugada.");
+      return;
+    }
+    setSelectedBets(lastPlayedBets.map((b) => ({ ...b })));
+    setAmount(lastPlayedBets[0]?.amount ?? amount);
     setError("");
   }
 
@@ -264,8 +258,9 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
 
     resultTimerRef.current = setTimeout(() => {
       setShowingResult(false);
+      setLastResult(null);
       resultTimerRef.current = null;
-    }, 3200);
+    }, 3800);
   }, [loadHistory]);
 
   async function handleSpin() {
@@ -280,7 +275,10 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
       return;
     }
 
-    const betPayload = selectedBets.map((b) => ({
+    const betsToPlay = selectedBets.map((b) => ({ ...b }));
+    setLastPlayedBets(betsToPlay);
+
+    const betPayload = betsToPlay.map((b) => ({
       betType: b.betType,
       betChoice: b.betChoice,
       amount: b.amount,
@@ -314,7 +312,6 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
     setLastResult(null);
     setTargetNumber(null);
     setPendingResult(null);
-    scrollToWheel();
 
     try {
       const res = await fetch("/api/roulette/spin", {
@@ -347,7 +344,7 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
   }
 
   return (
-    <div className={cn("roulette-screen", focusMode && "roulette-screen--focus")}>
+    <div className={cn("roulette-screen", spinView && "roulette-screen--focus")}>
       <BrandHeader balance={balance} title="Ruleta" backHref="/jugar" />
 
       {!active && (
@@ -362,14 +359,16 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
         </p>
       )}
 
-      {promoBanner && active && !focusMode && !dailyLimitReached && (
+      {promoBanner && active && !spinView && !dailyLimitReached && (
         <p className="roulette-promo-banner">{promoBanner}</p>
       )}
 
       <div className="roulette-scroll" ref={scrollRef}>
+        {spinView && (
         <section
-          className={cn("roulette-hero", focusMode && "roulette-hero--focus")}
+          className="roulette-hero roulette-hero--focus"
           ref={heroRef}
+          aria-live="polite"
         >
           <RouletteWheel
             spinning={spinning}
@@ -377,10 +376,12 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
             onSpinEnd={onSpinEnd}
           />
 
-          {spinning && (
-            <p className="roulette-spin-status" aria-live="polite">
-              Girando…
-            </p>
+          {spinning && !targetNumber && (
+            <p className="roulette-spin-status">Preparando giro…</p>
+          )}
+
+          {spinning && targetNumber !== null && (
+            <p className="roulette-spin-status">Girando…</p>
           )}
 
           {lastResult && showingResult && (
@@ -393,9 +394,14 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
               className="roulette-hero-result"
             />
           )}
-        </section>
 
-        {!focusMode && (
+          {showingResult && (
+            <p className="roulette-spin-done-hint">Elige tus próximas jugadas en un momento…</p>
+          )}
+        </section>
+        )}
+
+        {!spinView && (
         <section className="roulette-bets roulette-bets--enter">
           <div className="roulette-amount-panel">
             <p className="roulette-section-label">Monto por apuesta</p>
@@ -470,18 +476,28 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
             ))}
           </div>
 
-          <button
-            type="button"
-            className="roulette-spin-btn"
-            disabled={!canSpin()}
-            onClick={handleSpin}
-          >
-            {spinning
-              ? "Girando…"
-              : selectedBets.length > 1
-                ? `Girar · ${formatMoney(totalStake)}`
-                : "Girar"}
-          </button>
+          <div className="roulette-actions">
+            <button
+              type="button"
+              className="roulette-repeat-btn"
+              disabled={spinning || lastPlayedBets.length === 0}
+              onClick={repeatLastBets}
+            >
+              Repetir jugada
+            </button>
+            <button
+              type="button"
+              className="roulette-spin-btn"
+              disabled={!canSpin()}
+              onClick={handleSpin}
+            >
+              {spinning
+                ? "Girando…"
+                : selectedBets.length > 1
+                  ? `Girar · ${formatMoney(totalStake)}`
+                  : "Girar"}
+            </button>
+          </div>
 
           {selectedBets.length > 0 && (
             <div className="roulette-slip">
@@ -527,7 +543,7 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
         </section>
         )}
 
-        {!focusMode && (
+        {!spinView && (
         <section className="roulette-history roulette-history--enter">
           <p className="roulette-section-label">Historial</p>
           {historyPills.length === 0 ? (

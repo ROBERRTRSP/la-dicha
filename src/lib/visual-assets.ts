@@ -35,8 +35,3 @@ export function rouletteBallArt(color: "red" | "black" | "green") {
   return ART.roulette.ball[color];
 }
 
-/** Logos de lotería generados con IA (prioridad sobre SVG genéricos) */
-export const AI_LOTTERY_LOGOS: Record<string, string> = {
-  LEIDSA: "/logos/LEIDSA.png",
-  LOTEKA: "/logos/LOTEKA.png",
-};

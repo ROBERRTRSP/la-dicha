@@ -1,5 +1,11 @@
 import { RECEIPT_CONFIG } from "./receipt-config";
+import { getSuperPaleDefinition } from "./super-pale";
 import { formatTime12 } from "./utils";
+
+function superPaleDisplayName(codeOrName?: string | null) {
+  if (!codeOrName) return "";
+  return getSuperPaleDefinition(codeOrName)?.name ?? codeOrName;
+}
 
 export type ReceiptItem = {
   betType: string;
@@ -19,6 +25,7 @@ export type ReceiptData = {
   balanceBefore?: number;
   balanceAfter?: number;
   status?: "ACTIVE" | "CANCELLED" | "COPY" | "CANCELED";
+  paymentMethod?: "WALLET" | "CASH";
   playerName?: string;
   items: ReceiptItem[];
 };
@@ -254,7 +261,7 @@ function formatLotteryBets(bets: LotteryBetLine[]): string[] {
     const prefix = BET_SHORT[bet.betType] ?? bet.betType.slice(0, 2);
     out.push(betLineMarker(`${prefix} ${bet.numbers}`, bet.amount));
     if (bet.betType === "SUPER_PALE" && bet.superPaleName) {
-      out.push(lineLeft(`  ${bet.superPaleName}`));
+      out.push(lineLeft(`  ${superPaleDisplayName(bet.superPaleName)}`));
     }
   }
 
@@ -283,8 +290,11 @@ function formatSectionTicket(data: ReceiptData): string[] {
 
   out.push(lineLeft(`Tck: ${data.ticketNumber}`));
   out.push(lineLeft(`${saleDate} ${saleTime}`));
+  if (data.paymentMethod === "CASH") {
+    out.push(lineLeft("Pago: EFECTIVO"));
+  }
   if (data.playerName) {
-    out.push(lineLeft(`Jug: ${data.playerName} · ${statusLabel(data.status)}`));
+    out.push(lineLeft(`Cli: ${data.playerName} · ${statusLabel(data.status)}`));
   } else {
     out.push(lineLeft(`Est: ${statusLabel(data.status)}`));
   }

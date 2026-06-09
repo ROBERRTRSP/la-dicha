@@ -15,7 +15,7 @@ const LOGOS = {
   NAC_TARDE: `${CDN}/7827e5ee87f05e864aa79f64210269c5.png`,
   NAC_NOCHE: `${CDN}/7827e5ee87f05e864aa79f64210269c5.png`,
   LOTEKA: `${CDN}/quiniela-loteka.png`,
-  LEIDSA: `${CDN}/quiniela-leidsa.png`,
+  LEIDSA: `${CDN}/leidsa.png`,
   NY_AM: `${CDN}/new-york-tarde.png`,
   NY_PM: `${CDN}/new-york-noche.png`,
   FL_AM: `${CDN}/florida-dia.png`,

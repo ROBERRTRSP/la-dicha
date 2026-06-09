@@ -2,7 +2,7 @@
 
 Plataforma web para venta de lotería dominicana: jugadores, cajeros y administración.
 
-**Producción:** [https://la-dicha.vercel.app](https://la-dicha.vercel.app)
+**Producción:** [https://consorciobelendejudea.com](https://consorciobelendejudea.com) (alias: [la-dicha.vercel.app](https://la-dicha.vercel.app))
 
 ## Stack
 

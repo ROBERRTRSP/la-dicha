@@ -67,6 +67,31 @@ export default function AdminUsuariosPage() {
     load();
   }
 
+  async function changePassword(user: UserRow) {
+    const password = window.prompt(
+      `Nueva contraseña para ${user.username}:`,
+      ""
+    );
+    if (password === null) return;
+    if (password.trim().length < 4) {
+      setMsg("La contraseña debe tener al menos 4 caracteres.");
+      return;
+    }
+
+    setMsg("");
+    const res = await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: user.id, password: password.trim() }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setMsg(data.error ?? "No se pudo cambiar la contraseña.");
+      return;
+    }
+    setMsg(`Contraseña actualizada para ${user.username}.`);
+  }
+
   return (
     <div>
       <h1 className="admin-page-title">Usuarios</h1>
@@ -131,7 +156,14 @@ export default function AdminUsuariosPage() {
                   <td>{u.role}</td>
                   <td>{u.balance != null ? `RD$${u.balance.toFixed(2)}` : "—"}</td>
                   <td>{u.active ? "Activo" : "Inactivo"}</td>
-                  <td>
+                  <td className="admin-table-actions">
+                    <button
+                      type="button"
+                      className="staff-link-btn"
+                      onClick={() => changePassword(u)}
+                    >
+                      Cambiar clave
+                    </button>
                     <button type="button" className="staff-link-btn" onClick={() => toggleActive(u.id, u.active)}>
                       {u.active ? "Desactivar" : "Activar"}
                     </button>

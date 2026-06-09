@@ -81,15 +81,44 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
 
-  const { id, active } = await request.json();
-  if (!id || typeof active !== "boolean") {
-    return NextResponse.json({ error: "Datos inválidos." }, { status: 400 });
+  const body = await request.json();
+  const { id, active, password } = body as {
+    id?: string;
+    active?: boolean;
+    password?: string;
+  };
+
+  if (!id) {
+    return NextResponse.json({ error: "Usuario no indicado." }, { status: 400 });
+  }
+
+  const data: { active?: boolean; passwordHash?: string } = {};
+
+  if (typeof active === "boolean") {
+    data.active = active;
+  }
+
+  if (password !== undefined) {
+    const next = String(password).trim();
+    if (next.length < 4) {
+      return NextResponse.json(
+        { error: "La contraseña debe tener al menos 4 caracteres." },
+        { status: 400 }
+      );
+    }
+    data.passwordHash = await hashPassword(next);
+  }
+
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: "Nada que actualizar." }, { status: 400 });
   }
 
   const user = await prisma.user.update({
     where: { id },
-    data: { active },
+    data,
   });
 
-  return NextResponse.json({ user: { id: user.id, active: user.active } });
+  return NextResponse.json({
+    user: { id: user.id, active: user.active, passwordUpdated: !!data.passwordHash },
+  });
 }

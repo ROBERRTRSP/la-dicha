@@ -3,14 +3,13 @@
 import { useState } from "react";
 import Image from "next/image";
 import { getLotteryBrand } from "@/lib/lottery-brands";
-import { AI_LOTTERY_LOGOS } from "@/lib/visual-assets";
 import { cn } from "@/lib/utils";
 
 function logoCandidates(code: string, logoUrl?: string | null) {
+  const official = `/logos/${code}.png`;
   return [
-    AI_LOTTERY_LOGOS[code],
-    logoUrl,
-    `/logos/${code}.png`,
+    official,
+    logoUrl && logoUrl !== official ? logoUrl : null,
     `/logos/${code}.svg`,
   ].filter((s): s is string => Boolean(s));
 }

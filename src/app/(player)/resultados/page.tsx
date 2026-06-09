@@ -1,16 +1,15 @@
 import { redirect } from "next/navigation";
 import { requirePlayer } from "@/lib/auth";
-import { prisma } from "@/lib/db";
 import { ensureWeekDraws, RESULTS_WEEK_DAYS } from "@/lib/draws";
+import { fetchDrawsForWeek, repairWeekResults } from "@/lib/results-sync";
+import { compareDrawTime } from "@/lib/utils";
+import { dayStartInTz, nowInTz } from "@/lib/timezone";
 import { BrandHeader } from "@/components/player/BrandHeader";
 import {
   ResultsWeekPager,
   type ResultsDayData,
 } from "@/components/player/ResultsWeekPager";
-import { startOfDay, subDays } from "date-fns";
-import { toZonedTime } from "date-fns-tz";
-
-const TZ = "America/Santo_Domingo";
+import { subDays } from "date-fns";
 
 function formatDayLabel(date: Date) {
   return date.toLocaleDateString("es-DO", {
@@ -34,34 +33,27 @@ export default async function ResultadosPage() {
   const user = await requirePlayer();
   if (!user) redirect("/login");
 
-  const now = toZonedTime(new Date(), TZ);
-  const today = startOfDay(now);
-  const weekStart = startOfDay(subDays(now, RESULTS_WEEK_DAYS - 1));
+  const now = nowInTz();
+  const today = dayStartInTz(now);
+  const weekStart = dayStartInTz(subDays(now, RESULTS_WEEK_DAYS - 1));
 
   await ensureWeekDraws();
+  await repairWeekResults(RESULTS_WEEK_DAYS);
 
-  const allDraws = await prisma.draw.findMany({
-    where: { drawDate: { gte: weekStart, lte: today } },
-    include: { lottery: true, result: true },
-    orderBy: { drawTime: "asc" },
-  });
+  const uniqueDraws = await fetchDrawsForWeek(weekStart, today);
 
-  const drawsByDay = new Map<number, typeof allDraws>();
-  for (const draw of allDraws) {
-    const key = startOfDay(draw.drawDate).getTime();
+  const drawsByDay = new Map<number, typeof uniqueDraws>();
+  for (const draw of uniqueDraws) {
+    const key = dayStartInTz(draw.drawDate).getTime();
     if (!drawsByDay.has(key)) drawsByDay.set(key, []);
     drawsByDay.get(key)!.push(draw);
   }
   for (const draws of drawsByDay.values()) {
-    draws.sort((a, b) => {
-      const [ah, am] = a.drawTime.split(":").map(Number);
-      const [bh, bm] = b.drawTime.split(":").map(Number);
-      return ah * 60 + am - (bh * 60 + bm);
-    });
+    draws.sort((a, b) => compareDrawTime(a.drawTime, b.drawTime));
   }
 
   const weekDays = Array.from({ length: RESULTS_WEEK_DAYS }, (_, i) =>
-    startOfDay(subDays(now, i))
+    dayStartInTz(subDays(now, i))
   );
 
   const weekRange = `${formatShortDate(weekStart)} – ${formatShortDate(today)}`;

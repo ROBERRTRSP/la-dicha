@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireCajero } from "@/lib/auth";
-import { depositToPlayer } from "@/lib/cajero-service";
+import { adjustPlayerWallet } from "@/lib/cajero-service";
 
 export async function POST(request: Request) {
   const cajero = await requireCajero();
@@ -9,15 +9,19 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { playerId, amount, note } = await request.json();
-    const result = await depositToPlayer(
+    const { playerId, amount, mode, note } = await request.json();
+    const op = mode === "subtract" ? "subtract" : "add";
+    const label = op === "add" ? "Recarga" : "Descuento";
+
+    const result = await adjustPlayerWallet(
       String(playerId),
       Number(amount),
-      note ? String(note) : `Recarga — ${cajero.fullName}`
+      op,
+      note ? String(note) : `${label} — ${cajero.fullName}`
     );
     return NextResponse.json(result);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Error al recargar.";
+    const msg = e instanceof Error ? e.message : "Error al ajustar saldo.";
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 }

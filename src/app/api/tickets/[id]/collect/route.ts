@@ -1,22 +1,18 @@
 import { NextResponse } from "next/server";
 import { requirePlayer } from "@/lib/auth";
-import { collectTicket } from "@/lib/tickets";
 
-export async function POST(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+/** Los premios de lotería solo se pagan en ventanilla (cajero/admin), no al saldo. */
+export async function POST() {
   const user = await requirePlayer();
   if (!user) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
 
-  try {
-    const { id } = await params;
-    const result = await collectTicket(user.id, id);
-    return NextResponse.json(result);
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Error al cobrar.";
-    return NextResponse.json({ error: msg }, { status: 400 });
-  }
+  return NextResponse.json(
+    {
+      error:
+        "Los premios de lotería se cobran en ventanilla con tu cajero. No se acreditan al saldo de la app.",
+    },
+    { status: 403 }
+  );
 }

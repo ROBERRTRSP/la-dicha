@@ -38,7 +38,7 @@ export function CompactPlayPad({
   const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
   return (
-    <div className="play-pad flex flex-col flex-1 min-h-0 px-3">
+    <div className="play-pad flex flex-col shrink-0 px-3">
       <div className="play-display shrink-0">
         <span className="text-[10px] text-slate-400 uppercase tracking-wide">
           {typeHint}
@@ -73,7 +73,7 @@ export function CompactPlayPad({
         </button>
       </div>
 
-      <div className="play-keypad flex-1 min-h-0">
+      <div className="play-keypad">
         {keys.map((k) => (
           <button
             key={k}

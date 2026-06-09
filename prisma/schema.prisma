@@ -138,6 +138,9 @@ model Ticket {
   balanceBefore    Float
   balanceAfter     Float
   status           TicketStatus @default(ACTIVE)
+  paymentMethod    String       @default("WALLET")
+  soldByCajeroId   String?
+  customerName     String?
   closedAt         DateTime?
   createdAt        DateTime     @default(now())
   user             User         @relation(fields: [userId], references: [id])
@@ -166,6 +169,8 @@ model Result {
   second    String
   third     String
   confirmed Boolean  @default(true)
+  source    String?
+  syncedAt  DateTime?
   createdAt DateTime @default(now())
   draw      Draw     @relation(fields: [drawId], references: [id])
 }

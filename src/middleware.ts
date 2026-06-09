@@ -56,17 +56,35 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isPlayer && !session) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    const res = NextResponse.redirect(new URL("/login", request.url));
+    if (token) res.cookies.delete("la_dicha_session");
+    return res;
+  }
+
+  if (isPlayer && session) {
+    if (session.role === "CAJERO") {
+      return NextResponse.redirect(new URL("/cajero", request.url));
+    }
+    if (session.role === "ADMIN") {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
+    if (session.role !== "JUGADOR") {
+      const res = NextResponse.redirect(new URL("/login", request.url));
+      res.cookies.delete("la_dicha_session");
+      return res;
+    }
+  }
+
+  if (isLogin && session?.role === "CAJERO") {
+    return NextResponse.redirect(new URL("/cajero", request.url));
+  }
+
+  if (isLogin && session?.role === "ADMIN") {
+    return NextResponse.redirect(new URL("/admin", request.url));
   }
 
   if (isLogin && session?.role === "JUGADOR") {
     return NextResponse.redirect(new URL("/jugar", request.url));
-  }
-
-  if (isPlayer && token && !session) {
-    const res = NextResponse.redirect(new URL("/login", request.url));
-    res.cookies.delete("la_dicha_session");
-    return res;
   }
 
   return NextResponse.next();

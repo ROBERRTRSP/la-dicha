@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requirePlayer } from "@/lib/auth";
+import { getSession, requirePlayer } from "@/lib/auth";
 import { BottomNav } from "@/components/player/BottomNav";
 
 export default async function PlayerLayout({
@@ -8,7 +8,11 @@ export default async function PlayerLayout({
   children: React.ReactNode;
 }) {
   const user = await requirePlayer();
-  if (!user) redirect("/login");
+  if (!user) {
+    const session = await getSession();
+    if (session) redirect("/api/auth/logout?next=/login");
+    redirect("/login");
+  }
 
   return (
     <div className="player-shell">

@@ -1,10 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BrandHeader } from "@/components/player/BrandHeader";
-import { DecorativeBanner } from "@/components/ui/DecorativeBanner";
-import { AiVisual } from "@/components/ui/AiVisual";
-import { ART } from "@/lib/visual-assets";
+import Link from "next/link";
 import { CompactPlayPad } from "@/components/player/CompactPlayPad";
 import { PlayBetsPanel } from "@/components/player/PlayBetsPanel";
 import { LotteryStrip } from "@/components/player/LotteryStrip";
@@ -18,19 +15,16 @@ import {
 import { formatMoney } from "@/lib/utils";
 import type { OpenDrawView } from "@/lib/draws";
 import { generateId } from "@/lib/generate-id";
-import { REPEAT_CART_KEY } from "@/lib/ticket-cart";
 import { cartLineTotal, type CartLine } from "@/lib/tickets";
 import { getOpenSuperPales, isSuperPaleId } from "@/lib/super-pale";
 
-export function PlayClient({
+export function CajeroSellClient({
   initialDraws,
-  balance: initialBalance,
 }: {
   initialDraws: OpenDrawView[];
-  balance: number;
 }) {
   const [draws, setDraws] = useState(initialDraws);
-  const [balance, setBalance] = useState(initialBalance);
+  const [customerName, setCustomerName] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [digits, setDigits] = useState("");
   const [amount, setAmount] = useState(5);
@@ -45,8 +39,7 @@ export function PlayClient({
       ticketNumber: string;
       verificationCode: string;
       totalAmount: number;
-      balanceBefore?: number;
-      balanceAfter: number;
+      customerName?: string | null;
       createdAt: string;
       items: {
         betType: string;
@@ -55,6 +48,7 @@ export function PlayClient({
         amount: number;
         drawTime?: string;
         drawDate?: string;
+        superPaleName?: string | null;
       }[];
     };
     qrDataUrl: string;
@@ -98,32 +92,15 @@ export function PlayClient({
     return () => clearTimeout(t);
   }, [error]);
 
-  useEffect(() => {
-    const raw = sessionStorage.getItem(REPEAT_CART_KEY);
-    if (!raw) return;
-    sessionStorage.removeItem(REPEAT_CART_KEY);
-    try {
-      const lines = JSON.parse(raw) as CartLine[];
-      if (!lines.length) return;
-      setCart(lines);
-      setSelected(new Set(lines.flatMap((l) => l.drawIds)));
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
   const total = useMemo(
     () => cart.reduce((s, l) => s + cartLineTotal(l), 0),
     [cart]
   );
 
   const openSuperPales = useMemo(() => getOpenSuperPales(draws), [draws]);
-
-  const openDrawIds = useMemo(() => draws.map((d) => d.id), [draws]);
-
   const allSelectableIds = useMemo(
-    () => [...openDrawIds, ...openSuperPales.map((s) => s.id)],
-    [openDrawIds, openSuperPales]
+    () => [...draws.map((d) => d.id), ...openSuperPales.map((s) => s.id)],
+    [draws, openSuperPales]
   );
 
   function toggleDraw(id: string) {
@@ -136,7 +113,6 @@ export function PlayClient({
         }
         return new Set([id]);
       }
-
       const next = new Set(prev);
       for (const key of [...next]) {
         if (isSuperPaleId(key)) next.delete(key);
@@ -145,24 +121,6 @@ export function PlayClient({
       else next.add(id);
       return next;
     });
-  }
-
-  function appendDigit(d: string) {
-    setError("");
-    if (digits.length >= 6) {
-      setError("Máximo 6 dígitos.");
-      return;
-    }
-    setDigits((prev) => prev + d);
-  }
-
-  function appendDoubleZero() {
-    setError("");
-    if (digits.length > 4) {
-      setError("Máximo 6 dígitos.");
-      return;
-    }
-    setDigits((prev) => prev + "00");
   }
 
   function addToCart() {
@@ -228,7 +186,6 @@ export function PlayClient({
       lotteryNames: selectedDraws.map((d) => d.lotteryName),
       addedAt: Date.now(),
     };
-
     setCart((prev) => [...prev, line]);
     setDigits("");
     setAddedFlash(true);
@@ -239,19 +196,20 @@ export function PlayClient({
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/tickets", {
+      const res = await fetch("/api/cajero/sell", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lines: cart }),
+        body: JSON.stringify({ lines: cart, customerName }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Error al confirmar.");
-      setBalance(data.ticket.balanceAfter);
+      if (!res.ok) throw new Error(data.error ?? "Error al vender.");
       setSuccess({ ticket: data.ticket, qrDataUrl: data.qrDataUrl });
       setCart([]);
       setConfirmOpen(false);
+      setDigits("");
+      setSelected(new Set());
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al confirmar.");
+      setError(e instanceof Error ? e.message : "Error al vender.");
     } finally {
       setLoading(false);
     }
@@ -260,22 +218,47 @@ export function PlayClient({
   if (success) {
     return (
       <TicketSuccess
-        ticket={success.ticket}
+        ticket={{
+          ...success.ticket,
+          balanceBefore: 0,
+          balanceAfter: 0,
+        }}
         qrDataUrl={success.qrDataUrl}
-        onNewBet={() => setSuccess(null)}
+        onNewBet={() => {
+          setSuccess(null);
+          setCustomerName("");
+        }}
+        cashSale
+        newBetLabel="Nueva venta"
       />
     );
   }
 
   return (
-    <div
-      className={`play-screen${cart.length > 0 ? " play-screen--has-bets" : ""}`}
-    >
-      <div className="play-screen-top">
-        <BrandHeader balance={balance} compact />
+    <div className="cajero-sell">
+      <div className="cajero-sell-head">
+        <div>
+          <h1 className="admin-page-title">Vender números</h1>
+          <p className="cajero-sell-sub">
+            Vanquero · cobra en efectivo y entrega el ticket al cliente
+          </p>
+        </div>
+        <Link href="/cajero" className="cajero-sell-back">
+          ← Panel
+        </Link>
+      </div>
 
-        <DecorativeBanner src={ART.jugarBanner} className="play-visual-banner" />
+      <label className="cajero-sell-customer admin-field admin-field--full">
+        <span>Cliente (opcional)</span>
+        <input
+          type="text"
+          value={customerName}
+          onChange={(e) => setCustomerName(e.target.value)}
+          placeholder="Nombre del cliente"
+        />
+      </label>
 
+      <div className="cajero-sell-play">
         <LotteryStrip
           draws={draws}
           selected={selected}
@@ -283,86 +266,70 @@ export function PlayClient({
           onSelectAll={() => setSelected(new Set(allSelectableIds))}
           onClear={() => setSelected(new Set())}
         />
+
+        <CompactPlayPad
+          digits={digits}
+          amount={amount}
+          onDigit={(d) => {
+            setError("");
+            if (digits.length >= 6) {
+              setError("Máximo 6 dígitos.");
+              return;
+            }
+            setDigits((prev) => prev + d);
+          }}
+          onDoubleZero={() => {
+            setError("");
+            if (digits.length > 4) {
+              setError("Máximo 6 dígitos.");
+              return;
+            }
+            setDigits((prev) => prev + "00");
+          }}
+          onBackspace={() => setDigits((d) => d.slice(0, -1))}
+          onClear={() => setDigits("")}
+          onAdd={addToCart}
+          onAmountChange={setAmount}
+        />
+
+        <PlayBetsPanel
+          lines={cart}
+          onRemove={(id) => setCart((c) => c.filter((l) => l.id !== id))}
+        />
       </div>
 
-      <CompactPlayPad
-        digits={digits}
-        amount={amount}
-        onDigit={appendDigit}
-        onDoubleZero={appendDoubleZero}
-        onBackspace={() => setDigits((d) => d.slice(0, -1))}
-        onClear={() => setDigits("")}
-        onAdd={addToCart}
-        onAmountChange={setAmount}
-      />
-
-      <PlayBetsPanel
-        lines={cart}
-        onRemove={(id) => setCart((c) => c.filter((l) => l.id !== id))}
-      />
-
-      <div className="play-confirm-bar">
+      <div className="cajero-sell-bar">
         {cart.length > 0 && (
-          <div className="play-footer-summary">
-            <div>
-              <p className="text-[10px] text-slate-400">
-                {cart.length} jugada{cart.length !== 1 ? "s" : ""} · Total
-              </p>
-              <p className="text-lg font-bold text-[#c9a227] leading-tight">
-                {formatMoney(total)}
-              </p>
-            </div>
-            <p className="text-[10px] text-slate-400 text-right">
-              Saldo después
-              <br />
-              <span className="font-semibold text-[#0d9488]">
-                {formatMoney(balance - total)}
-              </span>
-            </p>
-          </div>
+          <p className="cajero-sell-total">
+            Total a cobrar: <strong>{formatMoney(total)}</strong>
+          </p>
         )}
         <button
           type="button"
-          className="play-confirm-full"
-          disabled={cart.length === 0 || total > balance}
-          onClick={() => {
-            if (cart.length === 0) {
-              setError("Agrega una jugada antes de confirmar.");
-              return;
-            }
-            if (total > balance) {
-              setError("Saldo insuficiente. Contacta a tu cajero.");
-              return;
-            }
-            setConfirmOpen(true);
-          }}
+          className="admin-save-btn cajero-sell-btn"
+          disabled={cart.length === 0}
+          onClick={() => setConfirmOpen(true)}
         >
-          <AiVisual
-            src={ART.btnConfirmar}
-            alt=""
-            width={24}
-            height={24}
-            className="play-confirm-icon"
-          />
-          Confirmar jugada
+          Cobrar y imprimir ticket
         </button>
       </div>
 
       {addedFlash && (
-        <div className="play-added-toast">Jugada agregada</div>
+        <div className="cajero-sell-toast">Jugada agregada</div>
       )}
-
-      {error && <div className="play-toast">{error}</div>}
+      {error && <div className="cajero-sell-error">{error}</div>}
 
       <ConfirmModal
         open={confirmOpen}
         lines={cart}
         total={total}
-        balanceBefore={balance}
-        balanceAfter={balance - total}
+        balanceBefore={0}
+        balanceAfter={0}
         loading={loading}
         onConfirm={confirmSale}
         onClose={() => setConfirmOpen(false)}
+        cashSale
+        customerName={customerName}
       />
     </div>
   );

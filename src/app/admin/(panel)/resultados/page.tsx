@@ -17,6 +17,7 @@ export default function AdminResultadosPage() {
   const [second, setSecond] = useState("");
   const [third, setThird] = useState("");
   const [msg, setMsg] = useState("");
+  const [syncing, setSyncing] = useState(false);
 
   async function load() {
     const res = await fetch("/api/admin/draws");
@@ -27,6 +28,20 @@ export default function AdminResultadosPage() {
   useEffect(() => {
     load();
   }, []);
+
+  async function syncOfficial() {
+    setSyncing(true);
+    setMsg("");
+    const res = await fetch("/api/admin/sync-results", { method: "POST" });
+    const data = await res.json();
+    setSyncing(false);
+    if (!res.ok) {
+      setMsg(data.error ?? "Error al sincronizar.");
+      return;
+    }
+    setMsg(`Sincronizados ${data.synced} resultados oficiales.`);
+    load();
+  }
 
   async function publish(e: React.FormEvent) {
     e.preventDefault();
@@ -49,8 +64,26 @@ export default function AdminResultadosPage() {
     <div>
       <h1 className="admin-page-title">Resultados</h1>
       <p className="admin-ruleta-sub">
-        Publica números y liquida premios automáticamente (Quiniela, Palé, Tripleta).
+        20 min después de cada sorteo: primero se busca en la fuente oficial{" "}
+        <a href="https://loteriasdominicanas.com/" target="_blank" rel="noreferrer">
+          loteriasdominicanas.com
+        </a>
+        . Solo si hay resultado y fecha correcta, se confirma en{" "}
+        <a href="https://www.conectate.com.do/loterias/" target="_blank" rel="noreferrer">
+          conectate.com.do
+        </a>
+        . Si coinciden, se publican y liquidan premios.
       </p>
+
+      <button
+        type="button"
+        className="admin-save-btn"
+        style={{ marginBottom: "1rem" }}
+        onClick={syncOfficial}
+        disabled={syncing}
+      >
+        {syncing ? "Sincronizando…" : "Sincronizar resultados oficiales"}
+      </button>
 
       <form className="staff-form" onSubmit={publish}>
         <div className="admin-settings-grid">

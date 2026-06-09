@@ -5,8 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 
 const LINKS = [
   { href: "/cajero", label: "Inicio", exact: true },
+  { href: "/cajero/vender", label: "Vender" },
   { href: "/cajero/jugadores", label: "Jugadores" },
-  { href: "/cajero/recargar", label: "Recargar" },
+  { href: "/cajero/recargar", label: "Saldo" },
   { href: "/cajero/tickets", label: "Tickets" },
 ];
 

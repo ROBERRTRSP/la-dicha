@@ -1,7 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL ?? "https://consorciobelendejudea.com";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(APP_URL),
   title: "La Dicha — Suerte clara. Jugada segura.",
   description: "Juega lotería dominicana desde tu celular.",
   manifest: "/manifest.json",

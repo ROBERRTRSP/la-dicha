@@ -59,7 +59,7 @@ export default function CajeroLoginPage() {
             placeholder="Usuario cajero"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full min-h-[48px] px-4 rounded-xl border border-slate-200"
+            className="admin-login-input"
             autoComplete="username"
           />
           <input
@@ -67,7 +67,7 @@ export default function CajeroLoginPage() {
             placeholder="Contraseña"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full min-h-[48px] px-4 rounded-xl border border-slate-200"
+            className="admin-login-input"
             autoComplete="current-password"
           />
           {error && (
@@ -81,8 +81,8 @@ export default function CajeroLoginPage() {
             {loading ? "Entrando…" : "Entrar"}
           </button>
         </form>
-        <p className="text-center text-xs text-slate-400 mt-4">
-          <a href="/login" className="underline hover:text-slate-200">
+        <p className="text-center text-xs text-slate-300 mt-4">
+          <a href="/login" className="underline hover:text-white">
             Volver al login de jugadores
           </a>
         </p>

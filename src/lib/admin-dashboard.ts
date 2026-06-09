@@ -1,12 +1,8 @@
-import { startOfDay } from "date-fns";
-import { toZonedTime } from "date-fns-tz";
 import { prisma } from "./db";
-
-const TZ = "America/Santo_Domingo";
+import { dayStartInTz, nowInTz } from "./timezone";
 
 export async function getAdminDashboardStats() {
-  const now = toZonedTime(new Date(), TZ);
-  const today = startOfDay(now);
+  const today = dayStartInTz(nowInTz());
 
   const [
     playerCount,

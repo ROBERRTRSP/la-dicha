@@ -25,6 +25,8 @@ export async function POST(request: Request) {
         second: pad(second),
         third: pad(third),
         confirmed: true,
+        source: "MANUAL",
+        syncedAt: null,
       },
       create: {
         drawId,
@@ -32,6 +34,7 @@ export async function POST(request: Request) {
         second: pad(second),
         third: pad(third),
         confirmed: true,
+        source: "MANUAL",
       },
     });
 
