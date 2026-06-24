@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <radialGradient id="bg" cx="38%" cy="32%" r="72%">
+      <stop offset="0%" stop-color="#7c2d12"/>
+      <stop offset="100%" stop-color="#1c0a00"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef9c3"/>
+      <stop offset="50%" stop-color="#fde047"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="gold-dark" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#92400e"/>
+      <stop offset="100%" stop-color="#fde047"/>
+    </linearGradient>
+    <filter id="glow"><feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#fde047" flood-opacity="0.7"/></filter>
+  </defs>
+  <rect x="22" y="22" width="156" height="156" rx="32" fill="url(#bg)" stroke="#d97706" stroke-width="4"/>
+  <g filter="url(#glow)" transform="translate(100 100) scale(1.5) translate(-50 -50)">
+    <ellipse cx="50" cy="66" rx="26" ry="7" fill="#422006" opacity="0.6"/>
+    <path d="M24 50 L50 34 L76 50 L50 66 Z" fill="url(#gold-dark)" stroke="#b45309" stroke-width="2"/>
+    <path d="M24 50 L50 34 L76 50" fill="url(#gold)"/>
+    <path d="M32 54v10l18 10 18-10V54" fill="#eab308" stroke="#ca8a04" stroke-width="1.8"/>
+  </g>
+</svg>

@@ -20,7 +20,7 @@ function buildReel(base: string[], wild: string, scatter: string): string[] {
 
 const TREASURE_SKUNK: SlotGameConfig = {
   id: "treasure-skunk",
-  name: "Treasure Skunk",
+  name: "Zorrillo del Tesoro",
   tagline: "Bosque, cofres y monedas",
   themeClass: "slot-theme--skunk",
   cols: 5,
@@ -91,7 +91,7 @@ const TREASURE_SKUNK: SlotGameConfig = {
 
 const MAGIC_LAMP: SlotGameConfig = {
   id: "magic-lamp",
-  name: "Magic Lamp",
+  name: "Lámpara Mágica",
   tagline: "Lámpara mágica y deseos",
   themeClass: "slot-theme--lamp",
   cols: 5,
@@ -156,7 +156,7 @@ const MAGIC_LAMP: SlotGameConfig = {
 
 const GOLDEN_OX: SlotGameConfig = {
   id: "golden-ox",
-  name: "Golden Ox",
+  name: "Toro Dorado",
   tagline: "Toro dorado y fortuna",
   themeClass: "slot-theme--ox",
   cols: 5,
@@ -221,13 +221,13 @@ const GOLDEN_OX: SlotGameConfig = {
     type: "ox_jackpot",
     scatterCount: 3,
     freeSpinsAwarded: 0,
-    description: "Jackpot menor, mayor y gran premio · multiplicadores ×2, ×5, ×10",
+    description: "Premio menor, mayor y gran premio · multiplicadores ×2, ×5, ×10",
   },
 };
 
 const MOON_WOLF: SlotGameConfig = {
   id: "moon-wolf",
-  name: "Moon Wolf",
+  name: "Lobo Lunar",
   tagline: "Lobo, luna y noche",
   themeClass: "slot-theme--wolf",
   cols: 5,

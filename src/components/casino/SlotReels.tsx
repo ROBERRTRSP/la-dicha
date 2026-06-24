@@ -8,23 +8,138 @@ import {
   useState,
 } from "react";
 import { SlotSymbolSvg } from "./SlotSymbolSvg";
+import { ReelMetricsProvider, useReelMetrics } from "./useReelMetrics";
+import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
 import type { SlotGameId, WinCell } from "@/lib/slots/types";
 import { getSlotGame } from "@/lib/slots/games";
+import { getSlotAnimationConfig } from "@/lib/slots/animation-config";
 import { cn } from "@/lib/utils";
 
-const CELL_H = 72;
-const SPIN_SYMBOLS = 16;
+const VISIBLE_ROWS = 3;
+const LOOP_SEGMENT_SIZE = 12;
+
+type ReelPhase = "idle" | "accel" | "spin" | "decel";
 
 function randomSymbol(ids: string[]): string {
   return ids[Math.floor(Math.random() * ids.length)] ?? ids[0];
 }
 
-function buildStrip(finalCol: string[], allIds: string[]): string[] {
-  const filler: string[] = [];
-  for (let i = 0; i < SPIN_SYMBOLS; i++) {
-    filler.push(randomSymbol(allIds));
+function buildLoopSegment(allIds: string[]): string[] {
+  return Array.from({ length: LOOP_SEGMENT_SIZE }, () => randomSymbol(allIds));
+}
+
+function buildStrip(
+  finalCol: string[],
+  allIds: string[],
+  repeatCount: number
+): string[] {
+  const segment = buildLoopSegment(allIds);
+  const body: string[] = [];
+  for (let i = 0; i < repeatCount; i++) {
+    body.push(...segment);
   }
-  return [...filler, ...finalCol];
+  return [...body, ...finalCol];
+}
+
+function loopHeightPx(cellH: number): number {
+  return LOOP_SEGMENT_SIZE * cellH;
+}
+
+function finalOffset(stripLen: number, cellH: number): number {
+  return Math.max(0, (stripLen - VISIBLE_ROWS) * cellH);
+}
+
+function drumCellTransform(
+  stripIndex: number,
+  offset: number,
+  cellH: number,
+  isMotion: boolean,
+  visibleRow: number
+): string | undefined {
+  if (cellH <= 0) return undefined;
+
+  const windowH = VISIBLE_ROWS * cellH;
+  const cellCenterY = stripIndex * cellH + cellH * 0.5 - offset;
+  const norm = (cellCenterY - windowH * 0.5) / (cellH * 1.05);
+
+  if (!isMotion && (visibleRow < 0 || visibleRow >= VISIBLE_ROWS)) {
+    return undefined;
+  }
+
+  const clamped = Math.max(-1.35, Math.min(1.35, norm));
+  const rotateX = clamped * -24;
+  const scale = 1 - Math.abs(clamped) * 0.16;
+
+  return `perspective(680px) rotateX(${rotateX}deg) scale(${scale})`;
+}
+
+function drumCellOpacity(
+  stripIndex: number,
+  offset: number,
+  cellH: number,
+  isMotion: boolean
+): number | undefined {
+  if (!isMotion || cellH <= 0) return undefined;
+
+  const windowH = VISIBLE_ROWS * cellH;
+  const cellCenterY = stripIndex * cellH + cellH * 0.5 - offset;
+  const norm = Math.abs((cellCenterY - windowH * 0.5) / (cellH * 1.05));
+  return Math.max(0.55, 1 - norm * 0.35);
+}
+
+function ReelCell({
+  symId,
+  gameId,
+  isWin,
+  isScatter,
+  settling,
+  stripIndex,
+  offset,
+  cellH,
+  visibleRow,
+  isMotion,
+}: {
+  symId: string;
+  gameId: SlotGameId;
+  isWin?: boolean;
+  isScatter?: boolean;
+  settling?: boolean;
+  stripIndex: number;
+  offset: number;
+  cellH: number;
+  visibleRow: number;
+  isMotion: boolean;
+}) {
+  const wheelStyle = drumCellTransform(
+    stripIndex,
+    offset,
+    cellH,
+    isMotion,
+    visibleRow
+  );
+  const motionOpacity = drumCellOpacity(stripIndex, offset, cellH, isMotion);
+
+  return (
+    <div
+      className={cn(
+        "slot-reel-cell",
+        isWin && "slot-reel-cell--win",
+        isScatter && "slot-reel-cell--scatter",
+        settling && "slot-reel-cell--settle",
+        isMotion && "slot-reel-cell--spinning"
+      )}
+    >
+      <div
+        className="slot-symbol-wrapper"
+        style={{
+          ...(wheelStyle ? { transform: wheelStyle } : {}),
+          ...(motionOpacity !== undefined ? { opacity: motionOpacity } : {}),
+        }}
+      >
+        <SlotSymbolSvg symbolId={symId} gameId={gameId} variant="cell" />
+      </div>
+    </div>
+  );
 }
 
 function SlotReelColumn({
@@ -37,6 +152,7 @@ function SlotReelColumn({
   winRows,
   scatterRows,
   highlight,
+  reducedMotion,
   onStopped,
 }: {
   columnIndex: number;
@@ -48,85 +164,264 @@ function SlotReelColumn({
   winRows: Set<number>;
   scatterRows: Set<number>;
   highlight: boolean;
+  reducedMotion?: boolean;
   onStopped?: () => void;
 }) {
+  const anim = getSlotAnimationConfig(gameId);
+  const { cellHeight: cellH } = useReelMetrics();
+
   const [strip, setStrip] = useState<string[]>(() =>
-    buildStrip(finalSymbols, allSymbolIds)
+    buildStrip(finalSymbols, allSymbolIds, anim.loopRepeats)
   );
-  const [phase, setPhase] = useState<"idle" | "blur" | "stop">("idle");
   const [offset, setOffset] = useState(0);
+  const [phase, setPhase] = useState<ReelPhase>("idle");
+  const [settling, setSettling] = useState(false);
+
+  const stripRef = useRef<HTMLDivElement>(null);
+  const phaseRef = useRef<ReelPhase>("idle");
+  const offsetRef = useRef(0);
+  const totalOffsetRef = useRef(0);
+  const velocityRef = useRef(0);
+  const rafRef = useRef(0);
+  const lastFrameRef = useRef(0);
+  const accelStartRef = useRef(0);
   const stoppedRef = useRef(false);
+  const targetOffsetRef = useRef(0);
+  const mountedRef = useRef(false);
+  const finalsRef = useRef(finalSymbols);
+
+  useEffect(() => {
+    finalsRef.current = finalSymbols;
+  }, [finalSymbols]);
+
+  const finishStop = useCallback(() => {
+    if (stoppedRef.current) return;
+    stoppedRef.current = true;
+    if (stripRef.current) stripRef.current.style.transition = "";
+    setSettling(true);
+    window.setTimeout(() => {
+      setSettling(false);
+      phaseRef.current = "idle";
+      setPhase("idle");
+      onStopped?.();
+    }, anim.settleMs);
+  }, [anim.settleMs, onStopped]);
+
+  useEffect(() => {
+    if (mountedRef.current) return;
+    mountedRef.current = true;
+    const s = buildStrip(finalSymbols, allSymbolIds, anim.loopRepeats);
+    const fo = finalOffset(s.length, cellH);
+    setStrip(s);
+    offsetRef.current = fo;
+    totalOffsetRef.current = fo;
+    setOffset(fo);
+    targetOffsetRef.current = fo;
+  }, [allSymbolIds, anim.loopRepeats, cellH, finalSymbols]);
+
+  useEffect(() => {
+    if (cellH <= 0) return;
+    if (phaseRef.current === "idle" && !spinning) {
+      const fo = finalOffset(strip.length, cellH);
+      offsetRef.current = fo;
+      setOffset(fo);
+      targetOffsetRef.current = fo;
+    }
+  }, [cellH, strip.length, spinning]);
 
   useEffect(() => {
     if (!spinning) return;
-    stoppedRef.current = false;
-    const newStrip = buildStrip(finalSymbols, allSymbolIds);
-    setStrip(newStrip);
-    setOffset(0);
-    setPhase("blur");
 
-    const stopAt = 600 + columnIndex * 280;
+    stoppedRef.current = false;
+    setSettling(false);
+
+    const startFinals = finalsRef.current;
+    const newStrip = buildStrip(startFinals, allSymbolIds, anim.loopRepeats);
+    targetOffsetRef.current = finalOffset(newStrip.length, cellH);
+
+    setStrip(newStrip);
+    offsetRef.current = 0;
+    totalOffsetRef.current = 0;
+    setOffset(0);
+    phaseRef.current = reducedMotion ? "decel" : "accel";
+    setPhase(reducedMotion ? "decel" : "accel");
+    velocityRef.current = 0;
+    accelStartRef.current = performance.now();
+    lastFrameRef.current = accelStartRef.current;
+
+    if (stripRef.current) stripRef.current.style.transition = "none";
+
+    const stopAt = reducedMotion
+      ? 80 + columnIndex * 40
+      : anim.baseSpinMs + columnIndex * anim.columnStopDelayMs;
+
+    const loopH = loopHeightPx(cellH);
+
+    const tick = (now: number) => {
+      const dt = Math.min(32, now - lastFrameRef.current);
+      lastFrameRef.current = now;
+
+      if (phaseRef.current === "decel") return;
+
+      if (phaseRef.current === "accel") {
+        const elapsed = now - accelStartRef.current;
+        const t = Math.min(1, elapsed / anim.accelMs);
+        velocityRef.current = anim.maxVelocity * t * t;
+      } else if (phaseRef.current === "spin") {
+        velocityRef.current = anim.maxVelocity;
+      }
+
+      if (phaseRef.current === "accel" || phaseRef.current === "spin") {
+        totalOffsetRef.current += velocityRef.current * dt;
+        const display = loopH > 0 ? totalOffsetRef.current % loopH : totalOffsetRef.current;
+        offsetRef.current = display;
+        setOffset(display);
+
+        if (
+          phaseRef.current === "accel" &&
+          now - accelStartRef.current >= anim.accelMs
+        ) {
+          phaseRef.current = "spin";
+          setPhase("spin");
+        }
+        rafRef.current = requestAnimationFrame(tick);
+      }
+    };
+
+    if (!reducedMotion) {
+      rafRef.current = requestAnimationFrame(tick);
+    }
+
     const stopTimer = window.setTimeout(() => {
-      setPhase("stop");
+      cancelAnimationFrame(rafRef.current);
+
+      const latestFinals = finalsRef.current;
+      setStrip((prev) => {
+        const tail = prev.slice(-VISIBLE_ROWS).join(",");
+        const nextTail = latestFinals.join(",");
+        if (tail === nextTail) {
+          targetOffsetRef.current = finalOffset(prev.length, cellH);
+          return prev;
+        }
+        const next = [...prev.slice(0, -VISIBLE_ROWS), ...latestFinals];
+        targetOffsetRef.current = finalOffset(next.length, cellH);
+        return next;
+      });
+
+      phaseRef.current = "decel";
+      setPhase("decel");
+
+      const snap = targetOffsetRef.current;
+      const decelMs = reducedMotion ? 0 : anim.decelMs;
+      totalOffsetRef.current = snap;
       requestAnimationFrame(() => {
-        setOffset((newStrip.length - 3) * CELL_H);
+        if (stripRef.current) {
+          stripRef.current.style.transition =
+            decelMs > 0
+              ? `transform ${decelMs}ms ${anim.decelEasing}`
+              : "none";
+        }
+        offsetRef.current = snap;
+        setOffset(snap);
+        if (decelMs === 0) finishStop();
       });
     }, stopAt);
 
-    return () => window.clearTimeout(stopTimer);
-  }, [spinning, stopGeneration, columnIndex, allSymbolIds, finalSymbols]);
+    const fallbackTimer = window.setTimeout(() => {
+      if (phaseRef.current !== "decel") return;
+      finishStop();
+    }, stopAt + (reducedMotion ? 50 : anim.decelMs + 120));
 
-  useEffect(() => {
-    if (phase !== "stop" || stoppedRef.current) return;
-    const t = window.setTimeout(() => {
-      stoppedRef.current = true;
-      setPhase("idle");
-      onStopped?.();
-    }, 700);
-    return () => window.clearTimeout(t);
-  }, [phase, onStopped]);
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      window.clearTimeout(stopTimer);
+      window.clearTimeout(fallbackTimer);
+    };
+  }, [
+    spinning,
+    stopGeneration,
+    columnIndex,
+    anim,
+    cellH,
+    allSymbolIds,
+    reducedMotion,
+    finishStop,
+  ]);
 
-  const lastIndex = strip.length - 3;
+  const handleTransitionEnd = useCallback(
+    (e: React.TransitionEvent) => {
+      if (e.propertyName !== "transform" || phaseRef.current !== "decel") return;
+      finishStop();
+    },
+    [finishStop]
+  );
+
+  const lastIndex = strip.length - VISIBLE_ROWS;
+  const isMotion = phase === "accel" || phase === "spin";
+  const isDecel = phase === "decel";
 
   return (
-    <div className="slot-reel-col">
-      <div
-        className={cn(
-          "slot-reel-strip",
-          phase === "blur" && "slot-reel-strip--blur",
-          phase === "stop" && "slot-reel-strip--stop"
-        )}
-        style={
-          phase === "blur"
-            ? undefined
-            : { transform: `translate3d(0, -${offset}px, 0)` }
-        }
-      >
-        {strip.map((symId, i) => {
-          const visibleRow = i - lastIndex;
-          const isWin =
-            highlight && visibleRow >= 0 && winRows.has(visibleRow);
-          const isScatter =
-            highlight && visibleRow >= 0 && scatterRows.has(visibleRow);
-          return (
-            <div
-              key={`${stopGeneration}-${i}-${symId}`}
-              className={cn(
-                "slot-reel-cell",
-                isWin && "slot-reel-cell--win",
-                isScatter && "slot-reel-cell--scatter"
-              )}
-            >
-              <SlotSymbolSvg symbolId={symId} gameId={gameId} size={56} />
-            </div>
-          );
-        })}
+    <div
+      className={cn(
+        "slot-reel-col",
+        isMotion && "slot-reel-col--spinning",
+        isDecel && "slot-reel-col--stopping"
+      )}
+    >
+      <div className="slot-reel-drum">
+        <div className="slot-reel-lip slot-reel-lip--top" aria-hidden />
+        <div className="slot-reel-window">
+          <div
+            ref={stripRef}
+            className={cn(
+              "slot-reel-strip",
+              isMotion && "slot-reel-strip--motion",
+              isDecel && "slot-reel-strip--decel"
+            )}
+            style={{ transform: `translate3d(0, -${offset}px, 0)` }}
+            onTransitionEnd={handleTransitionEnd}
+          >
+            {strip.map((symId, i) => {
+              const visibleRow = i - lastIndex;
+              const showWin =
+                highlight &&
+                phase === "idle" &&
+                visibleRow >= 0 &&
+                visibleRow < VISIBLE_ROWS &&
+                winRows.has(visibleRow);
+              const showScatter =
+                highlight &&
+                phase === "idle" &&
+                visibleRow >= 0 &&
+                visibleRow < VISIBLE_ROWS &&
+                scatterRows.has(visibleRow);
+              return (
+                <ReelCell
+                  key={`${stopGeneration}-${columnIndex}-${i}`}
+                  symId={symId}
+                  gameId={gameId}
+                  isWin={showWin}
+                  isScatter={showScatter}
+                  stripIndex={i}
+                  offset={offset}
+                  cellH={cellH}
+                  visibleRow={visibleRow}
+                  isMotion={isMotion}
+                  settling={
+                    settling && visibleRow >= 0 && visibleRow < VISIBLE_ROWS
+                  }
+                />
+              );
+            })}
+          </div>
+        </div>
+        <div className="slot-reel-lip slot-reel-lip--bottom" aria-hidden />
       </div>
     </div>
   );
 }
 
-export function SlotReels({
+function SlotReelsInner({
   gameId,
   grid,
   spinning,
@@ -148,6 +443,7 @@ export function SlotReels({
   const game = getSlotGame(gameId)!;
   const allIds = useMemo(() => Object.keys(game.symbols), [game.symbols]);
   const stoppedCount = useRef(0);
+  const reducedMotion = usePrefersReducedMotion();
 
   const winByCol = useMemo(() => {
     const map = new Map<number, Set<number>>();
@@ -180,7 +476,7 @@ export function SlotReels({
   }, [spinning, stopGeneration]);
 
   return (
-    <div className="slot-reels">
+    <div className={cn("slot-reels", `slot-reels--${gameId}`)}>
       {grid.map((col, colIndex) => (
         <SlotReelColumn
           key={colIndex}
@@ -192,11 +488,22 @@ export function SlotReels({
           stopGeneration={stopGeneration}
           winRows={winByCol.get(colIndex) ?? EMPTY_SET}
           scatterRows={scatterByCol.get(colIndex) ?? EMPTY_SET}
-          highlight={highlight && !spinning}
+          highlight={highlight}
+          reducedMotion={reducedMotion}
           onStopped={handleStopped}
         />
       ))}
     </div>
+  );
+}
+
+export function SlotReels(
+  props: Parameters<typeof SlotReelsInner>[0]
+) {
+  return (
+    <ReelMetricsProvider>
+      <SlotReelsInner {...props} />
+    </ReelMetricsProvider>
   );
 }
 

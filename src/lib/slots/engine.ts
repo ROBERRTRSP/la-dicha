@@ -1,5 +1,6 @@
 import { randomInt } from "crypto";
 import { getSlotGame } from "./games";
+import { formatJackpotMessage } from "./jackpot-labels";
 import { PAYLINES_5x3, readPayline } from "./paylines";
 import type {
   BonusState,
@@ -177,7 +178,7 @@ export function evaluateSpin(
     jackpotTier = jp.tier;
     jackpotAmount = jp.amount;
     if (jp.tier) {
-      message = `¡Jackpot ${jp.tier}!`;
+      message = formatJackpotMessage(jp.tier);
     } else if (multiplierApplied > 1) {
       message = `Fuego ×${multiplierApplied}`;
     }

@@ -9,9 +9,9 @@ export default function Error(props: {
   return (
     <RouteError
       {...props}
-      title="Error al cargar la ruleta"
+      title="Error al cargar el casino"
       homeHref="/ruleta"
-      homeLabel="Volver a Ruleta"
+      homeLabel="Volver al casino"
     />
   );
 }

@@ -7,12 +7,24 @@ import {
   useRef,
   useState,
 } from "react";
-import Image from "next/image";
-import Link from "next/link";
+import { OxBonusLegend } from "./OxBonusLegend";
 import { SlotReels } from "./SlotReels";
 import { SlotSymbolSvg } from "./SlotSymbolSvg";
-import { CASINO_ART } from "@/lib/casino-art";
+import { AmbientLights } from "./AmbientLights";
+import { CoinBurst } from "./CoinBurst";
+import { AnimatedBalance, WinDisplay } from "./WinDisplay";
+import {
+  BetControls,
+  SlotCabinet,
+  SlotCabinetBody,
+  SlotCabinetDeck,
+  SlotHeader,
+  SlotRuleBar,
+  SlotScreen,
+  SpinButton,
+} from "./SlotCabinet";
 import { getSlotGame } from "@/lib/slots/games";
+import { CASINO_ART } from "@/lib/casino-art";
 import { SLOT_BET_OPTIONS } from "@/lib/slots/settings";
 import type {
   BonusState,
@@ -23,6 +35,8 @@ import type {
 } from "@/lib/slots/types";
 import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+
+import { formatJackpotBanner } from "@/lib/slots/jackpot-labels";
 
 type SpinResponse = {
   balance: number;
@@ -82,6 +96,17 @@ export function ModernSlotMachine({
       })
       .catch(() => {});
   }, [gameId]);
+
+  useEffect(() => {
+    if (gameId !== "magic-lamp") return;
+    const thumb = new window.Image();
+    thumb.src = CASINO_ART.thumbs["magic-lamp"];
+    const bg = new window.Image();
+    bg.src = CASINO_ART.magicLampBg;
+  }, [gameId]);
+
+  const isLamp = gameId === "magic-lamp";
+  const isOx = gameId === "golden-ox";
 
   const spin = async () => {
     if (spinning) return;
@@ -145,134 +170,138 @@ export function ModernSlotMachine({
   const freeMode = bonus.freeSpinsLeft > 0;
 
   return (
-    <div className={cn("casino-machine", game.themeClass, winFlash && "casino-machine--win")}>
+    <div
+      className={cn(
+        "casino-machine",
+        game.themeClass,
+        isLamp && "casino-machine--magic-lamp",
+        winFlash && "casino-machine--win"
+      )}
+    >
       <div className="casino-machine-bg" aria-hidden />
+      {isLamp && <div className="casino-machine-theme-bg" aria-hidden />}
+      <div className="casino-machine-floor-glow" aria-hidden />
+
       <div className="casino-machine-inner">
-        <header className="casino-machine-top">
-          <Link href="/ruleta" className="casino-machine-back">
-            ← Casino
-          </Link>
-          <div className="casino-machine-title">
-            <h1>{game.name}</h1>
-            <p>{game.tagline}</p>
-          </div>
-          <div className="casino-machine-balance">
-            <span>Saldo</span>
-            <strong>{formatMoney(balance)}</strong>
-          </div>
-        </header>
-
-        <div className="casino-led-panel">
-          {freeMode ? (
-            <span className="casino-led-free">
-              FREE SPINS {bonus.freeSpinsLeft}
-              {bonus.multiplier > 1 ? ` · ×${bonus.multiplier}` : ""}
-              {bonus.progressiveMultiplier > 1
-                ? ` · PROG ×${bonus.progressiveMultiplier}`
-                : ""}
-            </span>
-          ) : (
-            <span className="casino-led-idle">5 × 3 · {game.bonus.description}</span>
-          )}
-          {lastWin != null && lastWin > 0 && (
-            <span className="casino-led-win">WIN {formatMoney(lastWin)}</span>
-          )}
-        </div>
-
-        <div className="casino-cabinet">
-          <Image
-            src={CASINO_ART.cabinetFrame}
-            alt=""
-            fill
-            className="casino-cabinet-frame"
-            priority
-            sizes="(max-width: 480px) 100vw, 420px"
+        <SlotCabinet themeClass={game.themeClass} winFlash={winFlash}>
+          {isLamp && <AmbientLights className="slot-ambient-lights--cabinet" />}
+          <SlotHeader
+            name={game.name}
+            tagline={game.tagline}
+            balanceNode={
+              <AnimatedBalance value={balance} className="slot-balance-value" />
+            }
           />
-          <div className="casino-cabinet-window">
-            <SlotReels
-              gameId={gameId}
-              grid={grid}
-              spinning={awaitingStop}
-              stopGeneration={stopGeneration}
-              winningCells={winCells}
-              scatterCells={scatterCells}
-              highlight={!awaitingStop}
-              onAllStopped={handleAllStopped}
-            />
-            {winFlash && <div className="casino-win-overlay" aria-hidden />}
-            {jackpotTier && (
-              <div className={cn("casino-jackpot-banner", `casino-jackpot-banner--${jackpotTier.toLowerCase()}`)}>
-                JACKPOT {jackpotTier}
-              </div>
-            )}
-          </div>
-        </div>
 
-        {lastWin != null && lastWin > 0 && (
-          <div className="casino-win-amount" key={stopGeneration}>
-            + {formatMoney(lastWin)}
-          </div>
-        )}
-        {message && <p className="casino-msg casino-msg--bonus">{message}</p>}
-        {error && <p className="casino-msg casino-msg--error">{error}</p>}
+          <SlotCabinetBody>
+            <SlotRuleBar>
+              {freeMode ? (
+                <span className="slot-rule-text slot-rule-text--free">
+                  GIROS GRATIS {bonus.freeSpinsLeft}
+                  {bonus.multiplier > 1 ? ` · ×${bonus.multiplier}` : ""}
+                  {bonus.progressiveMultiplier > 1
+                    ? ` · PROGRESIVO ×${bonus.progressiveMultiplier}`
+                    : ""}
+                </span>
+              ) : (
+                <span className="slot-rule-text">
+                  5 × 3 · {game.bonus.description}
+                </span>
+              )}
+            </SlotRuleBar>
 
-        <div className="casino-controls">
-          <div className="casino-bet-panel">
-            <span>APUESTA</span>
-            <div className="casino-bet-btns">
-              {SLOT_BET_OPTIONS.map((amount) => (
-                <button
-                  key={amount}
-                  type="button"
-                  className={cn("casino-bet-chip", bet === amount && "active")}
-                  disabled={spinning || freeMode}
-                  onClick={() => setBet(amount)}
+            <SlotScreen winFlash={winFlash}>
+              <SlotReels
+                gameId={gameId}
+                grid={grid}
+                spinning={awaitingStop}
+                stopGeneration={stopGeneration}
+                winningCells={winCells}
+                scatterCells={scatterCells}
+                highlight={!awaitingStop}
+                onAllStopped={handleAllStopped}
+              />
+              <CoinBurst active={winFlash} generation={stopGeneration} />
+              {winFlash && <div className="casino-win-overlay" aria-hidden />}
+              {jackpotTier && (
+                <div
+                  className={cn(
+                    "casino-jackpot-banner",
+                    `casino-jackpot-banner--${jackpotTier.toLowerCase()}`
+                  )}
                 >
-                  {formatMoney(amount)}
-                </button>
+                  {formatJackpotBanner(jackpotTier)}
+                </div>
+              )}
+            </SlotScreen>
+
+            {!awaitingStop && lastWin != null && lastWin > 0 && (
+              <WinDisplay amount={lastWin} generation={stopGeneration} />
+            )}
+            {message && <p className="slot-feedback slot-feedback--bonus">{message}</p>}
+            {error && <p className="slot-feedback slot-feedback--error">{error}</p>}
+          </SlotCabinetBody>
+
+          <SlotCabinetDeck>
+            <BetControls
+              bet={bet}
+              options={SLOT_BET_OPTIONS}
+              disabled={spinning || freeMode}
+              onSelect={setBet}
+            />
+            <SpinButton
+              label={
+                awaitingStop
+                  ? "GIRANDO"
+                  : freeMode
+                    ? "GRATIS"
+                    : "GIRAR"
+              }
+              spinning={awaitingStop}
+              disabled={spinning || awaitingStop || (!freeMode && balance < bet)}
+              onClick={() => void spin()}
+            />
+          </SlotCabinetDeck>
+        </SlotCabinet>
+
+        <details
+          className={cn(
+            "casino-paytable-details",
+            isOx && "casino-paytable-details--ox"
+          )}
+        >
+          <summary className="casino-paytable-toggle">Tabla de pagos</summary>
+          <section className="casino-paytable">
+            <h3 className="casino-paytable-title">Pagos · ×5 / ×4 / ×3</h3>
+            <div className="casino-paytable-grid">
+              {Object.values(game.symbols).map((sym) => (
+                <div key={sym.id} className="casino-paytable-item">
+                  <SlotSymbolSvg symbolId={sym.id} gameId={gameId} size={36} />
+                  <div className="casino-paytable-info">
+                    <span className="casino-paytable-name">
+                      {sym.label}
+                      {sym.isWild && (
+                        <em className="casino-tag casino-tag--wild">COMODÍN</em>
+                      )}
+                      {sym.isScatter && (
+                        <em className="casino-tag casino-tag--scatter">BONO</em>
+                      )}
+                    </span>
+                    <span className="casino-paytable-pays">
+                      {[5, 4, 3]
+                        .map((n) => sym.pays[n as 3 | 4 | 5])
+                        .filter((v): v is number => typeof v === "number")
+                        .map((v) => `×${v}`)
+                        .join(" · ")}
+                    </span>
+                  </div>
+                </div>
               ))}
             </div>
-          </div>
-          <button
-            type="button"
-            className={cn("casino-spin-btn", spinning && "casino-spin-btn--active")}
-            disabled={spinning || (!freeMode && balance < bet)}
-            onClick={() => void spin()}
-          >
-            <span className="casino-spin-btn-ring" aria-hidden />
-            <span className="casino-spin-btn-label">
-              {spinning ? "…" : freeMode ? "GRATIS" : "GIRAR"}
-            </span>
-          </button>
-        </div>
-
-        <section className="casino-paytable">
-          <h3 className="casino-paytable-title">Tabla de pagos · ×5 / ×4 / ×3</h3>
-          <div className="casino-paytable-grid">
-            {Object.values(game.symbols).map((sym) => (
-              <div key={sym.id} className="casino-paytable-item">
-                <SlotSymbolSvg symbolId={sym.id} gameId={gameId} size={40} />
-                <div className="casino-paytable-info">
-                  <span className="casino-paytable-name">
-                    {sym.label}
-                    {sym.isWild && <em className="casino-tag casino-tag--wild">WILD</em>}
-                    {sym.isScatter && (
-                      <em className="casino-tag casino-tag--scatter">BONUS</em>
-                    )}
-                  </span>
-                  <span className="casino-paytable-pays">
-                    {[5, 4, 3]
-                      .map((n) => sym.pays[n as 3 | 4 | 5])
-                      .filter((v): v is number => typeof v === "number")
-                      .map((v) => `×${v}`)
-                      .join(" · ")}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-          <p className="casino-paytable-foot">{game.bonus.description}</p>
-        </section>
+            <p className="casino-paytable-foot">{game.bonus.description}</p>
+            {isOx && <OxBonusLegend />}
+          </section>
+        </details>
       </div>
     </div>
   );

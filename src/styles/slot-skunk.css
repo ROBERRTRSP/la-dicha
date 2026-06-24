@@ -1,0 +1,37 @@
+/* Treasure Skunk · celdas oscuras */
+
+.slot-reels--treasure-skunk {
+  background: linear-gradient(180deg, #0a1810 0%, #061008 100%);
+}
+
+.slot-theme--skunk .slot-reel-col,
+.slot-reels--treasure-skunk .slot-reel-col {
+  background: rgba(74, 222, 128, 0.05);
+  border-color: rgba(74, 222, 128, 0.12);
+}
+
+.slot-theme--skunk .slot-reel-cell:not(.slot-reel-cell--win):not(.slot-reel-cell--scatter),
+.slot-reels--treasure-skunk .slot-reel-cell:not(.slot-reel-cell--win):not(.slot-reel-cell--scatter) {
+  background: linear-gradient(180deg, #1a2e1f 0%, #0f1a12 100%);
+  border-bottom-color: rgba(74, 222, 128, 0.1);
+}
+
+.slot-symbol-svg--treasure-skunk.slot-symbol-svg--wild {
+  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.9))
+    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+.slot-symbol-svg--treasure-skunk.slot-symbol-svg--scatter {
+  filter: drop-shadow(0 0 10px rgba(236, 72, 153, 0.85))
+    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+.slot-theme--skunk .slot-reel-cell--win,
+.slot-reels--treasure-skunk .slot-reel-cell--win {
+  background: radial-gradient(circle, #fef9c3 0%, #fde047 100%);
+}
+
+.slot-theme--skunk .slot-reel-cell--scatter,
+.slot-reels--treasure-skunk .slot-reel-cell--scatter {
+  background: radial-gradient(circle, #fce7f3 0%, #f9a8d4 100%);
+}

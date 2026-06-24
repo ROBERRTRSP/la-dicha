@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <radialGradient id="bg" cx="38%" cy="32%" r="72%">
+      <stop offset="0%" stop-color="#7c2d12"/>
+      <stop offset="100%" stop-color="#1c0a00"/>
+    </radialGradient>
+    <linearGradient id="fire" x1="50%" y1="100%" x2="50%" y2="0%">
+      <stop offset="0%" stop-color="#ea580c"/>
+      <stop offset="45%" stop-color="#f97316"/>
+      <stop offset="75%" stop-color="#fde047"/>
+      <stop offset="100%" stop-color="#fef9c3"/>
+    </linearGradient>
+    <filter id="glow"><feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#f97316" flood-opacity="0.9"/></filter>
+  </defs>
+  <circle cx="100" cy="100" r="92" fill="rgba(249,115,22,0.3)"/>
+  <rect x="22" y="22" width="156" height="156" rx="32" fill="url(#bg)" stroke="#f97316" stroke-width="5"/>
+  <g filter="url(#glow)" transform="translate(100 95) scale(1.55) translate(-50 -50)">
+    <path d="M50 74 C34 58 36 38 50 28 C56 38 58 48 54 54 C58 44 64 40 66 50 C72 42 74 58 50 74Z" fill="url(#fire)" stroke="#c2410c" stroke-width="1.5"/>
+    <path d="M50 72 C42 62 44 48 50 40 C52 48 52 56 50 62 C54 54 58 52 58 58 C62 52 62 64 50 72Z" fill="#fef9c3" opacity="0.85"/>
+  </g>
+  <text x="100" y="178" text-anchor="middle" font-size="13" font-weight="900" fill="#fb923c" letter-spacing="0.12em" font-family="system-ui,sans-serif">BONO</text>
+</svg>

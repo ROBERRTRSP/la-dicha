@@ -9,10 +9,10 @@ import { SLOT_GAME_LIST } from "@/lib/slots/games";
 import { ART } from "@/lib/visual-assets";
 
 const SLOT_SHORT: Record<string, string> = {
-  "treasure-skunk": "Skunk",
-  "magic-lamp": "Lamp",
-  "golden-ox": "Ox",
-  "moon-wolf": "Wolf",
+  "treasure-skunk": "Zorrillo",
+  "magic-lamp": "Lámpara",
+  "golden-ox": "Toro",
+  "moon-wolf": "Lobo",
 };
 
 export function CasinoAccessStrip() {

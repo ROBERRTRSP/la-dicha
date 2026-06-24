@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="rim" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fde047"/>
+      <stop offset="100%" stop-color="#dc2626"/>
+    </linearGradient>
+    <filter id="glow"><feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#fde047" flood-opacity="0.8"/></filter>
+  </defs>
+  <rect x="20" y="56" width="160" height="88" rx="18" fill="#7f1d1d" stroke="url(#rim)" stroke-width="5" filter="url(#glow)"/>
+  <text x="100" y="96" text-anchor="middle" font-size="18" font-weight="800" fill="#fff" letter-spacing="0.12em" font-family="system-ui,sans-serif">PREMIO</text>
+  <text x="100" y="124" text-anchor="middle" font-size="28" font-weight="900" fill="#fde047" font-family="system-ui,sans-serif">GRAN</text>
+</svg>
