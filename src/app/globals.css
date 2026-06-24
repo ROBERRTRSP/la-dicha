@@ -660,7 +660,7 @@ body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  padding-bottom: 4px;
+  padding-bottom: 12px;
 }
 
 .play-bottom-dock {
@@ -1315,6 +1315,108 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.play-confirm-bar--inline {
+  padding: 12px 12px 16px;
+  background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+  border-top: 1px solid #e2e8f0;
+  margin-top: 4px;
+}
+
+.play-casino-strip {
+  margin: 0 12px 8px;
+  padding: 10px 0 4px;
+}
+
+.play-casino-strip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 8px;
+}
+
+.play-casino-strip-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #1e3a5f;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.play-casino-strip-all {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--emerald);
+  text-decoration: none;
+}
+
+.play-casino-strip-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 4px 6px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.play-casino-strip-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.play-casino-chip {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 64px;
+  padding: 6px 4px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #1e3a5f 0%, #0f172a 100%);
+  color: #fef08a;
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.15;
+  box-shadow: 0 4px 12px rgba(30, 58, 95, 0.25);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+}
+
+.play-casino-chip:active {
+  transform: scale(0.96);
+}
+
+.play-casino-chip--slot {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.play-casino-chip-img {
+  border-radius: 8px;
+}
+
+.play-casino-chip-thumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.slot-theme--skunk.play-casino-chip--slot {
+  background: linear-gradient(180deg, #166534, #14532d);
+}
+
+.slot-theme--lamp.play-casino-chip--slot {
+  background: linear-gradient(180deg, #6d28d9, #4c1d95);
+}
+
+.slot-theme--ox.play-casino-chip--slot {
+  background: linear-gradient(180deg, #b45309, #7f1d1d);
+}
+
+.slot-theme--wolf.play-casino-chip--slot {
+  background: linear-gradient(180deg, #1e40af, #0f172a);
 }
 
 .play-footer-summary {

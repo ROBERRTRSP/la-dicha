@@ -8,7 +8,7 @@ import { ART } from "@/lib/visual-assets";
 import { CompactPlayPad } from "@/components/player/CompactPlayPad";
 import { PlayBetsPanel } from "@/components/player/PlayBetsPanel";
 import { LotteryStrip } from "@/components/player/LotteryStrip";
-import { RouletteAccess } from "@/components/player/RouletteAccess";
+import { CasinoAccessStrip } from "@/components/player/CasinoAccessStrip";
 import { ConfirmModal } from "@/components/player/ConfirmModal";
 import { TicketSuccess } from "@/components/player/TicketSuccess";
 import {
@@ -443,7 +443,7 @@ export function PlayClient({
           onClear={() => setSelected(new Set())}
         />
 
-        <RouletteAccess />
+        <CasinoAccessStrip />
 
         <CompactPlayPad
           digits={digits}
@@ -455,18 +455,8 @@ export function PlayClient({
           onAdd={addToCart}
           onAmountChange={setAmount}
         />
-      </div>
 
-      <div className="play-bottom-dock">
-        <PlayBetsPanel
-          lines={cart}
-          total={total}
-          expanded={betsExpanded}
-          onToggleExpanded={() => setBetsExpanded((v) => !v)}
-          onRemove={(id) => setCart((c) => c.filter((l) => l.id !== id))}
-        />
-
-        <div className="play-confirm-bar">
+        <div className="play-confirm-bar play-confirm-bar--inline">
           {cart.length === 0 && (
             <p className="play-footer-hint">
               1. Lotería · 2. Números y monto · 3. Agregar · 4. Confirmar
@@ -517,6 +507,16 @@ export function PlayClient({
             Confirmar jugada
           </button>
         </div>
+      </div>
+
+      <div className="play-bottom-dock">
+        <PlayBetsPanel
+          lines={cart}
+          total={total}
+          expanded={betsExpanded}
+          onToggleExpanded={() => setBetsExpanded((v) => !v)}
+          onRemove={(id) => setCart((c) => c.filter((l) => l.id !== id))}
+        />
       </div>
 
       {addedFlash && (
