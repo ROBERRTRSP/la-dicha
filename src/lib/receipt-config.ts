@@ -1,17 +1,13 @@
-/** Configuración genérica del recibo — adaptable a cualquier plataforma */
+/** Configuración del recibo térmico 80 mm (estilo banca ELITE). */
 export const RECEIPT_CONFIG = {
-  businessName: "LA DICHA",
+  businessName: "ELITE 13",
+  terminalCode: "bei-013",
   tagline: "Sistema de Lotería",
-  branch: "Principal",
   phone: "809-000-0000",
-  footerLines: [
-    "Conserve este ticket.",
-    "Revise sus números antes de salir.",
-    "Ticket válido solo para el sorteo indicado.",
-    "Gracias por jugar.",
-  ],
   timezone: "America/Santo_Domingo",
-  thermalWidth: 48,
+  thermalWidth: 42,
+  prizeFooter:
+    "1st:$56 2nd:$12 3rd:$4 Pale:1300 Tripleta:$10,000",
 } as const;
 
 export type ReceiptConfig = typeof RECEIPT_CONFIG;

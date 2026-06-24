@@ -22,9 +22,9 @@ export function RouletteResultBadge({
   summary?: string;
   className?: string;
 }) {
-  let outcome = "No salió";
+  let outcome = "Sin premio esta vez";
   if (won && payout !== undefined) {
-    outcome = `Ganaste ${formatMoney(payout)}`;
+    outcome = `¡Ganaste ${formatMoney(payout)}!`;
   } else if (!won && payout !== undefined && payout > 0) {
     outcome = `Recuperaste ${formatMoney(payout)}`;
   }

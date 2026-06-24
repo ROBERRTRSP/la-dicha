@@ -2,7 +2,11 @@
 
 Plataforma web para venta de lotería dominicana: jugadores, cajeros y administración.
 
-**Producción:** [https://consorciobelendejudea.com](https://consorciobelendejudea.com) (alias: [la-dicha.vercel.app](https://la-dicha.vercel.app))
+**Producción (URL oficial):** [https://www.consorciobelendejudea.com](https://www.consorciobelendejudea.com)
+
+> Usar siempre **`www.consorciobelendejudea.com`**. El dominio apex `consorciobelendejudea.com` (sin `www`) redirige permanentemente a `www` — no hay dos versiones del sistema. Alias Vercel: [la-dicha.vercel.app](https://la-dicha.vercel.app).
+
+Ver release de producción: [docs/PRODUCTION-RELEASE.md](docs/PRODUCTION-RELEASE.md)
 
 ## Stack
 
@@ -15,8 +19,8 @@ Plataforma web para venta de lotería dominicana: jugadores, cajeros y administr
 
 | Área | Rutas |
 |------|--------|
-| Jugador | `/login`, `/jugar`, `/ruleta`, `/tickets`, `/resultados` |
-| Cajero | `/cajero/login`, `/cajero/jugadores`, `/cajero/recargar`, `/cajero/tickets` |
+| Jugador | `/login`, `/jugar`, `/ruleta`, `/tickets`, `/tickets/[id]`, `/resultados` |
+| Cajero | `/cajero/login`, `/cajero`, `/cajero/vender`, `/cajero/monitor`, `/cajero/tickets`, `/cajero/jugadores`, `/cajero/recargar` |
 | Admin | `/admin/login`, `/admin`, `/admin/usuarios`, `/admin/billeteras`, `/admin/tickets`, `/admin/sorteos`, `/admin/resultados`, `/admin/ruleta` |
 
 ## Credenciales de demo
@@ -55,7 +59,8 @@ npx vercel env pull .env.local
 | `DATABASE_URL` | Conexión PostgreSQL (pooler) |
 | `DATABASE_URL_UNPOOLED` | Conexión directa (migraciones Prisma) |
 | `AUTH_SECRET` | Secreto JWT (string largo aleatorio) |
-| `NEXT_PUBLIC_APP_NAME` | Nombre de la app |
+| `NEXT_PUBLIC_APP_URL` | URL pública — usar `https://www.consorciobelendejudea.com` en producción |
+| `CRON_SECRET` | Opcional: protege el cron de sincronización de resultados |
 
 ### Base de datos
 
@@ -82,6 +87,17 @@ Abre [http://localhost:3000](http://localhost:3000).
 | `npm run db:push` | Sincronizar schema Prisma |
 | `npm run db:seed` | Datos iniciales |
 | `npm run db:setup` | `db:push` + `db:seed` |
+| `npm run logos:fetch` | Descarga logos oficiales al CDN (`vercel-build` lo ejecuta) |
+
+**Logos legacy:** `scripts/legacy/generate-logos.mjs` genera SVG placeholder locales; no forma parte del build. Ver `scripts/legacy/README.md`.
+
+## Documentación técnica
+
+| Documento | Contenido |
+|-----------|-----------|
+| [docs/PRODUCTION-RELEASE.md](docs/PRODUCTION-RELEASE.md) | Release de producción, pruebas 25/25 y post-deploy |
+| [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md) | Middleware vs layouts, riesgos y recomendaciones |
+| [docs/CSS-ORGANIZATION.md](docs/CSS-ORGANIZATION.md) | Mapa de `globals.css` y plan de división futura |
 
 ## Despliegue en Vercel
 
@@ -95,6 +111,23 @@ npx vercel deploy --prod
 ```
 
 El build (`vercel-build`) ejecuta `prisma db push`, seed y `next build`.
+
+### Post-deploy (obligatorio tras cada deploy a producción)
+
+1. Confirmar que el alias apex apunta al deployment actual:
+
+```bash
+npx vercel alias set la-dicha.vercel.app consorciobelendejudea.com
+```
+
+2. Ejecutar smoke tests:
+
+```bash
+node scripts/post-deploy-check.mjs https://consorciobelendejudea.com
+SKIP_RATE_LIMIT=1 node scripts/post-deploy-check.mjs https://www.consorciobelendejudea.com
+```
+
+Esperado: **25/25 PASS** en ambos. Detalle completo en [docs/PRODUCTION-RELEASE.md](docs/PRODUCTION-RELEASE.md).
 
 ## Estructura principal
 

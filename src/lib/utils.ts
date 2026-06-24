@@ -6,11 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatMoney(amount: number) {
-  return new Intl.NumberFormat("es-DO", {
-    style: "currency",
-    currency: "DOP",
-    minimumFractionDigits: 2,
-  }).format(amount);
+  return amount.toFixed(2);
 }
 
 export function formatTime12(time24: string) {

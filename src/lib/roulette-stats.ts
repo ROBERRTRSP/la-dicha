@@ -1,8 +1,12 @@
 import { startOfDay } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { prisma } from "./db";
+import { weekStartInTz } from "./timezone";
 import {
-  calcPayout,
+  calcBetPayout,
+  type RoulettePayoutMultipliers,
+} from "./roulette-payouts";
+import {
   isBetWinner,
   numberColor,
   type RouletteBetType,
@@ -16,8 +20,10 @@ export function getTodayStartUtc(): Date {
   return dayStart;
 }
 
-export async function getPlayerDailyPayout(userId: string): Promise<number> {
-  const since = getTodayStartUtc();
+async function getPlayerPayoutSince(
+  userId: string,
+  since: Date
+): Promise<number> {
   const wins = await prisma.rouletteBet.findMany({
     where: {
       userId,
@@ -29,6 +35,15 @@ export async function getPlayerDailyPayout(userId: string): Promise<number> {
   return wins.reduce((s, w) => s + w.payout, 0);
 }
 
+export async function getPlayerDailyPayout(userId: string): Promise<number> {
+  return getPlayerPayoutSince(userId, getTodayStartUtc());
+}
+
+/** Premios acumulados desde el lunes 00:00 (hora RD) — alineado al cierre semanal. */
+export async function getPlayerWeeklyPayout(userId: string): Promise<number> {
+  return getPlayerPayoutSince(userId, weekStartInTz());
+}
+
 export type AdminExposureSnapshot = {
   byNumber: Record<number, number>;
   byColor: { red: number; black: number; green: number };
@@ -36,7 +51,8 @@ export type AdminExposureSnapshot = {
 };
 
 export function buildExposureFromBets(
-  bets: { betType: string; betChoice: string; amount: number }[]
+  bets: { betType: string; betChoice: string; amount: number }[],
+  multipliers: RoulettePayoutMultipliers
 ): AdminExposureSnapshot {
   const byNumber: Record<number, number> = {};
   for (let n = 0; n <= 36; n++) byNumber[n] = 0;
@@ -45,15 +61,16 @@ export function buildExposureFromBets(
     if (bet.betType === "STRAIGHT") {
       const num = parseInt(bet.betChoice, 10);
       if (!Number.isNaN(num) && num >= 0 && num <= 36) {
-        byNumber[num] += calcPayout("STRAIGHT", bet.amount, true);
+        byNumber[num] += calcBetPayout("STRAIGHT", bet.amount, true, multipliers);
       }
     } else {
       for (let n = 0; n <= 36; n++) {
         if (isBetWinner(bet.betType as RouletteBetType, bet.betChoice, n)) {
-          byNumber[n] += calcPayout(
+          byNumber[n] += calcBetPayout(
             bet.betType as RouletteBetType,
             bet.amount,
-            true
+            true,
+            multipliers
           );
         }
       }
@@ -73,7 +90,7 @@ export function buildExposureFromBets(
       if (isBetWinner(bet.betType as RouletteBetType, bet.betChoice, n)) {
         maxP = Math.max(
           maxP,
-          calcPayout(bet.betType as RouletteBetType, bet.amount, true)
+          calcBetPayout(bet.betType as RouletteBetType, bet.amount, true, multipliers)
         );
       }
     }

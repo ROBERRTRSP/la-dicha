@@ -2,6 +2,7 @@ import { prisma } from "./db";
 import { format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import type { RouletteSettingsData } from "./roulette-settings";
+import { formatMoney } from "./utils";
 
 const TZ = "America/Santo_Domingo";
 
@@ -56,7 +57,7 @@ export async function applyWelcomeAndTrialCredits(
         data: { trialCreditClaimed: true },
       }),
     ]);
-    message = `¡Recibiste RD$${settings.trialCreditAmount.toFixed(2)} en créditos de prueba!`;
+    message = `¡Recibiste ${formatMoney(settings.trialCreditAmount)} en créditos de prueba!`;
   }
 
   if (settings.welcomeBonusEnabled && !promo.welcomeBonusClaimed) {
@@ -86,14 +87,43 @@ export async function applyWelcomeAndTrialCredits(
     ]);
     credited += bonus;
     message = message
-      ? `${message} Bono de bienvenida: RD$${bonus.toFixed(2)}.`
-      : `¡Bono de bienvenida! RD$${bonus.toFixed(2)} agregados a tu saldo.`;
+      ? `${message} Bono de bienvenida: ${formatMoney(bonus)}.`
+      : `¡Bono de bienvenida! ${formatMoney(bonus)} agregados a tu saldo.`;
   }
 
   return { credited, message };
 }
 
-export async function resolveFreeSpin(
+/** Solo lectura — para validar saldo sin consumir el giro gratis. */
+export async function peekStakeToCharge(
+  userId: string,
+  settings: RouletteSettingsData,
+  totalStake: number
+): Promise<number> {
+  if (!settings.freeSpinsEnabled || totalStake <= 0) {
+    return totalStake;
+  }
+
+  const promo = await ensurePlayerPromo(userId);
+  const day = todayKey();
+  const usedToday =
+    promo.freeSpinsDate === day ? promo.freeSpinsUsedToday : 0;
+
+  if (usedToday >= settings.freeSpinsPerDay) {
+    return totalStake;
+  }
+
+  return 0;
+}
+
+type PromoTx = Pick<
+  typeof prisma,
+  "roulettePlayerPromo"
+>;
+
+/** Consume giro gratis dentro de la transacción del spin (solo si el giro completa). */
+export async function consumeFreeSpinInTx(
+  tx: PromoTx,
   userId: string,
   settings: RouletteSettingsData,
   totalStake: number
@@ -102,15 +132,21 @@ export async function resolveFreeSpin(
     return { useFreeSpin: false, stakeToCharge: totalStake };
   }
 
-  const promo = await ensurePlayerPromo(userId);
+  const promo = await tx.roulettePlayerPromo.upsert({
+    where: { userId },
+    update: {},
+    create: { userId },
+  });
+
   const day = todayKey();
-  let usedToday = promo.freeSpinsDate === day ? promo.freeSpinsUsedToday : 0;
+  const usedToday =
+    promo.freeSpinsDate === day ? promo.freeSpinsUsedToday : 0;
 
   if (usedToday >= settings.freeSpinsPerDay) {
     return { useFreeSpin: false, stakeToCharge: totalStake };
   }
 
-  await prisma.roulettePlayerPromo.update({
+  await tx.roulettePlayerPromo.update({
     where: { userId },
     data: {
       freeSpinsUsedToday: usedToday + 1,
@@ -161,7 +197,7 @@ export function positiveOutcomeMessage(
 ): string | null {
   if (won) return "¡Excelente! ¡Sigue jugando con responsabilidad!";
   if (cashbackAmount > 0) {
-    return `No salió esta vez, pero recuperaste RD$${cashbackAmount.toFixed(2)} en cashback.`;
+    return `No salió esta vez, pero recuperaste ${formatMoney(cashbackAmount)} en cashback.`;
   }
   return settings.positiveSpinMessage;
 }

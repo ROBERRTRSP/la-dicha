@@ -58,6 +58,8 @@ model User {
   tickets           Ticket[]
   rouletteBets      RouletteBet[]
   roulettePlayerPromo RoulettePlayerPromo?
+  rouletteDailyAdjustments RouletteDailyAdjustment[]
+  rouletteScheduledRewards RouletteScheduledReward[]
 }
 
 model Wallet {
@@ -82,17 +84,20 @@ model WalletTransaction {
 }
 
 model Lottery {
-  id        String     @id @default(cuid())
-  code      String     @unique
-  name      String
-  logoUrl   String?
-  category  String     @default("DOMINICANA")
-  drawTime  String
-  timezone  String     @default("America/Santo_Domingo")
-  closeMin  Int        @default(15)
-  active    Boolean    @default(true)
-  schedules Schedule[]
-  draws     Draw[]
+  id                     String     @id @default(cuid())
+  code                   String     @unique
+  name                   String
+  logoUrl                String?
+  category               String     @default("DOMINICANA")
+  drawTime               String
+  timezone               String     @default("America/Santo_Domingo")
+  closeMin               Int        @default(15)
+  active                 Boolean    @default(true)
+  maxDirectoPerNumber    Float?
+  maxPalePerNumber       Float?
+  maxTripletaPerNumber   Float?
+  schedules              Schedule[]
+  draws                  Draw[]
 }
 
 model Schedule {
@@ -130,9 +135,10 @@ model SuperPaleConfig {
 }
 
 model Ticket {
-  id               String       @id @default(cuid())
-  ticketNumber     String       @unique
-  verificationCode String       @unique
+  id                 String       @id @default(cuid())
+  ticketNumber       String       @unique
+  internalTicketCode String?      @unique
+  verificationCode   String       @unique
   userId           String
   totalAmount      Float
   balanceBefore    Float
@@ -145,6 +151,12 @@ model Ticket {
   createdAt        DateTime     @default(now())
   user             User         @relation(fields: [userId], references: [id])
   items            TicketItem[]
+}
+
+/** Contador ascendente para números cortos T-000001. */
+model TicketSequence {
+  id    String @id @default("default")
+  value Int    @default(0)
 }
 
 model TicketItem {
@@ -188,6 +200,9 @@ model RouletteSettings {
   maxExposurePerSpin      Float    @default(800)
   houseReserve            Float    @default(10000)
   maxRiskPercentOfReserve Float    @default(15)
+  houseEdge               Float    @default(0.08)
+  playerRtp               Float    @default(0.92)
+  payoutMultipliers       String   @default("{}")
   welcomeBonusEnabled     Boolean  @default(false)
   welcomeBonusAmount      Float    @default(5)
   cashbackEnabled         Boolean  @default(false)
@@ -199,7 +214,82 @@ model RouletteSettings {
   rankingEnabled          Boolean  @default(true)
   promoBannerMessage      String?
   positiveSpinMessage     String?
+  /** Política: la casa elige resultado favorable y cierre diario. */
+  /** % ganancia de la casa sobre lo apostado en el día (legacy → target). */
+  dailyProfitPercent      Float    @default(3)
+  dailyMinProfitPct       Float    @default(1)
+  dailyMaxProfitPct       Float    @default(8)
+  dailyTargetProfitPct    Float    @default(3)
+  autoAdjustmentEnabled   Boolean  @default(true)
+  /** BALANCE_CREDIT | BONUS | CASHBACK */
+  adjustmentType          String   @default("BALANCE_CREDIT")
+  houseAlwaysWins         Boolean  @default(false)
+  dailyOpenTime           String   @default("06:00")
+  dailyCloseTime          String   @default("23:45")
+  /** Sistema de premios programados desde el pozo promocional. */
+  rewardSystemActive        Boolean @default(false)
+  /** % que cobra la casa primero sobre cada apuesta. */
+  housePercent              Float   @default(3)
+  /** % del poolContribution que va al fondo promocional. */
+  promoPercent              Float   @default(20)
+  rewardIntervalMinutes     Int     @default(15)
+  maxRewardPercentOfPromoPool Float @default(10)
+  minSpinsToQualify         Int     @default(3)
+  minBetAmountToQualify     Float   @default(5)
+  /** Pérdidas consecutivas para activar cashback de mala racha. */
+  cashbackAfterLosses       Int     @default(10)
+  maxCashbackAmount         Float   @default(50)
+  spinWeight                Float   @default(1)
+  dailyMissionBetAmount     Float   @default(20)
+  dailyMissionBonus         Float   @default(2)
+  activePlayerBonusPercent  Float   @default(3)
   updatedAt               DateTime @updatedAt
+}
+
+/** Sesión diaria de ruleta (cierre contable). */
+model RouletteDaySession {
+  id               String    @id @default(cuid())
+  sessionDate      String    @unique
+  status           String    @default("OPEN")
+  totalBet         Float     @default(0)
+  totalPaid        Float     @default(0)
+  houseProfit      Float     @default(0)
+  spinCount        Int       @default(0)
+  realProfitPct    Float?
+  minProfitPct     Float?
+  maxProfitPct     Float?
+  targetProfitPct  Float?
+  excessReturned   Float     @default(0)
+  /** OPEN | OK | OVER_TARGET | UNDER_TARGET */
+  closeStatus      String    @default("OPEN")
+  strictNextDay    Boolean   @default(false)
+  openedAt         DateTime  @default(now())
+  closedAt         DateTime?
+  adjustedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  adjustments      RouletteDailyAdjustment[]
+}
+
+/** Ajuste de cierre diario devuelto a jugadores perdedores. */
+model RouletteDailyAdjustment {
+  id                  String   @id @default(cuid())
+  sessionDate         String
+  sessionId           String?
+  userId              String
+  amount              Float
+  adjustmentType      String
+  playerLoss          Float
+  playerBet           Float
+  playerPaid          Float
+  note                String?
+  walletTransactionId String?
+  createdAt           DateTime @default(now())
+  user                User     @relation(fields: [userId], references: [id])
+  session             RouletteDaySession? @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionDate])
+  @@index([userId])
 }
 
 model RoulettePlayerPromo {
@@ -209,12 +299,15 @@ model RoulettePlayerPromo {
   trialCreditClaimed  Boolean  @default(false)
   freeSpinsUsedToday  Int      @default(0)
   freeSpinsDate       String?
+  rouletteBonusBalance    Float @default(0)
+  rouletteCashbackBalance Float @default(0)
   user                User     @relation(fields: [userId], references: [id])
 }
 
 model RouletteBet {
   id             String   @id @default(cuid())
   userId         String
+  spinId         String?
   betType        String
   betChoice      String
   amount         Float
@@ -224,6 +317,142 @@ model RouletteBet {
   balanceBefore  Float
   balanceAfter   Float
   result         String
+  /** Desglose contable (no afecta el resultado del giro). */
+  houseFee             Float   @default(0)
+  promoContribution    Float   @default(0)
+  mainPoolContribution Float   @default(0)
+  poolDate             String?
   createdAt      DateTime @default(now())
   user           User     @relation(fields: [userId], references: [id])
+
+  @@index([spinId])
+  @@index([userId, spinId])
+  @@index([createdAt])
+  @@index([poolDate])
+}
+
+/** Pozo promocional diario — financia premios programados (no la banca). */
+model RouletteRewardPool {
+  id                  String   @id @default(cuid())
+  date                String   @unique
+  totalPromoCollected Float    @default(0)
+  totalPromoPaid      Float    @default(0)
+  currentPromoBalance Float    @default(0)
+  totalMainCollected  Float    @default(0)
+  totalHouseFee       Float    @default(0)
+  lastRewardRunAt     DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  scheduledRewards    RouletteScheduledReward[]
+  ledger              RouletteRewardLedger[]
+
+  @@index([date])
+}
+
+/** Premio programado pagado desde el pozo promocional. */
+model RouletteScheduledReward {
+  id         String   @id @default(cuid())
+  poolDate   String
+  poolId     String?
+  /** CASHBACK | ACTIVE_PLAYER_BONUS | MISSION | JACKPOT | FREE_SPIN */
+  rewardType String
+  amount     Float
+  playerId   String
+  reason     String
+  source     String   @default("PROMO_POOL")
+  /** PENDING | PAID | CANCELLED */
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+  paidAt     DateTime?
+  user       User     @relation(fields: [playerId], references: [id])
+  pool       RouletteRewardPool? @relation(fields: [poolId], references: [id])
+
+  @@index([poolDate])
+  @@index([playerId])
+  @@index([rewardType])
+  @@index([status])
+}
+
+/** Auditoría completa de movimientos del pozo promocional. */
+model RouletteRewardLedger {
+  id                String   @id @default(cuid())
+  poolId            String?
+  poolDate          String
+  playerId          String?
+  rewardType        String
+  /** COLLECT | PAY */
+  direction         String
+  amount            Float
+  promoPoolBefore   Float
+  promoPoolAfter    Float
+  reason            String
+  eligibilityData   String?
+  scheduledRewardId String?
+  spinId            String?
+  createdAt         DateTime @default(now())
+  pool              RouletteRewardPool? @relation(fields: [poolId], references: [id])
+
+  @@index([poolDate])
+  @@index([playerId])
+  @@index([rewardType])
+}
+
+/** Evita doble cobro/premio por reintentos de red en ruleta. */
+model RouletteSpinIdempotency {
+  id             String   @id @default(cuid())
+  userId         String
+  idempotencyKey String
+  responseJson   String
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime
+
+  @@unique([userId, idempotencyKey])
+  @@index([expiresAt])
+}
+
+/** Configuración de banca / terminal (estilo ELITE). */
+model BancaSettings {
+  id                     String   @id @default("default")
+  bancaName              String   @default("ELITE 13")
+  terminalCode           String   @default("bei-0013")
+  defaultOpeningBalance  Float    @default(-174.3)
+  expensiveDirectoAmount Float    @default(100)
+  maxDirectoPerNumber    Float    @default(2000)
+  maxPalePerNumber       Float    @default(2000)
+  maxTripletaPerNumber   Float    @default(2000)
+  maxSuperPalePerNumber  Float    @default(2000)
+  /** GLOBAL = mismo límite en todas; PER_LOTTERY = límite por lotería. */
+  playLimitsMode         String   @default("GLOBAL")
+  updatedAt              DateTime @updatedAt
+}
+
+/** Sesión diaria de caja por terminal. */
+model BancaDaySession {
+  id             String             @id @default(cuid())
+  terminalCode   String
+  sessionDate    String
+  openingBalance Float
+  currentBalance Float
+  closingBalance Float?
+  status         String             @default("OPEN")
+  openedById     String
+  closedAt       DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  transactions   BancaTransaction[]
+
+  @@unique([terminalCode, sessionDate])
+}
+
+model BancaTransaction {
+  id            String          @id @default(cuid())
+  sessionId     String
+  type          String
+  amount        Float
+  balanceBefore Float
+  balanceAfter  Float
+  note          String?
+  createdById   String?
+  createdAt     DateTime        @default(now())
+  session       BancaDaySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }

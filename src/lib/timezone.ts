@@ -1,3 +1,4 @@
+import { startOfWeek } from "date-fns";
 import { formatInTimeZone, fromZonedTime, toZonedTime } from "date-fns-tz";
 
 export const TZ = "America/Santo_Domingo";
@@ -14,6 +15,14 @@ export function dayStartInTz(date: Date = new Date()): Date {
 
 export function dateKeyInTz(date: Date): string {
   return formatInTimeZone(date, TZ, "yyyy-MM-dd");
+}
+
+/** Lunes 00:00 (hora RD) del inicio de la semana contable. */
+export function weekStartInTz(date: Date = new Date()): Date {
+  const zoned = toZonedTime(date, TZ);
+  const monday = startOfWeek(zoned, { weekStartsOn: 1 });
+  const key = formatInTimeZone(monday, TZ, "yyyy-MM-dd");
+  return fromZonedTime(`${key}T00:00:00`, TZ);
 }
 
 /** Formato d-m-yyyy usado por loteriasdominicanas.com */

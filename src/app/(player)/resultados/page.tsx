@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { requirePlayer } from "@/lib/auth";
-import { ensureWeekDraws, RESULTS_WEEK_DAYS } from "@/lib/draws";
-import { fetchDrawsForWeek, repairWeekResults } from "@/lib/results-sync";
+import { ensureTodayDraws, RESULTS_WEEK_DAYS } from "@/lib/draws";
+import { fetchDrawsForWeek } from "@/lib/results-sync";
 import { compareDrawTime } from "@/lib/utils";
 import { dayStartInTz, nowInTz } from "@/lib/timezone";
 import { BrandHeader } from "@/components/player/BrandHeader";
@@ -9,6 +9,7 @@ import {
   ResultsWeekPager,
   type ResultsDayData,
 } from "@/components/player/ResultsWeekPager";
+import { ResultsLiveSync } from "@/components/player/ResultsLiveSync";
 import { subDays } from "date-fns";
 
 function formatDayLabel(date: Date) {
@@ -37,8 +38,7 @@ export default async function ResultadosPage() {
   const today = dayStartInTz(now);
   const weekStart = dayStartInTz(subDays(now, RESULTS_WEEK_DAYS - 1));
 
-  await ensureWeekDraws();
-  await repairWeekResults(RESULTS_WEEK_DAYS);
+  await ensureTodayDraws();
 
   const uniqueDraws = await fetchDrawsForWeek(weekStart, today);
 
@@ -90,11 +90,16 @@ export default async function ResultadosPage() {
     })
     .filter((d): d is ResultsDayData => d !== null);
 
+  const todayDraws = drawsByDay.get(today.getTime()) ?? [];
+  const pendingToday = todayDraws.filter((d) => !d.result).length;
+
   return (
     <div className="results-page">
       <BrandHeader balance={user.wallet?.balance ?? 0} title="Resultados" />
 
       <p className="results-date">Últimos {RESULTS_WEEK_DAYS} días · {weekRange}</p>
+
+      <ResultsLiveSync pendingToday={pendingToday} />
 
       <ResultsWeekPager days={days} />
     </div>

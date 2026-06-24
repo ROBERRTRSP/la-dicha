@@ -2,7 +2,11 @@
 
 import { formatMoney } from "@/lib/utils";
 import { betTypeLabel } from "@/lib/bet-parser";
-import { cartLineTotal, type CartLine } from "@/lib/tickets";
+import {
+  cartLineTotal,
+  isMultiLotteryLine,
+  type CartLine,
+} from "@/lib/tickets";
 
 export function ConfirmModal({
   open,
@@ -30,9 +34,15 @@ export function ConfirmModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] bg-black/50 flex items-end sm:items-center justify-center">
+    <div
+      className="fixed inset-0 z-[70] bg-black/50 flex items-end sm:items-center justify-center"
+      data-cajero-confirm-modal
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-modal-title"
+    >
       <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 max-h-[85dvh] overflow-y-auto">
-        <h2 className="text-xl font-bold text-[#1e3a5f] mb-1">
+        <h2 id="confirm-modal-title" className="text-xl font-bold text-[#1e3a5f] mb-1">
           {cashSale ? "¿Confirmar venta?" : "¿Confirmar jugada?"}
         </h2>
         <p className="text-sm text-slate-500 mb-4">
@@ -55,8 +65,14 @@ export function ConfirmModal({
               <p className="text-slate-500">
                 {l.superPaleName ?? l.lotteryNames.join(", ")}
               </p>
-              <p className="text-slate-400">
-                {formatMoney(cartLineTotal(l))}
+              {isMultiLotteryLine(l) && (
+                <p className="text-amber-700 text-xs font-semibold">
+                  {formatMoney(l.amount)} en cada una · {l.drawIds.length}{" "}
+                  loterías
+                </p>
+              )}
+              <p className="text-slate-400 font-semibold">
+                Total línea: {formatMoney(cartLineTotal(l))}
               </p>
             </div>
           ))}

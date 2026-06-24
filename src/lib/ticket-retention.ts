@@ -1,54 +1,92 @@
+import { subDays } from "date-fns";
+import { fromZonedTime } from "date-fns-tz";
 import { prisma } from "./db";
+import { dateKeyInTz, dayStartInTz, nowInTz, TZ } from "./timezone";
 
-/** Tiempo que permanecen tickets cancelados o cobrados antes de borrarse */
-export const TICKET_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+/** Días visibles en el historial del jugador (igual que resultados). */
+export const TICKET_RETENTION_DAYS = 7;
 
-/** Los 3 tickets más recientes siempre se conservan en el historial */
-export const MIN_KEPT_TICKETS = 3;
+export function ticketRetentionStart(): Date {
+  return dayStartInTz(subDays(nowInTz(), TICKET_RETENTION_DAYS - 1));
+}
 
-const CLOSED_STATUSES = ["CANCELED", "PAID"] as const;
+function formatDayLabel(date: Date) {
+  return date.toLocaleDateString("es-DO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
 
-function closedReferenceDate(closedAt: Date | null, createdAt: Date): Date {
-  return closedAt ?? createdAt;
+function dayTitleForKey(dateKey: string): string {
+  const today = dayStartInTz();
+  const target = dayStartInTz(fromZonedTime(`${dateKey}T12:00:00`, TZ));
+  const diffDays = Math.round(
+    (today.getTime() - target.getTime()) / (24 * 60 * 60 * 1000)
+  );
+  const label = formatDayLabel(target);
+  if (diffDays === 0) return `Hoy · ${label}`;
+  if (diffDays === 1) return `Ayer · ${label}`;
+  return label;
+}
+
+export type TicketWeekDay<T> = {
+  date: string;
+  dateKey: string;
+  title: string;
+  tickets: T[];
+};
+
+/** Ventana de 7 días (hoy → atrás), un slide por día para deslizar. */
+export function buildTicketWeekDays<T extends { createdAt: string }>(
+  tickets: T[]
+): TicketWeekDay<T>[] {
+  const now = nowInTz();
+  const weekDays = Array.from({ length: TICKET_RETENTION_DAYS }, (_, i) =>
+    dayStartInTz(subDays(now, i))
+  );
+
+  const map = new Map<string, T[]>();
+  for (const ticket of tickets) {
+    const key = dateKeyInTz(new Date(ticket.createdAt));
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(ticket);
+  }
+
+  return weekDays.map((day, offset) => {
+    const dateKey = dateKeyInTz(day);
+    const dayTickets = map.get(dateKey) ?? [];
+    dayTickets.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    return {
+      date: day.toISOString(),
+      dateKey,
+      title: dayTitleForKey(dateKey),
+      tickets: dayTickets,
+    };
+  });
+}
+
+export function isTicketWithinRetention(createdAt: Date): boolean {
+  return createdAt >= ticketRetentionStart();
 }
 
 export async function purgeExpiredTickets(userId: string): Promise<number> {
-  const tickets = await prisma.ticket.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-    select: { id: true, status: true, closedAt: true, createdAt: true },
+  const cutoff = ticketRetentionStart();
+  const result = await prisma.ticket.deleteMany({
+    where: { userId, createdAt: { lt: cutoff } },
   });
-
-  if (tickets.length <= MIN_KEPT_TICKETS) return 0;
-
-  const protectedIds = new Set(
-    tickets.slice(0, MIN_KEPT_TICKETS).map((t) => t.id)
-  );
-
-  const cutoff = Date.now() - TICKET_RETENTION_MS;
-  const toDelete = tickets.filter((t) => {
-    if (protectedIds.has(t.id)) return false;
-    if (!CLOSED_STATUSES.includes(t.status as (typeof CLOSED_STATUSES)[number])) {
-      return false;
-    }
-    const ref = closedReferenceDate(t.closedAt, t.createdAt);
-    return ref.getTime() < cutoff;
-  });
-
-  if (!toDelete.length) return 0;
-
-  await prisma.ticket.deleteMany({
-    where: { id: { in: toDelete.map((t) => t.id) } },
-  });
-
-  return toDelete.length;
+  return result.count;
 }
 
 export async function getPlayerTickets(userId: string) {
   await purgeExpiredTickets(userId);
+  const cutoff = ticketRetentionStart();
 
   return prisma.ticket.findMany({
-    where: { userId },
+    where: { userId, createdAt: { gte: cutoff } },
     include: {
       items: { include: { draw: true } },
     },

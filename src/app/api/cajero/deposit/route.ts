@@ -10,12 +10,20 @@ export async function POST(request: Request) {
 
   try {
     const { playerId, amount, mode, note } = await request.json();
+    if (!playerId || typeof playerId !== "string") {
+      return NextResponse.json({ error: "Jugador no indicado." }, { status: 400 });
+    }
+    const amt = Number(amount);
+    if (!Number.isFinite(amt) || amt <= 0) {
+      return NextResponse.json({ error: "Monto inválido." }, { status: 400 });
+    }
+
     const op = mode === "subtract" ? "subtract" : "add";
     const label = op === "add" ? "Recarga" : "Descuento";
 
     const result = await adjustPlayerWallet(
-      String(playerId),
-      Number(amount),
+      playerId,
+      amt,
       op,
       note ? String(note) : `${label} — ${cajero.fullName}`
     );

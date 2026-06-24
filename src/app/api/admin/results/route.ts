@@ -16,23 +16,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Datos incompletos." }, { status: 400 });
     }
 
-    const pad = (n: string) => String(n).padStart(2, "0").slice(-2);
+    const pad = (n: string | number) => {
+      const raw = String(n).trim();
+      if (!/^\d{1,2}$/.test(raw)) {
+        throw new Error(`Número inválido: ${n}`);
+      }
+      const padded = raw.padStart(2, "0");
+      if (Number(padded) > 99) {
+        throw new Error(`Número fuera de rango (00-99): ${n}`);
+      }
+      return padded;
+    };
+
+    const f = pad(first);
+    const s = pad(second);
+    const t = pad(third);
 
     await prisma.result.upsert({
       where: { drawId },
       update: {
-        first: pad(first),
-        second: pad(second),
-        third: pad(third),
+        first: f,
+        second: s,
+        third: t,
         confirmed: true,
         source: "MANUAL",
         syncedAt: null,
       },
       create: {
         drawId,
-        first: pad(first),
-        second: pad(second),
-        third: pad(third),
+        first: f,
+        second: s,
+        third: t,
         confirmed: true,
         source: "MANUAL",
       },

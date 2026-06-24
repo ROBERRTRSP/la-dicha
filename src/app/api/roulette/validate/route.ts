@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
 import { requirePlayer } from "@/lib/auth";
-import { validateBetsRisk } from "@/lib/roulette-risk";
-import { getRouletteSettings } from "@/lib/roulette-settings";
-import { getPlayerDailyPayout } from "@/lib/roulette-stats";
+import { prisma } from "@/lib/db";
+import { getEffectiveRouletteSettings } from "@/lib/roulette-bankroll";
 import {
-  normalizeBetChoice,
-  type RouletteBetInput,
-  type RouletteBetType,
-} from "@/lib/roulette";
+  formatExposureSummary,
+  validateBetsRisk,
+} from "@/lib/roulette-risk";
+import {
+  getRouletteSettings,
+  resolvePlayerSettings,
+} from "@/lib/roulette-settings";
+import {
+  normalizeRouletteBets,
+  parseRouletteBetsPayload,
+} from "@/lib/roulette-validation";
+import { peekStakeToCharge } from "@/lib/roulette-promotions";
+import { getRoulettePlayWindow } from "@/lib/roulette-daily";
 
 export async function POST(request: Request) {
   const user = await requirePlayer();
@@ -15,29 +23,63 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
 
-  const body = await request.json();
-  const rawBets = Array.isArray(body.bets) ? body.bets : [];
+  try {
+    const body = await request.json();
+    const settings = await getRouletteSettings();
+    const playWindow = await getRoulettePlayWindow(settings);
+    const rouletteCtx = await getEffectiveRouletteSettings();
+    const playerSettings = resolvePlayerSettings(rouletteCtx.effective);
 
-  const bets: RouletteBetInput[] = rawBets.map(
-    (b: { betType: string; betChoice: string; amount: number }) => ({
-      betType: b.betType as RouletteBetType,
-      betChoice: normalizeBetChoice(
-        b.betType as RouletteBetType,
-        String(b.betChoice ?? "")
-      ),
-      amount: Number(b.amount),
-    })
-  );
+    if (!playWindow.open) {
+      return NextResponse.json({
+        ok: false,
+        message: playWindow.reason ?? "La Ruleta no está disponible.",
+      });
+    }
 
-  const [settings, dailyPayout] = await Promise.all([
-    getRouletteSettings(),
-    getPlayerDailyPayout(user.id),
-  ]);
+    const rawList = parseRouletteBetsPayload(body);
+    const bets = normalizeRouletteBets(rawList, playerSettings);
+    const totalStake = bets.reduce((sum, b) => sum + b.amount, 0);
 
-  const risk = validateBetsRisk(bets, settings, dailyPayout);
+    const wallet = await prisma.wallet.findUnique({ where: { userId: user.id } });
 
-  return NextResponse.json({
-    ok: risk.ok,
-    message: risk.ok ? null : risk.message,
-  });
+    if (!wallet) {
+      return NextResponse.json({
+        ok: false,
+        message: "Cuenta sin billetera.",
+      });
+    }
+
+    const stakeToCharge = await peekStakeToCharge(user.id, settings, totalStake);
+
+    if (stakeToCharge > wallet.balance) {
+      return NextResponse.json({
+        ok: false,
+        message: "Saldo insuficiente para estas apuestas.",
+      });
+    }
+
+    const risk = validateBetsRisk(
+      bets,
+      { ...playerSettings, houseAlwaysWins: settings.houseAlwaysWins },
+      settings.payoutMultipliers,
+      rouletteCtx.bankroll
+    );
+
+    const exposureSummary = risk.exposure
+      ? formatExposureSummary(risk.exposure, settings.payoutMultipliers, bets)
+      : null;
+
+    return NextResponse.json({
+      ok: risk.ok,
+      message: risk.ok ? null : risk.message,
+      totalStake,
+      stakeToCharge,
+      balance: wallet.balance,
+      exposure: exposureSummary,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Apuesta inválida.";
+    return NextResponse.json({ ok: false, message: msg });
+  }
 }

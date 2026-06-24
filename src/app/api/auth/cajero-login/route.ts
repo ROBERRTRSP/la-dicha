@@ -1,9 +1,25 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { createSession, verifyPassword } from "@/lib/auth";
+import {
+  getClientIp,
+  getRateLimitStatus,
+  LOGIN_RATE,
+  rateLimitResponse,
+  recordFailedLogin,
+} from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const rlKey = `login:cajero:${ip}`;
+    const blocked = getRateLimitStatus(
+      rlKey,
+      LOGIN_RATE.maxAttempts,
+      LOGIN_RATE.windowMs
+    );
+    if (!blocked.ok) return rateLimitResponse(blocked.retryAfterSec);
+
     const { username, password } = await request.json();
     if (!username || !password) {
       return NextResponse.json(
@@ -16,17 +32,27 @@ export async function POST(request: Request) {
       where: { username: String(username).toLowerCase().trim() },
     });
 
-    if (!user || !user.active || user.role !== "CAJERO") {
+    if (!user || !user.active) {
+      recordFailedLogin(rlKey, LOGIN_RATE.maxAttempts, LOGIN_RATE.windowMs);
       return NextResponse.json(
-        { error: "Acceso de cajero denegado." },
+        { error: "Usuario cajero no encontrado o inactivo." },
+        { status: 401 }
+      );
+    }
+
+    if (user.role !== "CAJERO") {
+      recordFailedLogin(rlKey, LOGIN_RATE.maxAttempts, LOGIN_RATE.windowMs);
+      return NextResponse.json(
+        { error: "Este usuario no es cajero." },
         { status: 401 }
       );
     }
 
     const valid = await verifyPassword(password, user.passwordHash);
     if (!valid) {
+      recordFailedLogin(rlKey, LOGIN_RATE.maxAttempts, LOGIN_RATE.windowMs);
       return NextResponse.json(
-        { error: "Acceso de cajero denegado." },
+        { error: "Contraseña incorrecta." },
         { status: 401 }
       );
     }

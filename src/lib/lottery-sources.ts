@@ -2,6 +2,8 @@ export type LotterySourceConfig = {
   code: string;
   /** Ruta en la fuente oficial (loteriasdominicanas.com) */
   officialPath: string;
+  /** ID del juego en api.loteriasdominicanas.com */
+  officialSiteGameId: string;
   /** Nombre del bloque en la fuente oficial */
   officialName: string;
   /** Nombre del bloque en la fuente alterna (conectate.com.do) */
@@ -9,26 +11,26 @@ export type LotterySourceConfig = {
 };
 
 export const LOTTERY_SOURCES: LotterySourceConfig[] = [
-  { code: "LP_DIA", officialPath: "/la-primera/quiniela-medio-dia", officialName: "La Primera Día", alternateName: "La Primera Día" },
-  { code: "LP_NOCHE", officialPath: "/la-primera/quiniela-noche", officialName: "Primera Noche", alternateName: "Primera Noche" },
-  { code: "LOTEDOM", officialPath: "/lotedom/quiniela", officialName: "Quiniela LoteDom", alternateName: "LoteDom" },
-  { code: "LS_DIA", officialPath: "/la-suerte-dominicana/quiniela", officialName: "La Suerte 12:30", alternateName: "La Suerte MD" },
-  { code: "LS_TARDE", officialPath: "/la-suerte-dominicana/quiniela-tarde", officialName: "La Suerte 18:00", alternateName: "La Suerte 6PM" },
-  { code: "GANAMAS", officialPath: "/loteria-nacional/gana-mas", officialName: "Gana Más", alternateName: "Gana Más" },
-  { code: "QREAL", officialPath: "/loto-real/quiniela", officialName: "Quiniela Real", alternateName: "Quiniela Real" },
-  { code: "NAC_NOCHE", officialPath: "/loteria-nacional/quiniela", officialName: "Lotería Nacional", alternateName: "Lotería Nacional" },
-  { code: "LOTEKA", officialPath: "/loteka/quiniela-mega-decenas", officialName: "Quiniela Loteka", alternateName: "Quiniela Loteka" },
-  { code: "LEIDSA", officialPath: "/leidsa/quiniela-pale", officialName: "Quiniela Leidsa", alternateName: "Quiniela Leidsa" },
-  { code: "ANG_10", officialPath: "/anguila/anguila-manana", officialName: "Anguila Mañana", alternateName: "Anguila 10:00 AM" },
-  { code: "ANG_1", officialPath: "/anguila/anguila-medio-dia", officialName: "Anguila Medio Día", alternateName: "Anguila 1:00 PM" },
-  { code: "ANG_6", officialPath: "/anguila/anguila-tarde", officialName: "Anguila Tarde", alternateName: "Anguila 6:00 PM" },
-  { code: "ANG_9", officialPath: "/anguila/anguila-noche", officialName: "Anguila Noche", alternateName: "Anguila 9:00 PM" },
-  { code: "FL_AM", officialPath: "/americanas/florida-tarde", officialName: "Florida Día", alternateName: "Florida Día" },
-  { code: "FL_PM", officialPath: "/americanas/florida-noche", officialName: "Florida Noche", alternateName: "Florida Noche" },
-  { code: "NY_AM", officialPath: "/americanas/new-york-medio-dia", officialName: "New York Tarde", alternateName: "New York 3:30" },
-  { code: "NY_PM", officialPath: "/americanas/new-york-noche", officialName: "New York Noche", alternateName: "New York 11:30" },
-  { code: "KING_AM", officialPath: "/king-lottery/quiniela-dia", officialName: "King Lottery 12:30", alternateName: "King Lottery 12:30" },
-  { code: "KING_PM", officialPath: "/king-lottery/quiniela-noche", officialName: "King Lottery 7:30", alternateName: "King Lottery 7:30" },
+  { code: "LP_DIA", officialPath: "/la-primera/quiniela-medio-dia", officialSiteGameId: "6966a6d2ea7015c3b8a3d5c3", officialName: "La Primera Día", alternateName: "La Primera Día" },
+  { code: "LP_NOCHE", officialPath: "/la-primera/quiniela-noche", officialSiteGameId: "6966a6d2ea7015c3b8a3d5c9", officialName: "Primera Noche", alternateName: "Primera Noche" },
+  { code: "LOTEDOM", officialPath: "/lotedom/quiniela", officialSiteGameId: "6966a6d3ea7015c3b8a3d5f7", officialName: "Quiniela LoteDom", alternateName: "LoteDom" },
+  { code: "LS_DIA", officialPath: "/la-suerte-dominicana/quiniela", officialSiteGameId: "6966a6d3ea7015c3b8a3d5e6", officialName: "La Suerte 12:30", alternateName: "La Suerte MD" },
+  { code: "LS_TARDE", officialPath: "/la-suerte-dominicana/quiniela-tarde", officialSiteGameId: "6966a6d3ea7015c3b8a3d5ec", officialName: "La Suerte 18:00", alternateName: "La Suerte 6PM" },
+  { code: "GANAMAS", officialPath: "/loteria-nacional/gana-mas", officialSiteGameId: "6966a6d2ea7015c3b8a3d485", officialName: "Gana Más", alternateName: "Gana Más" },
+  { code: "QREAL", officialPath: "/loto-real/quiniela", officialSiteGameId: "6966a6d2ea7015c3b8a3d4b1", officialName: "Quiniela Real", alternateName: "Quiniela Real" },
+  { code: "NAC_NOCHE", officialPath: "/loteria-nacional/quiniela", officialSiteGameId: "6966a6d1ea7015c3b8a3d47f", officialName: "Lotería Nacional", alternateName: "Lotería Nacional" },
+  { code: "LOTEKA", officialPath: "/loteka/quiniela-mega-decenas", officialSiteGameId: "6966a6d2ea7015c3b8a3d4da", officialName: "Quiniela Loteka", alternateName: "Quiniela Loteka" },
+  { code: "LEIDSA", officialPath: "/leidsa/quiniela-pale", officialSiteGameId: "6966a6d1ea7015c3b8a3d456", officialName: "Quiniela Leidsa", alternateName: "Quiniela Leidsa" },
+  { code: "ANG_10", officialPath: "/anguila/anguila-manana", officialSiteGameId: "6966a6d3ea7015c3b8a3d638", officialName: "Anguila Mañana", alternateName: "Anguila 10:00 AM" },
+  { code: "ANG_1", officialPath: "/anguila/anguila-medio-dia", officialSiteGameId: "6966a6d3ea7015c3b8a3d614", officialName: "Anguila Medio Día", alternateName: "Anguila 1:00 PM" },
+  { code: "ANG_6", officialPath: "/anguila/anguila-tarde", officialSiteGameId: "6966a6d3ea7015c3b8a3d61a", officialName: "Anguila Tarde", alternateName: "Anguila 6:00 PM" },
+  { code: "ANG_9", officialPath: "/anguila/anguila-noche", officialSiteGameId: "6966a6d3ea7015c3b8a3d620", officialName: "Anguila Noche", alternateName: "Anguila 9:00 PM" },
+  { code: "FL_AM", officialPath: "/americanas/florida-tarde", officialSiteGameId: "6966a6d2ea7015c3b8a3d518", officialName: "Florida Día", alternateName: "Florida Día" },
+  { code: "FL_PM", officialPath: "/americanas/florida-noche", officialSiteGameId: "6966a6d2ea7015c3b8a3d51e", officialName: "Florida Noche", alternateName: "Florida Noche" },
+  { code: "NY_AM", officialPath: "/americanas/new-york-medio-dia", officialSiteGameId: "6966a6d2ea7015c3b8a3d50c", officialName: "New York Tarde", alternateName: "New York 3:30" },
+  { code: "NY_PM", officialPath: "/americanas/new-york-noche", officialSiteGameId: "6966a6d2ea7015c3b8a3d512", officialName: "New York Noche", alternateName: "New York 11:30" },
+  { code: "KING_AM", officialPath: "/king-lottery/quiniela-dia", officialSiteGameId: "6966a6d3ea7015c3b8a3d66d", officialName: "King Lottery 12:30", alternateName: "King Lottery 12:30" },
+  { code: "KING_PM", officialPath: "/king-lottery/quiniela-noche", officialSiteGameId: "6966a6d3ea7015c3b8a3d673", officialName: "King Lottery 7:30", alternateName: "King Lottery 7:30" },
 ];
 
 export const LOTTERY_SOURCE_BY_CODE = Object.fromEntries(
@@ -37,6 +39,8 @@ export const LOTTERY_SOURCE_BY_CODE = Object.fromEntries(
 
 /** Fuente oficial — se consulta primero. */
 export const OFFICIAL_SOURCE_BASE = "https://loteriasdominicanas.com";
+/** API JSON de la fuente oficial (reemplaza el HTML tras migración a Nuxt). */
+export const OFFICIAL_API_BASE = "https://api.loteriasdominicanas.com/dominicana";
 /** Fuente alterna — solo para confirmar lo obtenido en la oficial. */
 export const ALTERNATE_SOURCE_BASE = "https://www.conectate.com.do/loterias/";
 

@@ -9,7 +9,10 @@ const LINKS = [
   { href: "/admin/billeteras", label: "Billeteras" },
   { href: "/admin/tickets", label: "Tickets" },
   { href: "/admin/sorteos", label: "Sorteos" },
+  { href: "/admin/loterias", label: "Loterías" },
+  { href: "/admin/riesgo", label: "Riesgo" },
   { href: "/admin/resultados", label: "Resultados" },
+  { href: "/admin/limites", label: "Límites" },
   { href: "/admin/ruleta", label: "Ruleta" },
 ];
 

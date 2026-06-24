@@ -1,9 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { AiVisual } from "@/components/ui/AiVisual";
-import { ART } from "@/lib/visual-assets";
+import { useMemo } from "react";
 import { cn, formatTime12 } from "@/lib/utils";
 import type { OpenDrawView } from "@/lib/draws";
 import { statusLabel } from "@/lib/draws";
@@ -35,6 +32,8 @@ function SuperPaleChip({
     <button
       type="button"
       onClick={onToggle}
+      aria-pressed={isSelected}
+      aria-label={`${sp.name}, ${formatTime12(sp.sortTime)}, ${statusLabel(sp.status)}`}
       className={cn(
         "play-lottery-chip play-lottery-chip--super",
         isSelected && "selected",
@@ -91,8 +90,6 @@ export function LotteryStrip({
   onClear: () => void;
   onSelectAll: () => void;
 }) {
-  const [rouletteActive, setRouletteActive] = useState(true);
-
   const superPales = useMemo(() => getOpenSuperPales(draws), [draws]);
   const stripItems = useMemo(
     () => buildPlayStripItems(draws, superPales),
@@ -100,13 +97,6 @@ export function LotteryStrip({
   );
 
   const hasOpenGames = draws.length > 0 || superPales.length > 0;
-
-  useEffect(() => {
-    fetch("/api/roulette/status")
-      .then((r) => r.json())
-      .then((d) => setRouletteActive(d.active !== false))
-      .catch(() => {});
-  }, []);
 
   return (
     <section className="play-lottery-strip">
@@ -131,36 +121,6 @@ export function LotteryStrip({
       </div>
 
       <div className="play-lottery-scroll">
-        {rouletteActive ? (
-          <Link href="/ruleta" className="play-lottery-chip play-lottery-chip--ruleta">
-            <AiVisual
-              src={ART.ruletaChip}
-              alt=""
-              width={32}
-              height={32}
-              className="play-lottery-chip-art"
-            />
-            <div className="play-lottery-chip-body">
-              <p className="play-lottery-chip-name">Ruleta</p>
-              <p className="play-lottery-chip-meta open">Siempre abierta · Jugar</p>
-            </div>
-          </Link>
-        ) : (
-          <div className="play-lottery-chip play-lottery-chip--ruleta disabled">
-            <AiVisual
-              src={ART.ruletaChip}
-              alt=""
-              width={32}
-              height={32}
-              className="play-lottery-chip-art"
-            />
-            <div className="play-lottery-chip-body">
-              <p className="play-lottery-chip-name">Ruleta</p>
-              <p className="play-lottery-chip-meta">Desactivada</p>
-            </div>
-          </div>
-        )}
-
         {stripItems.map((item) => {
           if (item.kind === "super_pale") {
             const sp = item.superPale;
@@ -181,6 +141,8 @@ export function LotteryStrip({
               key={d.id}
               type="button"
               onClick={() => onToggle(d.id)}
+              aria-pressed={isSelected}
+              aria-label={`${d.lotteryName}, ${formatTime12(d.drawTime)}, ${statusLabel(d.status)}`}
               className={cn(
                 "play-lottery-chip",
                 isSelected && "selected",
@@ -221,15 +183,15 @@ export function LotteryStrip({
 
       {!hasOpenGames ? (
         <p className="text-xs text-amber-700 px-3 py-2 text-center">
-          No hay más loterías abiertas ahora. Puedes jugar Ruleta.
+          No hay loterías abiertas ahora. Revisa más tarde o juega Ruleta abajo.
         </p>
       ) : (
         <p className="play-lottery-hint">
-          Desliza → · Ruleta
+          Desliza →
           {draws.length > 0 &&
-            ` + ${draws.length} lotería${draws.length !== 1 ? "s" : ""}`}
+            ` ${draws.length} lotería${draws.length !== 1 ? "s" : ""}`}
           {superPales.length > 0 &&
-            ` + ${superPales.length} súper palé${superPales.length !== 1 ? "s" : ""}`}
+            `${draws.length > 0 ? " ·" : ""} ${superPales.length} súper palé${superPales.length !== 1 ? "s" : ""}`}
         </p>
       )}
     </section>

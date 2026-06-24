@@ -1,37 +1,39 @@
-import QRCode from "qrcode";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 import type { BetTypeCode } from "./bet-parser";
-import { getSuperPaleDefinition } from "./super-pale";
-import { genPosTicketNumber, genVerificationHash } from "./ticket-codes";
+import { validateAndNormalizeCart } from "./cart-validation";
+import {
+  cartLineTotal,
+  type CartLine,
+} from "./cart-line";
+import { getSuperPaleDefinition, superPaleReceiptTitle } from "./super-pale";
+import { allocateTicketNumbers } from "./ticket-allocation";
+
+export {
+  cartLineTotal,
+  cartLineUnitCount,
+  isMultiLotteryLine,
+  type CartLine,
+} from "./cart-line";
 
 /** Ventana para cancelar un ticket (5 minutos) */
 export const TICKET_CANCEL_WINDOW_MS = 5 * 60 * 1000;
 
-export function cartLineTotal(line: CartLine) {
-  return line.betType === "SUPER_PALE" ? line.amount : line.amount * line.drawIds.length;
+async function validateCartLinesOpen(lines: CartLine[]) {
+  await validateCartLinesOpenInTx(prisma, lines);
 }
 
-export type CartLine = {
-  id: string;
-  betType: BetTypeCode;
-  numbers: string;
-  digits: string;
-  amount: number;
-  drawIds: string[];
-  lotteryNames: string[];
-  superPaleCode?: string;
-  superPaleName?: string;
-  addedAt: number;
-};
-
-async function validateCartLinesOpen(lines: CartLine[]) {
+export async function validateCartLinesOpenInTx(
+  tx: Prisma.TransactionClient | typeof prisma,
+  lines: CartLine[]
+) {
   const now = new Date();
   for (const line of lines) {
-    if (line.betType === "SUPER_PALE") {
+    if (line.betType === "SUPER_PALE" || line.superPaleCode) {
       const def = getSuperPaleDefinition(line.superPaleCode ?? "");
       if (!def) throw new Error("Súper Palé no válido.");
 
-      const closeDraw = await prisma.draw.findFirst({
+      const closeDraw = await tx.draw.findFirst({
         where: {
           id: { in: line.drawIds },
           lottery: { code: def.closesWithLotteryCode },
@@ -43,7 +45,7 @@ async function validateCartLinesOpen(lines: CartLine[]) {
       continue;
     }
 
-    const openCount = await prisma.draw.count({
+    const openCount = await tx.draw.count({
       where: {
         id: { in: line.drawIds },
         status: { in: ["OPEN", "CLOSING_SOON"] },
@@ -56,14 +58,18 @@ async function validateCartLinesOpen(lines: CartLine[]) {
   }
 }
 
-function buildTicketItemsCreate(lines: CartLine[]) {
+export function buildTicketItemsCreate(lines: CartLine[]) {
   return lines.flatMap((line) => {
-    if (line.betType === "SUPER_PALE") {
+    if (line.superPaleCode) {
+      const betType: BetTypeCode =
+        line.betType === "PALE" || line.betType === "SUPER_PALE"
+          ? "SUPER_PALE"
+          : line.betType;
       return [
         {
           drawId: line.drawIds[0],
-          lotteryName: line.superPaleName ?? line.lotteryNames.join(" + "),
-          betType: line.betType,
+          lotteryName: superPaleReceiptTitle(line.superPaleCode ?? line.superPaleName),
+          betType,
           numbers: line.numbers,
           amount: line.amount,
           superPaleName: line.superPaleCode ?? line.superPaleName,
@@ -82,27 +88,27 @@ function buildTicketItemsCreate(lines: CartLine[]) {
 
 export async function createTicketFromCart(
   userId: string,
-  lines: CartLine[]
+  rawLines: unknown
 ) {
+  const { lines, total } = validateAndNormalizeCart(rawLines);
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: { wallet: true },
   });
   if (!user?.wallet) throw new Error("Cuenta sin billetera.");
 
-  const total = lines.reduce((sum, l) => sum + cartLineTotal(l), 0);
-  if (total <= 0) throw new Error("Agrega una jugada antes de confirmar.");
   if (user.wallet.balance < total)
     throw new Error("No tienes saldo suficiente para esta jugada.");
 
   await validateCartLinesOpen(lines);
 
-  const ticketNumber = genPosTicketNumber();
-  const verificationCode = genVerificationHash(ticketNumber, userId);
   const balanceBefore = user.wallet.balance;
   const balanceAfter = balanceBefore - total;
 
   const ticket = await prisma.$transaction(async (tx) => {
+    const numbers = await allocateTicketNumbers(tx, userId);
+
     await tx.wallet.update({
       where: { id: user.wallet!.id },
       data: { balance: balanceAfter },
@@ -115,14 +121,15 @@ export async function createTicketFromCart(
         amount: -total,
         balanceBefore,
         balanceAfter,
-        note: `Ticket ${ticketNumber}`,
+        note: `Ticket ${numbers.ticketNumber}`,
       },
     });
 
     const created = await tx.ticket.create({
       data: {
-        ticketNumber,
-        verificationCode,
+        ticketNumber: numbers.ticketNumber,
+        internalTicketCode: numbers.internalTicketCode,
+        verificationCode: numbers.verificationCode,
         userId,
         totalAmount: total,
         balanceBefore,
@@ -141,18 +148,17 @@ export async function createTicketFromCart(
     return created;
   });
 
-  const qrData = `LA-DICHA|${ticket.ticketNumber}|${ticket.verificationCode}`;
-  const qrDataUrl = await QRCode.toDataURL(qrData, { margin: 1, width: 200 });
-
-  return { ticket, qrDataUrl };
+  return { ticket };
 }
 
 /** Venta en efectivo desde cajero / vanquero (sin descontar saldo digital). */
 export async function createCashTicketFromCart(
   cajeroId: string,
-  lines: CartLine[],
+  rawLines: unknown,
   customerName?: string
 ) {
+  const { lines, total } = validateAndNormalizeCart(rawLines);
+
   const mostrador = await prisma.user.findUnique({
     where: { username: "mostrador" },
   });
@@ -160,41 +166,39 @@ export async function createCashTicketFromCart(
     throw new Error("Cuenta de mostrador no configurada. Ejecuta el seed.");
   }
 
-  const total = lines.reduce((sum, l) => sum + cartLineTotal(l), 0);
-  if (total <= 0) throw new Error("Agrega una jugada antes de confirmar.");
-
   await validateCartLinesOpen(lines);
 
-  const ticketNumber = genPosTicketNumber();
-  const verificationCode = genVerificationHash(ticketNumber, mostrador.id);
+  const ticket = await prisma.$transaction(async (tx) => {
+    const numbers = await allocateTicketNumbers(tx, mostrador.id);
 
-  const ticket = await prisma.ticket.create({
-    data: {
-      ticketNumber,
-      verificationCode,
-      userId: mostrador.id,
-      totalAmount: total,
-      balanceBefore: 0,
-      balanceAfter: 0,
-      status: "ACTIVE",
-      paymentMethod: "CASH",
-      soldByCajeroId: cajeroId,
-      customerName: customerName?.trim() || null,
-      items: {
-        create: buildTicketItemsCreate(lines),
+    return tx.ticket.create({
+      data: {
+        ticketNumber: numbers.ticketNumber,
+        internalTicketCode: numbers.internalTicketCode,
+        verificationCode: numbers.verificationCode,
+        userId: mostrador.id,
+        totalAmount: total,
+        balanceBefore: 0,
+        balanceAfter: 0,
+        status: "ACTIVE",
+        paymentMethod: "CASH",
+        soldByCajeroId: cajeroId,
+        customerName: customerName?.trim() || null,
+        items: {
+          create: buildTicketItemsCreate(lines),
+        },
       },
-    },
-    include: {
-      items: { include: { draw: { include: { lottery: true } } } },
-      user: true,
-    },
+      include: {
+        items: { include: { draw: { include: { lottery: true } } } },
+        user: true,
+      },
+    });
   });
 
-  const qrData = `LA-DICHA|${ticket.ticketNumber}|${ticket.verificationCode}`;
-  const qrDataUrl = await QRCode.toDataURL(qrData, { margin: 1, width: 200 });
-
-  return { ticket, qrDataUrl };
+  return { ticket };
 }
+
+type DrawCancelCheck = { status: string; closesAt: Date | string };
 
 export function canCancelTicket(
   status: string,
@@ -204,6 +208,25 @@ export function canCancelTicket(
   const created =
     typeof createdAt === "string" ? new Date(createdAt) : createdAt;
   return Date.now() - created.getTime() <= TICKET_CANCEL_WINDOW_MS;
+}
+
+/** Cajero puede anular mientras todos los sorteos del ticket sigan abiertos. */
+export function canCancelTicketForCajero(
+  status: string,
+  draws: DrawCancelCheck[]
+): boolean {
+  if (status !== "ACTIVE" || draws.length === 0) return false;
+  const now = new Date();
+  return draws.every((draw) => {
+    const closesAt =
+      typeof draw.closesAt === "string"
+        ? new Date(draw.closesAt)
+        : draw.closesAt;
+    return (
+      (draw.status === "OPEN" || draw.status === "CLOSING_SOON") &&
+      closesAt > now
+    );
+  });
 }
 
 export function cancelTicketMsLeft(createdAt: Date | string): number {
@@ -256,6 +279,75 @@ export async function cancelTicket(userId: string, ticketId: string) {
   return { balanceAfter, ticketNumber: ticket.ticketNumber };
 }
 
+/** Anulación desde monitor / cajero (efectivo o saldo digital). */
+export async function cancelTicketForCajero(
+  cajeroLabel: string,
+  ticketId: string
+) {
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    include: {
+      items: { include: { draw: true } },
+      user: { include: { wallet: true } },
+    },
+  });
+
+  if (!ticket) throw new Error("Ticket no encontrado.");
+  if (ticket.status !== "ACTIVE") {
+    throw new Error("Este ticket ya no se puede cancelar.");
+  }
+  if (!canCancelTicketForCajero(ticket.status, ticket.items.map((i) => i.draw))) {
+    throw new Error("No se puede cancelar: el sorteo ya cerró.");
+  }
+
+  if (ticket.paymentMethod === "CASH") {
+    const canceled = await prisma.ticket.updateMany({
+      where: { id: ticketId, status: "ACTIVE" },
+      data: { status: "CANCELED", closedAt: new Date() },
+    });
+    if (canceled.count === 0) {
+      throw new Error("Este ticket ya no se puede cancelar.");
+    }
+    return { ticketNumber: ticket.ticketNumber, paymentMethod: "CASH" as const };
+  }
+
+  const wallet = ticket.user.wallet;
+  if (!wallet) throw new Error("Cuenta sin billetera.");
+
+  const balanceBefore = wallet.balance;
+  const balanceAfter = balanceBefore + ticket.totalAmount;
+
+  await prisma.$transaction(async (tx) => {
+    const canceled = await tx.ticket.updateMany({
+      where: { id: ticketId, status: "ACTIVE" },
+      data: { status: "CANCELED", closedAt: new Date() },
+    });
+    if (canceled.count === 0) {
+      throw new Error("Este ticket ya no se puede cancelar.");
+    }
+    await tx.wallet.update({
+      where: { id: wallet.id },
+      data: { balance: balanceAfter },
+    });
+    await tx.walletTransaction.create({
+      data: {
+        walletId: wallet.id,
+        type: "CANCEL",
+        amount: ticket.totalAmount,
+        balanceBefore,
+        balanceAfter,
+        note: `Cancelación cajero (${cajeroLabel}) ${ticket.ticketNumber}`,
+      },
+    });
+  });
+
+  return {
+    ticketNumber: ticket.ticketNumber,
+    paymentMethod: "WALLET" as const,
+    balanceAfter,
+  };
+}
+
 /**
  * Paga premio de lotería en ventanilla (efectivo).
  * Regla: premios de lotería NUNCA se acreditan al saldo digital.
@@ -285,10 +377,13 @@ export async function payLotteryTicketPrize(
   const balance = wallet?.balance ?? 0;
 
   await prisma.$transaction(async (tx) => {
-    await tx.ticket.update({
-      where: { id: ticketId },
+    const paid = await tx.ticket.updateMany({
+      where: { id: ticketId, status: "WINNER" },
       data: { status: "PAID", closedAt: new Date() },
     });
+    if (paid.count === 0) {
+      throw new Error("Este ticket no tiene premio por cobrar.");
+    }
     await tx.ticketItem.updateMany({
       where: { ticketId, status: "WINNER" },
       data: { status: "PAID" },

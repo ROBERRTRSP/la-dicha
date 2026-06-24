@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatMoney } from "@/lib/utils";
 
 type UserRow = {
   id: string;
@@ -154,7 +155,7 @@ export default function AdminUsuariosPage() {
                   <td>{u.username}</td>
                   <td>{u.fullName}</td>
                   <td>{u.role}</td>
-                  <td>{u.balance != null ? `RD$${u.balance.toFixed(2)}` : "—"}</td>
+                  <td>{u.balance != null ? formatMoney(u.balance) : "—"}</td>
                   <td>{u.active ? "Activo" : "Inactivo"}</td>
                   <td className="admin-table-actions">
                     <button

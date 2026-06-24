@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, formatMoney } from "@/lib/utils";
 import {
   detectBetType,
   betTypeLabel,
   formatNumbers,
   QUICK_AMOUNTS,
 } from "@/lib/bet-parser";
+import { BET_AMOUNT_MAX, BET_AMOUNT_MIN } from "@/lib/cart-limits";
 
 export function CompactPlayPad({
   digits,
@@ -30,6 +31,7 @@ export function CompactPlayPad({
 }) {
   const [customOpen, setCustomOpen] = useState(false);
   const [customVal, setCustomVal] = useState("");
+  const [customError, setCustomError] = useState("");
 
   const type = detectBetType(digits);
   const display = type ? formatNumbers(digits, type) : digits || "—";
@@ -46,6 +48,9 @@ export function CompactPlayPad({
         <p className="text-2xl font-bold text-[#1e3a5f] tracking-widest leading-none">
           {display}
         </p>
+        <p className="text-[9px] text-slate-400 mt-1">
+          2 = Quiniela · 4 = Palé · 6 = Tripleta
+        </p>
       </div>
 
       <div className="play-amounts shrink-0">
@@ -61,7 +66,11 @@ export function CompactPlayPad({
         ))}
         <button
           type="button"
-          onClick={() => setCustomOpen(true)}
+          onClick={() => {
+            setCustomError("");
+            setCustomVal(amount > 0 && !QUICK_AMOUNTS.includes(amount as (typeof QUICK_AMOUNTS)[number]) ? String(amount) : "");
+            setCustomOpen(true);
+          }}
           className={cn(
             "play-amount-chip",
             !QUICK_AMOUNTS.includes(amount as (typeof QUICK_AMOUNTS)[number]) &&
@@ -107,19 +116,35 @@ export function CompactPlayPad({
       {customOpen && (
         <div className="fixed inset-0 z-[70] bg-black/50 flex items-end">
           <div className="bg-white w-full rounded-t-2xl p-5 pb-8">
-            <h4 className="font-bold mb-3">Otro monto</h4>
+            <h4 className="font-bold mb-1">Otro monto</h4>
+            <p className="text-xs text-slate-500 mb-3">
+              Mínimo {formatMoney(BET_AMOUNT_MIN)} · máximo {formatMoney(BET_AMOUNT_MAX)}
+            </p>
             <input
               type="number"
               inputMode="numeric"
+              min={1}
+              max={BET_AMOUNT_MAX}
               value={customVal}
-              onChange={(e) => setCustomVal(e.target.value)}
-              className="w-full text-xl font-bold text-center border-2 border-slate-200 rounded-xl py-3 mb-3"
+              onChange={(e) => {
+                setCustomVal(e.target.value);
+                setCustomError("");
+              }}
+              className="w-full text-xl font-bold text-center border-2 border-slate-200 rounded-xl py-3 mb-2"
               autoFocus
             />
+            {customError && (
+              <p className="text-xs text-red-600 font-semibold text-center mb-2">
+                {customError}
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setCustomOpen(false)}
+                onClick={() => {
+                  setCustomOpen(false);
+                  setCustomError("");
+                }}
                 className="play-action-secondary"
               >
                 Cancelar
@@ -128,12 +153,19 @@ export function CompactPlayPad({
                 type="button"
                 className="play-action-primary"
                 onClick={() => {
-                  const n = Number(customVal);
-                  if (n > 0) {
-                    onAmountChange(n);
-                    setCustomOpen(false);
-                    setCustomVal("");
+                  const n = Math.floor(Number(customVal));
+                  if (!Number.isFinite(n) || n < BET_AMOUNT_MIN) {
+                    setCustomError(`Escribe un monto de al menos ${formatMoney(BET_AMOUNT_MIN)}.`);
+                    return;
                   }
+                  if (n > BET_AMOUNT_MAX) {
+                    setCustomError(`El máximo por jugada es ${formatMoney(BET_AMOUNT_MAX)}.`);
+                    return;
+                  }
+                  onAmountChange(n);
+                  setCustomOpen(false);
+                  setCustomVal("");
+                  setCustomError("");
                 }}
               >
                 Aplicar

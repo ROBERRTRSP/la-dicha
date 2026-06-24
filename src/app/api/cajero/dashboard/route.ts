@@ -8,6 +8,11 @@ export async function GET() {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
 
-  const stats = await getCajeroDashboardStats(cajero.id);
-  return NextResponse.json(stats);
+  try {
+    const stats = await getCajeroDashboardStats(cajero.id);
+    return NextResponse.json(stats);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Error al cargar ventas.";
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }

@@ -1,11 +1,10 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
+import { getAuthSecret } from "./auth-secret";
 import { prisma } from "./db";
 
-const SECRET = new TextEncoder().encode(
-  process.env.AUTH_SECRET ?? "la-dicha-dev-secret"
-);
+const SECRET = getAuthSecret();
 const COOKIE = "la_dicha_session";
 
 export async function hashPassword(password: string) {

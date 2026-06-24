@@ -29,9 +29,17 @@ export function ResultsDaySection({
 }) {
   if (draws.length === 0) return null;
 
-  const ordered = [...draws]
-    .filter((d) => showPending || d.result)
-    .sort((a, b) => compareDrawTime(a.drawTime, b.drawTime));
+  const visible = draws.filter((d) => showPending || d.result);
+  const ordered = showPending
+    ? [
+        ...visible
+          .filter((d) => d.result)
+          .sort((a, b) => compareDrawTime(b.drawTime, a.drawTime)),
+        ...visible
+          .filter((d) => !d.result)
+          .sort((a, b) => compareDrawTime(a.drawTime, b.drawTime)),
+      ]
+    : [...visible].sort((a, b) => compareDrawTime(b.drawTime, a.drawTime));
 
   const confirmed = ordered.filter((d) => d.result).length;
 
@@ -50,8 +58,8 @@ export function ResultsDaySection({
 
       <p className="results-order-hint">
         {showPending
-          ? `${confirmed} de ${ordered.length} confirmados · orden de salida`
-          : `${ordered.length} sorteos · orden de salida`}
+          ? `${confirmed} de ${ordered.length} confirmados · último en salir arriba`
+          : `${ordered.length} sorteos · último en salir arriba`}
       </p>
 
       <ul className="results-list results-list--timeline">

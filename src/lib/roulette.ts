@@ -1,4 +1,7 @@
 import { prisma } from "./db";
+import type { RoulettePayoutMultipliers } from "./roulette-payouts";
+import { calcBetPayout } from "./roulette-payouts";
+import { formatMoney } from "./utils";
 
 /** Orden físico de la ruleta europea (para animación) */
 export const WHEEL_ORDER = [
@@ -41,38 +44,21 @@ export const BET_TYPE_LABELS: Record<RouletteBetType, string> = {
   COLUMN_3: "Columna 3",
 };
 
-const PAYOUT_MULTIPLIER: Record<RouletteBetType, number> = {
-  STRAIGHT: 35,
-  RED: 1,
-  BLACK: 1,
-  EVEN: 1,
-  ODD: 1,
-  LOW: 1,
-  HIGH: 1,
-  DOZEN_1: 2,
-  DOZEN_2: 2,
-  DOZEN_3: 2,
-  COLUMN_1: 2,
-  COLUMN_2: 2,
-  COLUMN_3: 2,
-};
+export function calcPayout(
+  betType: RouletteBetType,
+  amount: number,
+  won: boolean,
+  multipliers: RoulettePayoutMultipliers
+): number {
+  return calcBetPayout(betType, amount, won, multipliers);
+}
 
 export function numberColor(n: number): "green" | "red" | "black" {
   if (n === 0) return "green";
   return RED_NUMBERS.has(n) ? "red" : "black";
 }
 
-/** Resultado aleatorio justo — ruleta europea 0–36, sin manipulación */
-export function spinWinningNumber(): number {
-  const buf = new Uint32Array(1);
-  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
-    crypto.getRandomValues(buf);
-    return buf[0] % 37;
-  }
-  return Math.floor(Math.random() * 37);
-}
-
-export const EUROPEAN_HOUSE_EDGE = 0.027;
+export const DEFAULT_HOUSE_EDGE = 0.08;
 
 export function wheelIndexForNumber(n: number): number {
   return WHEEL_ORDER.indexOf(n as (typeof WHEEL_ORDER)[number]);
@@ -166,113 +152,153 @@ export function isBetWinner(
   }
 }
 
-export function calcPayout(
-  betType: RouletteBetType,
-  amount: number,
-  won: boolean
-): number {
-  if (!won) return 0;
-  return amount + amount * PAYOUT_MULTIPLIER[betType];
-}
-
 export async function isRouletteActive(): Promise<boolean> {
   const { getRouletteSettings } = await import("./roulette-settings");
+  const { getRoulettePlayWindow } = await import("./roulette-daily");
   const settings = await getRouletteSettings();
-  return settings.active;
+  const window = await getRoulettePlayWindow(settings);
+  return window.open;
 }
+
+export type RouletteSpinResult = {
+  bets: {
+    id: string;
+    betType: string;
+    betChoice: string;
+    amount: number;
+    won: boolean;
+    payout: number;
+    profit: number;
+  }[];
+  winningNumber: number;
+  color: string;
+  balanceAfter: number;
+  totalStake: number;
+  totalPayout: number;
+  totalProfit: number;
+  wonCount: number;
+  betCount: number;
+  anyWon: boolean;
+  usedFreeSpin: boolean;
+  cashbackAmount: number;
+  promoMessage: string | null;
+  fairPlay: boolean;
+  houseEdge: number;
+};
 
 export async function placeRouletteBets(
   userId: string,
-  rawBets: RouletteBetInput[]
-) {
-  const { getRouletteSettings } = await import("./roulette-settings");
+  rawBody: unknown
+): Promise<RouletteSpinResult> {
+  const { getRouletteSettings, resolvePlayerSettings } = await import(
+    "./roulette-settings"
+  );
+  const { getEffectiveRouletteSettings } = await import("./roulette-bankroll");
   const { validateBetsRisk } = await import("./roulette-risk");
-  const { getPlayerDailyPayout } = await import("./roulette-stats");
   const {
-    applyWelcomeAndTrialCredits,
-    resolveFreeSpin,
+    getRoulettePlayWindow,
+    recordSpinOnDailySession,
+  } = await import("./roulette-daily");
+  const { normalizeRouletteBets, parseRouletteBetsPayload } = await import(
+    "./roulette-validation"
+  );
+  const {
+    beginSpinIdempotency,
+    extractIdempotencyKey,
+    releaseSpinIdempotency,
+    saveSpinResponse,
+  } = await import("./roulette-idempotency");
+  const {
+    consumeFreeSpinInTx,
     applyCashbackOnLoss,
     positiveOutcomeMessage,
   } = await import("./roulette-promotions");
-
-  const settings = await getRouletteSettings();
-  if (!settings.active) {
-    throw new Error("La Ruleta está desactivada temporalmente.");
-  }
-
-  if (!rawBets.length) {
-    throw new Error("Selecciona al menos una apuesta.");
-  }
-
-  const seen = new Set<string>();
-  const bets: RouletteBetInput[] = [];
-  for (const raw of rawBets) {
-    const err = validateBetInput(raw.betType, raw.betChoice, raw.amount);
-    if (err) throw new Error(err);
-    const key = betSelectionKey(raw.betType, raw.betChoice);
-    if (seen.has(key)) {
-      throw new Error("Apuesta duplicada en la misma jugada.");
-    }
-    seen.add(key);
-    bets.push({
-      betType: raw.betType,
-      betChoice: normalizeBetChoice(raw.betType, raw.betChoice),
-      amount: raw.amount,
-    });
-  }
-
-  const dailyPayout = await getPlayerDailyPayout(userId);
-  const risk = validateBetsRisk(bets, settings, dailyPayout);
-  if (!risk.ok) throw new Error(risk.message);
-
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: { wallet: true },
-  });
-  if (!user?.wallet) throw new Error("Cuenta sin billetera.");
-
-  const totalStake = bets.reduce((sum, b) => sum + b.amount, 0);
-  const { useFreeSpin, stakeToCharge } = await resolveFreeSpin(
-    userId,
-    settings,
-    totalStake
+  const { spinWinningNumber, newRouletteSpinId } = await import("./roulette-random");
+  const { computeBetSplit, collectSpinSplitInTx, poolDateKey } = await import(
+    "./roulette-reward-pool"
   );
 
-  if (stakeToCharge > user.wallet.balance) {
-    throw new Error("Saldo insuficiente para estas apuestas.");
+  const settings = await getRouletteSettings();
+  const playWindow = await getRoulettePlayWindow(settings);
+  if (!playWindow.open) {
+    throw new Error(playWindow.reason ?? "La Ruleta no está disponible.");
   }
 
-  const winningNumber = spinWinningNumber();
-  const color = numberColor(winningNumber);
+  const rouletteCtx = await getEffectiveRouletteSettings();
+  const playerSettings = resolvePlayerSettings(rouletteCtx.effective);
+  const payoutMultipliers = settings.payoutMultipliers;
 
-  const outcomes = bets.map((bet) => {
-    const won = isBetWinner(bet.betType, bet.betChoice, winningNumber);
-    const payout = calcPayout(bet.betType, bet.amount, won);
-    return {
-      ...bet,
-      won,
-      payout,
-      profit: payout - bet.amount,
-      result: won ? ("WIN" as const) : ("LOSE" as const),
-    };
-  });
+  const idempotencyKey = extractIdempotencyKey(rawBody);
+  if (idempotencyKey) {
+    const { cached } = await beginSpinIdempotency(userId, idempotencyKey);
+    if (cached) return cached as RouletteSpinResult;
+  }
 
-  const totalPayout = outcomes.reduce((sum, o) => sum + o.payout, 0);
-  const balanceBefore = user.wallet.balance;
-  let balanceAfter = balanceBefore - stakeToCharge + totalPayout;
-  const netChange = balanceAfter - balanceBefore;
-  const wonCount = outcomes.filter((o) => o.won).length;
-  const anyWon = wonCount > 0;
+  try {
+  const rawList = parseRouletteBetsPayload(rawBody);
+  const bets = normalizeRouletteBets(rawList, playerSettings);
+  const risk = validateBetsRisk(
+    bets,
+    { ...playerSettings, houseAlwaysWins: settings.houseAlwaysWins },
+    payoutMultipliers,
+    rouletteCtx.bankroll
+  );
+  if (!risk.ok) throw new Error(risk.message);
 
-  const savedBets = await prisma.$transaction(async (tx) => {
-    await tx.wallet.update({
-      where: { id: user.wallet!.id },
+  const totalStake = bets.reduce((sum, b) => sum + b.amount, 0);
+
+  const txResult = await prisma.$transaction(async (tx) => {
+    const wallet = await tx.wallet.findUnique({ where: { userId } });
+    if (!wallet) throw new Error("Cuenta sin billetera.");
+
+    const { useFreeSpin, stakeToCharge } = await consumeFreeSpinInTx(
+      tx,
+      userId,
+      settings,
+      totalStake
+    );
+
+    if (stakeToCharge > wallet.balance) {
+      throw new Error("Saldo insuficiente para estas apuestas.");
+    }
+
+    const winningNumber = spinWinningNumber();
+    const spinId = newRouletteSpinId();
+    const color = numberColor(winningNumber);
+
+    const outcomes = bets.map((bet) => {
+      const won = isBetWinner(bet.betType, bet.betChoice, winningNumber);
+      const payout = calcPayout(bet.betType, bet.amount, won, payoutMultipliers);
+      return {
+        ...bet,
+        won,
+        payout,
+        profit: payout - bet.amount,
+        result: won ? ("WIN" as const) : ("LOSE" as const),
+      };
+    });
+
+    const totalPayout = outcomes.reduce((sum, o) => sum + o.payout, 0);
+    const balanceBefore = wallet.balance;
+    const balanceAfter = balanceBefore - stakeToCharge + totalPayout;
+    const netChange = balanceAfter - balanceBefore;
+
+    const updated = await tx.wallet.updateMany({
+      where: {
+        id: wallet.id,
+        balance: { gte: stakeToCharge },
+      },
       data: { balance: balanceAfter },
     });
+    if (updated.count === 0) {
+      throw new Error(
+        "Saldo insuficiente. Tu saldo cambió; revisa e intenta de nuevo."
+      );
+    }
 
     await tx.walletTransaction.create({
       data: {
-        walletId: user.wallet!.id,
+        walletId: wallet.id,
         type: netChange >= 0 ? "ROULETTE_WIN" : "ROULETTE_BET",
         amount: netChange,
         balanceBefore,
@@ -281,13 +307,21 @@ export async function placeRouletteBets(
       },
     });
 
+    const poolDate = poolDateKey();
+    const spinSplit = { houseFee: 0, promoContribution: 0, mainPoolContribution: 0 };
+
     let runningBalance = balanceBefore;
     const created = [];
     for (const outcome of outcomes) {
       const betBalanceAfter = runningBalance - outcome.amount + outcome.payout;
+      const split = computeBetSplit(outcome.amount, settings);
+      spinSplit.houseFee += split.houseFee;
+      spinSplit.promoContribution += split.promoContribution;
+      spinSplit.mainPoolContribution += split.mainPoolContribution;
       const bet = await tx.rouletteBet.create({
         data: {
           userId,
+          spinId,
           betType: outcome.betType,
           betChoice: outcome.betChoice,
           amount: outcome.amount,
@@ -297,16 +331,52 @@ export async function placeRouletteBets(
           balanceBefore: runningBalance,
           balanceAfter: betBalanceAfter,
           result: outcome.result,
+          houseFee: split.houseFee,
+          promoContribution: split.promoContribution,
+          mainPoolContribution: split.mainPoolContribution,
+          poolDate,
         },
       });
       created.push(bet);
       runningBalance = betBalanceAfter;
     }
-    return created;
+
+    await collectSpinSplitInTx(tx, {
+      settings,
+      split: spinSplit,
+      spinId,
+      poolDate,
+    });
+
+    return {
+      savedBets: created,
+      winningNumber,
+      color,
+      outcomes,
+      balanceBefore,
+      balanceAfter,
+      totalPayout,
+      totalStake,
+      useFreeSpin,
+      stakeToCharge,
+    };
   });
 
+  const wonCount = txResult.outcomes.filter((o) => o.won).length;
+  const anyWon = wonCount > 0;
+  let balanceAfter = txResult.balanceAfter;
+  const stakeToCharge = txResult.stakeToCharge;
+
   let cashbackAmount = 0;
-  if (!anyWon && stakeToCharge > 0) {
+  // El cashback inmediato (financiado por la casa) solo aplica cuando el sistema
+  // de premios del pozo está INACTIVO. Con el pozo activo, el cashback se reparte
+  // desde el pozo promocional vía el job programado (no con dinero de la casa).
+  if (
+    !anyWon &&
+    stakeToCharge > 0 &&
+    !settings.houseAlwaysWins &&
+    !settings.rewardSystemActive
+  ) {
     cashbackAmount = await applyCashbackOnLoss(userId, settings, stakeToCharge);
     if (cashbackAmount > 0) {
       balanceAfter += cashbackAmount;
@@ -315,9 +385,9 @@ export async function placeRouletteBets(
 
   const promoMessage = positiveOutcomeMessage(anyWon, settings, cashbackAmount);
 
-  return {
-    bets: outcomes.map((outcome, i) => ({
-      id: savedBets[i].id,
+  const response = {
+    bets: txResult.outcomes.map((outcome, i) => ({
+      id: txResult.savedBets[i].id,
       betType: outcome.betType,
       betChoice: outcome.betChoice,
       amount: outcome.amount,
@@ -325,41 +395,81 @@ export async function placeRouletteBets(
       payout: outcome.payout,
       profit: outcome.profit,
     })),
-    winningNumber,
-    color,
+    winningNumber: txResult.winningNumber,
+    color: txResult.color,
     balanceAfter,
-    totalStake,
-    totalPayout,
-    totalProfit: totalPayout - stakeToCharge + cashbackAmount,
+    totalStake: txResult.totalStake,
+    totalPayout: txResult.totalPayout,
+    totalProfit: txResult.totalPayout - stakeToCharge + cashbackAmount,
     wonCount,
-    betCount: outcomes.length,
+    betCount: txResult.outcomes.length,
     anyWon,
-    usedFreeSpin: useFreeSpin,
+    usedFreeSpin: txResult.useFreeSpin,
     cashbackAmount,
     promoMessage,
-    fairPlay: true,
+    fairPlay: !settings.houseAlwaysWins,
+    houseEdge: settings.houseEdge,
   };
+
+  if (idempotencyKey) {
+    await saveSpinResponse(userId, idempotencyKey, response);
+  }
+
+  await recordSpinOnDailySession(
+    playWindow.sessionDate,
+    stakeToCharge,
+    txResult.totalPayout
+  );
+
+  if (settings.rewardSystemActive) {
+    const { maybeRunRewardsAfterSpin } = await import("./roulette-rewards");
+    await maybeRunRewardsAfterSpin();
+  }
+
+  return response;
+  } catch (e) {
+    if (idempotencyKey) {
+      await releaseSpinIdempotency(userId, idempotencyKey);
+    }
+    throw e;
+  }
 }
 
-/** Un registro por giro (agrupa apuestas múltiples del mismo spin) */
+/** Un registro por giro (agrupa apuestas múltiples del mismo spinId) */
 export async function getRouletteHistory(userId: string, limit = 15) {
   const bets = await prisma.rouletteBet.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
-    take: limit * 8,
+    take: limit * 10,
   });
 
-  const spins: typeof bets = [];
+  type SpinSummary = (typeof bets)[0] & { amount: number };
+  const spins: SpinSummary[] = [];
+  const seenSpinIds = new Set<string>();
+
   for (const bet of bets) {
-    const prev = spins[spins.length - 1];
-    if (
-      prev &&
-      prev.winningNumber === bet.winningNumber &&
-      Math.abs(prev.createdAt.getTime() - bet.createdAt.getTime()) < 4000
-    ) {
-      continue;
+    if (bet.spinId) {
+      if (seenSpinIds.has(bet.spinId)) continue;
+      seenSpinIds.add(bet.spinId);
+      const spinBets = bets.filter((b) => b.spinId === bet.spinId);
+      const totalStake = spinBets.reduce((s, b) => s + b.amount, 0);
+      const anyWin = spinBets.some((b) => b.result === "WIN");
+      spins.push({
+        ...bet,
+        amount: totalStake,
+        result: anyWin ? "WIN" : "LOSE",
+      });
+    } else {
+      const prev = spins[spins.length - 1];
+      if (
+        prev &&
+        prev.winningNumber === bet.winningNumber &&
+        Math.abs(prev.createdAt.getTime() - bet.createdAt.getTime()) < 4000
+      ) {
+        continue;
+      }
+      spins.push(bet);
     }
-    spins.push(bet);
     if (spins.length >= limit) break;
   }
   return spins;
@@ -372,22 +482,41 @@ export async function getRouletteAdminStats() {
     calcHouseEdge,
     getPlayerRankings,
   } = await import("./roulette-stats");
-  const { getRouletteSettings, effectiveMaxSpinExposure, maxRiskFromReserve } =
-    await import("./roulette-settings");
+  const { getEffectiveRouletteSettings } = await import("./roulette-bankroll");
+  const { effectiveMaxSpinExposure } = await import("./roulette-settings");
+  const { maxAllowedRisk } = await import("./roulette-risk");
 
-  const [bets, agg, settings, rankings] = await Promise.all([
+  const { weekStartInTz, dayStartInTz, dateKeyInTz, nowInTz } = await import("./timezone");
+  const { ensureTodayRouletteSession, getDaySession } = await import("./roulette-daily");
+  const weekStart = weekStartInTz();
+  const dayStart = dayStartInTz(nowInTz());
+  const todayKey = dateKeyInTz(nowInTz());
+
+  const [bets, agg, dailyAgg, rouletteCtx, rankings, dailySession] = await Promise.all([
     prisma.rouletteBet.findMany({
       orderBy: { createdAt: "desc" },
       include: { user: { select: { username: true, fullName: true } } },
       take: 200,
     }),
     prisma.rouletteBet.aggregate({
+      where: { createdAt: { gte: weekStart } },
       _sum: { amount: true, payout: true },
       _count: true,
     }),
-    getRouletteSettings(),
+    prisma.rouletteBet.aggregate({
+      where: { createdAt: { gte: dayStart } },
+      _sum: { amount: true, payout: true },
+      _count: true,
+    }),
+    getEffectiveRouletteSettings(),
     getPlayerRankings(8),
+    ensureTodayRouletteSession().catch(() => getDaySession(todayKey)),
   ]);
+
+  const { settings, effective, bankroll, dynamicLimits } = rouletteCtx;
+  const unlimitedPlayerMode = (await import("./roulette-settings")).isUnlimitedPlayerMode(
+    settings
+  );
 
   const totalBet = agg._sum.amount ?? 0;
   const totalPaid = agg._sum.payout ?? 0;
@@ -396,23 +525,49 @@ export async function getRouletteAdminStats() {
   const houseEdge = calcHouseEdge(rtp);
 
   const recentForExposure = bets.slice(0, 50);
-  const exposure = buildExposureFromBets(recentForExposure);
+  const exposure = buildExposureFromBets(
+    recentForExposure,
+    settings.payoutMultipliers
+  );
 
   const riskAlerts: string[] = [];
-  const spinCap = effectiveMaxSpinExposure(settings);
+  const spinCap = effectiveMaxSpinExposure(effective);
+  const allowedRisk = maxAllowedRisk(effective, bankroll);
+  const expectedHouseProfit = totalBet * settings.houseEdge;
+
   if (exposure.byNumber) {
     const hot = Object.entries(exposure.byNumber)
       .map(([n, p]) => ({ n: Number(n), p }))
-      .filter((x) => x.p > settings.maxExposurePerNumber * 0.8)
+      .filter((x) => x.p > 0)
       .sort((a, b) => b.p - a.p)
       .slice(0, 3);
-    for (const h of hot) {
-      if (h.p >= settings.maxExposurePerNumber * 0.9) {
-        riskAlerts.push(
-          `Número ${h.n} cerca del límite de exposición (RD$${h.p.toFixed(2)}).`
-        );
+
+    if (
+      !unlimitedPlayerMode &&
+      settings.maxExposurePerNumber > 0 &&
+      effective.maxExposurePerNumber > 0
+    ) {
+      for (const h of hot) {
+        if (h.p >= effective.maxExposurePerNumber * 0.9) {
+          riskAlerts.push(
+            `Número ${h.n} cerca del límite de exposición (${formatMoney(h.p)}).`
+          );
+        }
       }
+    } else if (unlimitedPlayerMode && hot.length > 0 && hot[0].p >= 100) {
+      riskAlerts.push(
+        `Monitoreo: Nº ${hot[0].n} con pago posible ${formatMoney(hot[0].p)} (últimas 50 jugadas).`
+      );
     }
+  }
+
+  if (
+    !unlimitedPlayerMode &&
+    bankroll.currentBankroll < bankroll.initialReserve * 0.75
+  ) {
+    riskAlerts.push(
+      `Fondo dinámico bajo (${formatMoney(bankroll.currentBankroll)}). Los límites de apuesta están reducidos.`
+    );
   }
   if (rtp > 1 && totalBet > 100) {
     riskAlerts.push("RTP real supera 100% — revisar volumen reciente.");
@@ -420,8 +575,8 @@ export async function getRouletteAdminStats() {
   if (houseProfit < 0 && totalBet > 500) {
     riskAlerts.push("Ganancia neta negativa en el periodo acumulado.");
   }
-  if (settings.houseReserve < totalPaid * 0.1) {
-    riskAlerts.push("Reserva de casa baja respecto a pagos históricos.");
+  if (bankroll.currentBankroll < totalPaid * 0.1 && totalPaid > 100) {
+    riskAlerts.push("Fondo dinámico bajo respecto a pagos recientes.");
   }
 
   const topNumbers = Object.entries(exposure.byNumber)
@@ -430,23 +585,46 @@ export async function getRouletteAdminStats() {
     .sort((a, b) => b.exposure - a.exposure)
     .slice(0, 10);
 
+  const dailyTotalBet = dailyAgg._sum.amount ?? 0;
+  const dailyTotalPaid = dailyAgg._sum.payout ?? 0;
+  const dailyHouseProfit = dailyTotalBet - dailyTotalPaid;
+
   return {
     bets,
     totalBet,
     totalPaid,
     houseProfit,
     totalSpins: agg._count,
+    weekStart: weekStart.toISOString(),
+    daily: {
+      sessionDate: todayKey,
+      session: dailySession,
+      totalBet: dailyTotalBet,
+      totalPaid: dailyTotalPaid,
+      houseProfit: dailyHouseProfit,
+      totalSpins: dailyAgg._count,
+      rtp: calcRtp(dailyTotalBet, dailyTotalPaid),
+    },
     rtp,
     houseEdge,
-    theoreticalHouseEdge: EUROPEAN_HOUSE_EDGE,
+    theoreticalHouseEdge: settings.houseEdge,
+    configuredPlayerRtp: settings.playerRtp,
+    expectedHouseProfit,
+    maxAllowedRisk: Number.isFinite(allowedRisk) ? allowedRisk : null,
+    currentSpinExposure: exposure.byNumber
+      ? Math.max(...Object.values(exposure.byNumber), 0)
+      : 0,
     exposure,
     topNumbers,
     rankings,
     riskAlerts,
     settings,
+    effectiveLimits: effective,
+    bankroll,
+    dynamicLimits,
+    unlimitedPlayerMode,
     limits: {
       effectiveMaxSpinExposure: spinCap,
-      maxRiskFromReserve: maxRiskFromReserve(settings),
     },
   };
 }

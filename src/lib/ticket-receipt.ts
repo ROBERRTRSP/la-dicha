@@ -1,11 +1,9 @@
 import { RECEIPT_CONFIG } from "./receipt-config";
-import { getSuperPaleDefinition } from "./super-pale";
+import {
+  getSuperPaleDefinition,
+  superPaleReceiptTitle,
+} from "./super-pale";
 import { formatTime12 } from "./utils";
-
-function superPaleDisplayName(codeOrName?: string | null) {
-  if (!codeOrName) return "";
-  return getSuperPaleDefinition(codeOrName)?.name ?? codeOrName;
-}
 
 export type ReceiptItem = {
   betType: string;
@@ -19,6 +17,7 @@ export type ReceiptItem = {
 
 export type ReceiptData = {
   ticketNumber: string;
+  internalTicketCode?: string | null;
   verificationCode: string;
   createdAt: string | Date;
   totalAmount: number;
@@ -27,6 +26,7 @@ export type ReceiptData = {
   status?: "ACTIVE" | "CANCELLED" | "COPY" | "CANCELED";
   paymentMethod?: "WALLET" | "CASH";
   playerName?: string;
+  businessName?: string;
   items: ReceiptItem[];
 };
 
@@ -60,11 +60,27 @@ export type LotteryBetGroup = {
   bets: LotteryBetLine[];
 };
 
-const W = RECEIPT_CONFIG.thermalWidth;
+export type ReceiptDisplayLine =
+  | { type: "brand"; text: string }
+  | { type: "status"; text: string }
+  | { type: "datetime"; text: string }
+  | { type: "ticket-hero"; text: string }
+  | { type: "meta"; label: string; value: string }
+  | { type: "hash"; text: string }
+  | { type: "divider" }
+  | { type: "lottery"; title: string; subtotal: string }
+  | { type: "col-header" }
+  | {
+      type: "bet-row";
+      left: { play: string; amount: string };
+      right?: { play: string; amount: string };
+    }
+  | { type: "total"; amount: string }
+  | { type: "balance"; before: string; after: string }
+  | { type: "prizes"; text: string }
+  | { type: "footer"; text: string };
 
-/** Jerarquía visual del recibo (80mm POS) */
-const DIV_L1 = "="; // Nivel 1: empresa, ticket, cierre
-const DIV_L2 = "-"; // Nivel 2: lotería
+const W = RECEIPT_CONFIG.thermalWidth;
 
 const BET_HIERARCHY: Record<string, number> = {
   QUINIELA: 1,
@@ -73,22 +89,14 @@ const BET_HIERARCHY: Record<string, number> = {
   SUPER_PALE: 4,
 };
 
-const BET_SHORT: Record<string, string> = {
-  QUINIELA: "Q",
-  PALE: "P",
-  TRIPLETA: "T",
-  SUPER_PALE: "SP",
-};
-
 function amountPlain(n: number) {
   return n.toFixed(2);
 }
 
 function amountReceipt(n: number) {
-  return `$${amountPlain(n)}`;
+  return amountPlain(n);
 }
 
-/** Línea centrada de exactamente W caracteres */
 function lineCenter(text: string): string {
   const t = text.length > W ? text.slice(0, W) : text;
   const pad = W - t.length;
@@ -96,22 +104,12 @@ function lineCenter(text: string): string {
   return " ".repeat(left) + t + " ".repeat(pad - left);
 }
 
-/** Línea izquierda, máximo W caracteres */
 function lineLeft(text: string): string {
   return text.length > W ? text.slice(0, W) : text;
 }
 
-/** Dos columnas: izquierda + derecha al borde W */
-function lineCols(left: string, right: string): string {
-  const r = right.length > 10 ? right.slice(0, 10) : right;
-  const maxLeft = W - r.length - 1;
-  const l = left.length > maxLeft ? left.slice(0, maxLeft) : left;
-  const gap = W - l.length - r.length;
-  return l + " ".repeat(Math.max(1, gap)) + r;
-}
-
-function lineDivider(char: string = DIV_L1) {
-  return char.repeat(W);
+function lineDivider(): string {
+  return "=".repeat(W);
 }
 
 function parseTime24(time: string): number {
@@ -136,220 +134,67 @@ function sortBetsByHierarchy(bets: LotteryBetLine[]): LotteryBetLine[] {
   });
 }
 
-/**
- * Títulos cortos para recibo 80mm (máx ~22 chars por línea centrada).
- * Basado en tickets POS dominicanos: nombre de marca + horario, sin "Quiniela".
- */
-function shortLotteryReceiptTitle(name: string): string[] {
+function shortLotteryReceiptTitle(name: string): string {
   const n = name.toUpperCase().trim();
 
-  const rules: [RegExp, string | string[]][] = [
+  if (/SUPER\s*PAL/.test(n)) {
+    return superPaleReceiptTitle(name);
+  }
+  const spDef = getSuperPaleDefinition(name);
+  if (spDef) {
+    return superPaleReceiptTitle(spDef.code);
+  }
+
+  const rules: [RegExp, string][] = [
     [/LOTEKA/, "LOTEKA"],
     [/LEIDSA/, "LEIDSA"],
     [/GANA\s*M[AÁ]S/, "GANA MAS"],
     [/NACIONAL.*NOCHE/, "NACIONAL NOCHE"],
     [/NACIONAL.*TARDE/, "NACIONAL TARDE"],
     [/NACIONAL/, "NACIONAL"],
-    [/PRIMERA.*NOCHE/, ["LA PRIMERA", "NOCHE"]],
-    [/PRIMERA.*D[IÍ]A/, ["LA PRIMERA", "DIA"]],
+    [/PRIMERA.*NOCHE/, "LA PRIMERA NOCHE"],
+    [/PRIMERA.*D[IÍ]A/, "LA PRIMERA DIA"],
     [/PRIMERA/, "LA PRIMERA"],
-    [/NEW YORK.*NOCHE|NY.*PM/, ["NEW YORK", "NOCHE"]],
-    [/NEW YORK.*TARDE|NY.*AM/, ["NEW YORK", "TARDE"]],
-    [/FLORIDA.*NOCHE/, ["FLORIDA", "NOCHE"]],
-    [/FLORIDA.*D[IÍ]A/, ["FLORIDA", "DIA"]],
+    [/NEW JERSEY.*NOCHE|NEW JERSEY.*PM|NJ.*PM/, "NEW JERSEY PM"],
+    [/NEW JERSEY.*TARDE|NEW JERSEY.*AM|NJ.*AM/, "NEW JERSEY AM"],
+    [/NEW YORK.*NOCHE|NEW YORK.*PM/, "NEW YORK PM"],
+    [/NEW YORK.*TARDE|NEW YORK.*AM/, "NEW YORK AM"],
+    [/NEW YORK/, "NEW YORK"],
+    [/FLORIDA.*NOCHE|FL.*PM/, "FLORIDA PM"],
+    [/FLORIDA.*D[IÍ]A|FL.*AM/, "FLORIDA AM"],
     [/REAL/, "QUINIELA REAL"],
     [/LOTEDOM|LOTE DOM/, "LOTEDOM"],
-    [/SUERTE.*(18|6:00|6PM)/, ["LA SUERTE", "6:00 PM"]],
-    [/SUERTE.*(12|12:30)/, ["LA SUERTE", "12:30 PM"]],
+    [/SUERTE.*(18|6:00|6PM)/, "LA SUERTE 6PM"],
+    [/SUERTE.*(12|12:30)/, "LA SUERTE 12PM"],
     [/SUERTE/, "LA SUERTE"],
-    [/KING.*(7|7:30)/, ["KING LOTTERY", "7:30 PM"]],
-    [/KING.*(12|12:30)/, ["KING LOTTERY", "12:30 PM"]],
+    [/KING.*(7|7:30)/, "KING 7:30 PM"],
+    [/KING.*(12|12:30)/, "KING 12:30 PM"],
     [/KING/, "KING LOTTERY"],
-    [/ANGUILA.*10/, ["ANGUILA", "10:00 AM"]],
-    [/ANGUILA.*1(?!0)/, ["ANGUILA", "1:00 PM"]],
-    [/ANGUILA.*6/, ["ANGUILA", "6:00 PM"]],
-    [/ANGUILA.*9/, ["ANGUILA", "9:00 PM"]],
+    [/ANGUILA.*10/, "ANGUILA 10AM"],
+    [/ANGUILA.*1(?!0)/, "ANGUILA 1 P.M"],
+    [/ANGUILA.*6/, "ANGUILA 6 P.M"],
+    [/ANGUILA.*9/, "ANGUILA 9 P.M"],
     [/ANGUILA/, "ANGUILA"],
   ];
 
   for (const [re, title] of rules) {
-    if (re.test(n)) {
-      return Array.isArray(title) ? title : [title];
-    }
+    if (re.test(n)) return title;
   }
 
-  const clean = n
-    .replace(/^QUINIELA\s+/i, "")
-    .replace(/^LA\s+/i, "LA ");
-  return wrapTitleWords(clean);
+  return n.replace(/^QUINIELA\s+/i, "").replace(/^LA\s+/i, "LA ").slice(0, 28);
 }
 
-/** Parte títulos largos en líneas de máx 22 caracteres */
-function wrapTitleWords(title: string): string[] {
-  const max = 22;
-  if (title.length <= max) return [title];
-
-  const words = title.split(/\s+/);
-  const lines: string[] = [];
-  let current = "";
-
-  for (const word of words) {
-    const next = current ? `${current} ${word}` : word;
-    if (next.length > max) {
-      if (current) lines.push(current);
-      current = word.length > max ? word.slice(0, max) : word;
-    } else {
-      current = next;
-    }
+function formatBetPlayLabel(bet: LotteryBetLine): string {
+  if (bet.betType === "QUINIELA") {
+    return bet.numbers.replace(/-/g, "");
   }
-  if (current) lines.push(current);
-  return lines.length ? lines : [title.slice(0, max)];
+  return bet.numbers;
 }
 
-/**
- * Bloque de título de lotería — todo centrado (estándar banca):
- * ──────
- *   NOMBRE
- *   MONTO
- *   FECHA / HORA
- * ──────
- */
-function lotteryTitleOneLine(name: string): string {
-  return shortLotteryReceiptTitle(name).join(" ");
-}
-
-/** Marcador para título de lotería (render HTML más grande en pantalla) */
-export function lotteryTitleMarker(title: string): string {
-  return `@LOT@${title}@`;
-}
-
-export function isLotteryTitleLine(line: string): string | null {
-  const m = line.match(/^@LOT@(.+)@$/);
-  return m ? m[1] : null;
-}
-
-/** Marcador para jugada + monto apostado (render destacado en pantalla) */
-export function betLineMarker(play: string, amount: number): string {
-  return `@BET@${play}|${amountReceipt(amount)}@`;
-}
-
-export function parseBetLine(
-  line: string
-): { play: string; amount: string } | null {
-  const m = line.match(/^@BET@(.+)\|(\$[\d.]+)@$/);
-  return m ? { play: m[1], amount: m[2] } : null;
-}
-
-function formatLotteryBlockHeader(group: LotteryBetGroup): string[] {
-  const draw =
-    group.drawDate && group.drawTime
-      ? `${group.drawDate} ${group.drawTime}`
-      : group.drawDate || group.drawTime;
-
-  return [
-    lineDivider(DIV_L2),
-    lotteryTitleMarker(lotteryTitleOneLine(group.name)),
-    lineCenter(`${draw} · $${amountPlain(group.subtotal)}`),
-  ];
-}
-
-function formatLotteryBets(bets: LotteryBetLine[]): string[] {
-  const out: string[] = [lineCols("JUGADA", "JUGÓ")];
-  const sorted = sortBetsByHierarchy(bets);
-
-  for (const bet of sorted) {
-    const prefix = BET_SHORT[bet.betType] ?? bet.betType.slice(0, 2);
-    out.push(betLineMarker(`${prefix} ${bet.numbers}`, bet.amount));
-    if (bet.betType === "SUPER_PALE" && bet.superPaleName) {
-      out.push(lineLeft(`  ${superPaleDisplayName(bet.superPaleName)}`));
-    }
-  }
-
-  return out;
-}
-
-function formatSectionBusiness(cfg: typeof RECEIPT_CONFIG): string[] {
-  const meta = [cfg.tagline, cfg.branch].filter(Boolean).join(" · ");
-  return [
-    lineCenter(cfg.businessName),
-    ...(meta ? [lineCenter(meta)] : []),
-    ...(cfg.phone ? [lineCenter(cfg.phone)] : []),
-  ];
-}
-
-function formatSectionTicket(data: ReceiptData): string[] {
-  const saleDate = formatReceiptDate(data.createdAt);
-  const saleTime = formatReceiptTime(data.createdAt);
-  const out: string[] = [];
-
-  if (data.status === "COPY") {
-    out.push(lineCenter(`** COPIA **`));
-  } else if (data.status === "CANCELLED" || data.status === "CANCELED") {
-    out.push(lineCenter("* CANCELADO *"));
-  }
-
-  out.push(lineLeft(`Tck: ${data.ticketNumber}`));
-  out.push(lineLeft(`${saleDate} ${saleTime}`));
-  if (data.paymentMethod === "CASH") {
-    out.push(lineLeft("Pago: EFECTIVO"));
-  }
-  if (data.playerName) {
-    out.push(lineLeft(`Cli: ${data.playerName} · ${statusLabel(data.status)}`));
-  } else {
-    out.push(lineLeft(`Est: ${statusLabel(data.status)}`));
-  }
-  out.push(...wrapHash(formatVerificationDisplay(data.verificationCode)));
-  return out;
-}
-
-function formatSectionLotteries(groups: LotteryBetGroup[]): string[] {
-  const sorted = sortLotteriesByTime(groups);
-  const out: string[] = [];
-
-  for (const lot of sorted) {
-    out.push(...formatLotteryBlockHeader(lot));
-    out.push(...formatLotteryBets(lot.bets));
-  }
-
-  return out;
-}
-
-function formatSectionSummary(data: ReceiptData): string[] {
-  const out: string[] = [
-    lineDivider(DIV_L2),
-    lineCenter(`TOTAL: $${amountPlain(data.totalAmount)} · ${data.items.length} jug.`),
-  ];
-
-  if (data.balanceBefore != null && data.balanceAfter != null) {
-    out.push(
-      lineLeft(
-        `Bal: ${amountPlain(data.balanceBefore)} > ${amountPlain(data.balanceAfter)}`
-      )
-    );
-  } else if (data.balanceAfter != null) {
-    out.push(lineLeft(`Bal: ${amountPlain(data.balanceAfter)}`));
-  }
-
-  out.push(lineCenter("1st:$56 2nd:$12 3rd:$4 Pale:1300 Tri:$10k"));
-  return out;
-}
-
-function formatSectionFooter(cfg: typeof RECEIPT_CONFIG): string[] {
-  return [
-    lineDivider(DIV_L1),
-    lineCenter("NO TICKET, NO MONEY"),
-    lineCenter(cfg.footerLines[0]),
-    lineDivider(DIV_L1),
-  ];
-}
-
-function wrapHash(code: string): string[] {
-  if (code.length <= W) return [lineLeft(`Hash: ${code}`)];
-  const half = Math.ceil(code.length / 2);
-  return [
-    lineLeft(`Hash: ${code.slice(0, half)}`),
-    lineLeft(code.slice(half)),
-  ];
+function statusBanner(status?: ReceiptData["status"]): string | null {
+  if (status === "COPY") return "** COPIA **";
+  if (status === "CANCELLED" || status === "CANCELED") return "* CANCELADO *";
+  return "** ORIGINAL **";
 }
 
 export function validateReceiptData(data: ReceiptData): string | null {
@@ -410,9 +255,7 @@ export function statusLabel(status?: ReceiptData["status"]) {
 }
 
 export function formatVerificationDisplay(code: string): string {
-  const clean = code.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-  if (clean.length <= 12) return clean;
-  return `${clean.slice(0, 4)}-${clean.slice(4, 8)}-${clean.slice(8, 12)}`;
+  return code.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
 }
 
 export function groupReceiptBets(items: ReceiptItem[]): GroupedBet[] {
@@ -457,9 +300,17 @@ export function uniqueLotteries(items: ReceiptItem[]): LotteryEntry[] {
 export function groupReceiptByLottery(items: ReceiptItem[]): LotteryBetGroup[] {
   const map = new Map<string, LotteryBetGroup>();
   for (const item of items) {
-    if (!map.has(item.lotteryName)) {
-      map.set(item.lotteryName, {
-        name: item.lotteryName,
+    const isSuperPale = Boolean(item.superPaleName);
+    const groupKey = isSuperPale
+      ? `__sp__:${item.superPaleName}`
+      : item.lotteryName;
+    const displayName = isSuperPale
+      ? superPaleReceiptTitle(item.superPaleName)
+      : item.lotteryName;
+
+    if (!map.has(groupKey)) {
+      map.set(groupKey, {
+        name: displayName,
         drawTime: item.drawTime ? formatTime12(item.drawTime) : "",
         drawDate: formatDrawDateShort(item.drawDate),
         drawTime24: item.drawTime ?? "",
@@ -467,7 +318,7 @@ export function groupReceiptByLottery(items: ReceiptItem[]): LotteryBetGroup[] {
         bets: [],
       });
     }
-    const group = map.get(item.lotteryName)!;
+    const group = map.get(groupKey)!;
     group.subtotal += item.amount;
     group.bets.push({
       betType: item.betType,
@@ -479,36 +330,175 @@ export function groupReceiptByLottery(items: ReceiptItem[]): LotteryBetGroup[] {
   return [...map.values()];
 }
 
-function buildReceiptLines(data: ReceiptData): string[] {
+function lotteryBlockTitle(group: LotteryBetGroup): string {
+  const base = shortLotteryReceiptTitle(group.name);
+  if (group.drawTime && !base.toUpperCase().includes(group.drawTime.toUpperCase().replace(/\s/g, ""))) {
+    return `${base} ${group.drawTime}`.trim();
+  }
+  return base;
+}
+
+function pairBets(
+  bets: LotteryBetLine[]
+): { left: { play: string; amount: string }; right?: { play: string; amount: string } }[] {
+  const sorted = sortBetsByHierarchy(bets);
+  const rows: {
+    left: { play: string; amount: string };
+    right?: { play: string; amount: string };
+  }[] = [];
+
+  for (let i = 0; i < sorted.length; i += 2) {
+    const left = sorted[i];
+    const right = sorted[i + 1];
+    rows.push({
+      left: {
+        play: formatBetPlayLabel(left),
+        amount: amountReceipt(left.amount),
+      },
+      right: right
+        ? {
+            play: formatBetPlayLabel(right),
+            amount: amountReceipt(right.amount),
+          }
+        : undefined,
+    });
+  }
+
+  return rows;
+}
+
+export function buildReceiptDisplayLines(data: ReceiptData): ReceiptDisplayLine[] {
   const err = validateReceiptData(data);
   if (err) throw new Error(err);
 
-  const cfg = RECEIPT_CONFIG;
-  const lotteryGroups = groupReceiptByLottery(data.items);
+  const brand = data.businessName ?? RECEIPT_CONFIG.businessName;
+  const saleDate = formatReceiptDate(data.createdAt);
+  const saleTime = formatReceiptTime(data.createdAt);
+  const now = new Date();
+  const printStamp = `${formatReceiptDate(now)} ${formatReceiptTime(now)}`;
+  const hash = formatVerificationDisplay(data.verificationCode);
+  const groups = sortLotteriesByTime(groupReceiptByLottery(data.items));
 
-  return [
-    ...formatSectionBusiness(cfg),
-    ...formatSectionTicket(data),
-    ...formatSectionLotteries(lotteryGroups),
-    ...formatSectionSummary(data),
-    ...formatSectionFooter(cfg),
-  ];
+  const lines: ReceiptDisplayLine[] = [];
+
+  const banner = statusBanner(data.status);
+  if (banner) lines.push({ type: "status", text: banner });
+
+  lines.push({ type: "brand", text: brand });
+  lines.push({ type: "datetime", text: printStamp });
+  lines.push({ type: "ticket-hero", text: `TICKET: ${data.ticketNumber}` });
+  if (data.internalTicketCode && data.internalTicketCode !== data.ticketNumber) {
+    lines.push({
+      type: "meta",
+      label: "Código interno:",
+      value: data.internalTicketCode,
+    });
+  }
+  lines.push({ type: "meta", label: "Fecha:", value: `${saleDate} ${saleTime}` });
+  lines.push({ type: "hash", text: hash });
+
+  for (const group of groups) {
+    lines.push({ type: "divider" });
+    lines.push({
+      type: "lottery",
+      title: lotteryBlockTitle(group),
+      subtotal: amountPlain(group.subtotal),
+    });
+    lines.push({ type: "divider" });
+
+    const rows = pairBets(group.bets);
+    if (rows.length > 0) {
+      lines.push({ type: "col-header" });
+      for (const row of rows) {
+        lines.push({ type: "bet-row", ...row });
+      }
+    }
+  }
+
+  lines.push({ type: "total", amount: amountPlain(data.totalAmount) });
+
+  if (data.balanceBefore != null && data.balanceAfter != null) {
+    lines.push({
+      type: "balance",
+      before: amountPlain(data.balanceBefore),
+      after: amountPlain(data.balanceAfter),
+    });
+  }
+
+  lines.push({ type: "prizes", text: RECEIPT_CONFIG.prizeFooter });
+  lines.push({ type: "footer", text: "NO TIKET, NO MONEY" });
+
+  return lines;
 }
 
-function plainReceiptLine(line: string): string {
-  const title = isLotteryTitleLine(line);
-  if (title) return lineCenter(title);
-  const bet = parseBetLine(line);
-  if (bet) return lineCols(bet.play, bet.amount);
-  return line;
+function displayLineToPlain(line: ReceiptDisplayLine): string[] {
+  switch (line.type) {
+    case "brand":
+      return [lineCenter(line.text)];
+    case "status":
+    case "datetime":
+    case "footer":
+      return [lineCenter(line.text)];
+    case "ticket-hero":
+      return [lineCenter(line.text)];
+    case "meta":
+      return [lineLeft(`${line.label} ${line.value}`)];
+    case "hash":
+      return line.text.length > W
+        ? [lineLeft(line.text.slice(0, W)), lineLeft(line.text.slice(W))]
+        : [lineLeft(line.text)];
+    case "divider":
+      return [lineDivider()];
+    case "lottery":
+      return [lineCenter(`${line.title}: ${line.subtotal}`)];
+    case "col-header":
+      return [lineLeft("JUGADA  MONTO   JUGADA  MONTO")];
+    case "bet-row": {
+      const l = `${line.left.play} ${line.left.amount}`.padEnd(21);
+      const r = line.right ? `${line.right.play} ${line.right.amount}` : "";
+      return [lineLeft(`${l}${r}`.trimEnd())];
+    }
+    case "total":
+      return [lineCenter(`-- TOTAL: ${line.amount} --`)];
+    case "balance":
+      return [lineLeft(`Bal ${line.before} > ${line.after}`)];
+    case "prizes":
+      return [lineCenter(line.text)];
+    default:
+      return [];
+  }
 }
 
 export function formatThermalReceipt(data: ReceiptData): string {
-  return buildReceiptLines(data).map(plainReceiptLine).join("\n");
+  return buildReceiptDisplayLines(data)
+    .flatMap((l) => displayLineToPlain(l))
+    .join("\n");
 }
 
 export function buildReceiptLinesForDisplay(data: ReceiptData): string[] {
-  return buildReceiptLines(data);
+  return buildReceiptDisplayLines(data).flatMap((l) => displayLineToPlain(l));
+}
+
+/** @deprecated Marcadores legacy — mantener por compatibilidad interna */
+export function lotteryTitleMarker(title: string): string {
+  return `@LOT@${title}@`;
+}
+
+export function isLotteryTitleLine(line: string): string | null {
+  const m = line.match(/^@LOT@(.+)@$/);
+  return m ? m[1] : null;
+}
+
+export function betLineMarker(play: string, amount: string | number): string {
+  const a = typeof amount === "number" ? amountReceipt(amount) : amount;
+  return `@BET@${play}|$${a}@`;
+}
+
+export function parseBetLine(
+  line: string
+): { play: string; amount: string } | null {
+  const m = line.match(/^@BET@(.+)\|(\$?[\d.]+)@$/);
+  return m ? { play: m[1], amount: m[2].startsWith("$") ? m[2] : `$${m[2]}` } : null;
 }
 
 export function formatFullTicketReceipt(
@@ -529,6 +519,7 @@ export function formatFullTicketReceipt(
     balanceAfter?: number;
     status?: ReceiptData["status"];
     playerName?: string;
+    businessName?: string;
   }
 ): string {
   return formatThermalReceipt({
@@ -540,6 +531,7 @@ export function formatFullTicketReceipt(
     balanceAfter: meta.balanceAfter,
     status: meta.status,
     playerName: meta.playerName,
+    businessName: meta.businessName,
     items: items.map((i) => ({
       betType: i.betType ?? "QUINIELA",
       numbers: i.numbers,

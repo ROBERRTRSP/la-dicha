@@ -195,6 +195,62 @@ export async function syncRecentResults(days = 7): Promise<SyncResult[]> {
   return all;
 }
 
+/** Solo sorteos que ya debieron salir y aún no tienen resultado oficial. */
+export async function syncPendingResultsForDay(day: Date): Promise<SyncResult[]> {
+  await ensureDrawsForDay(day);
+  const now = nowInTz();
+  const dayStart = dayStartInTz(day);
+
+  const draws = await prisma.draw.findMany({
+    where: {
+      drawDate: {
+        gte: new Date(dayStart.getTime() - 12 * 60 * 60 * 1000),
+        lte: new Date(dayStart.getTime() + 36 * 60 * 60 * 1000),
+      },
+      lottery: { active: true },
+    },
+    include: { lottery: true, result: true },
+  });
+
+  const pendingCodes = new Set<string>();
+  for (const draw of draws) {
+    if (dateKeyInTz(draw.drawDate) !== dateKeyInTz(day)) continue;
+    if (draw.result?.source === "OFFICIAL" || draw.result?.source === "MANUAL") {
+      continue;
+    }
+    const drawAt = drawInstantInTz(draw.drawTime, day);
+    const readyAt = addMinutes(drawAt, SYNC_DELAY_MINUTES);
+    if (now >= readyAt) {
+      pendingCodes.add(draw.lottery.code);
+    }
+  }
+
+  if (pendingCodes.size === 0) return [];
+
+  clearAlternateSourceCache();
+  return mapInBatches([...pendingCodes], 4, (code) =>
+    syncLotteryResultForDay(code, day)
+  );
+}
+
+/** Sincronización en vivo: hoy (+ ayer si daysBack >= 1). */
+export async function syncPendingResults(daysBack = 1): Promise<SyncResult[]> {
+  const now = nowInTz();
+  const all: SyncResult[] = [];
+  for (let i = 0; i <= daysBack; i++) {
+    const day = dayStartInTz(subDays(now, i));
+    const dayResults = await syncPendingResultsForDay(day);
+    all.push(...dayResults);
+  }
+  return all;
+}
+
+export function countFreshResults(results: SyncResult[]) {
+  return results.filter(
+    (r) => r.status === "applied" || r.status === "settled"
+  ).length;
+}
+
 type DrawWithOptionalResult = {
   id: string;
   lotteryId: string;

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BrandHeader } from "@/components/player/BrandHeader";
+import { RouletteConfirmModal } from "@/components/roulette/RouletteConfirmModal";
 import { RouletteWheel } from "@/components/roulette/RouletteWheel";
 import { RouletteResultBadge } from "@/components/roulette/RouletteResultBadge";
 import {
@@ -11,6 +12,17 @@ import {
   numberColor,
   type RouletteBetType,
 } from "@/lib/roulette";
+import {
+  clearSpinRecovery,
+  consumeSpinRecovery,
+  saveSpinRecovery,
+} from "@/lib/roulette-recovery";
+import {
+  ROULETTE_ALLOWED_AMOUNTS,
+  ROULETTE_AMOUNT_ERROR,
+  filterAllowedAmountsForBalance,
+  isAllowedRouletteAmount,
+} from "@/lib/roulette-validation";
 import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +36,23 @@ type HistoryItem = {
   profit: number;
   result: string;
   createdAt: string;
+};
+
+type RewardItem = {
+  id: string;
+  rewardType: string;
+  amount: number;
+  reason: string;
+  source: string;
+  paidAt: string;
+};
+
+const REWARD_TYPE_LABELS: Record<string, string> = {
+  CASHBACK: "Cashback",
+  ACTIVE_PLAYER_BONUS: "Bono del pozo",
+  MISSION: "Misión",
+  JACKPOT: "Premio comunitario",
+  FREE_SPIN: "Giro gratis",
 };
 
 type SelectedBet = {
@@ -47,8 +76,6 @@ const OUTSIDE_BETS: RouletteBetType[] = [
   "COLUMN_2",
   "COLUMN_3",
 ];
-
-const AMOUNTS = [1, 2, 3, 4, 5];
 
 function resultColor(c: string): "red" | "black" | "green" {
   if (c === "red" || c === "black" || c === "green") return c;
@@ -84,17 +111,27 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
     promoMessage?: string | null;
   } | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [rewards, setRewards] = useState<RewardItem[]>([]);
+  const [totalReceived, setTotalReceived] = useState(0);
   const [error, setError] = useState("");
+  const [errorSticky, setErrorSticky] = useState(false);
+  const [betsValid, setBetsValid] = useState(true);
   const [infoMessage, setInfoMessage] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [spinRequesting, setSpinRequesting] = useState(false);
   const [promoBanner, setPromoBanner] = useState<string | null>(null);
   const [active, setActive] = useState(true);
+  const [closedReason, setClosedReason] = useState<string | null>(null);
+  const [dailyHours, setDailyHours] = useState<{
+    openTime: string;
+    closeLabel: string;
+  } | null>(null);
   const [limits, setLimits] = useState({
     minBet: 1,
-    maxBet: 100,
-    maxStraightBet: 20,
-    maxOutsideBet: 50,
+    maxBet: 5,
+    maxStraightBet: 5,
+    maxOutsideBet: 5,
   });
-  const [dailyLimitReached, setDailyLimitReached] = useState(false);
   const [lastPlayedBets, setLastPlayedBets] = useState<SelectedBet[]>([]);
   const [pendingResult, setPendingResult] = useState<{
     winningNumber: number;
@@ -107,17 +144,35 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
   } | null>(null);
 
   const amountOptions = useMemo(
-    () =>
-      AMOUNTS.filter(
-        (a) => a >= limits.minBet && a <= limits.maxBet
-      ),
-    [limits.minBet, limits.maxBet]
+    () => filterAllowedAmountsForBalance(balance),
+    [balance]
   );
+
+  useEffect(() => {
+    if (amountOptions.length === 0) return;
+    if (!amountOptions.includes(amount)) {
+      setAmount(amountOptions[amountOptions.length - 1] ?? 1);
+    }
+  }, [amountOptions, amount]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLElement>(null);
   const resultTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingResultRef = useRef(pendingResult);
+  const spinLockedRef = useRef(false);
+  const spinIdempotencyRef = useRef<string | null>(null);
+
+  function newSpinIdempotencyKey() {
+    if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+      return crypto.randomUUID();
+    }
+    return `spin-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+  }
+
+  function showError(message: string, sticky = false) {
+    setError(message);
+    setErrorSticky(sticky);
+  }
 
   useEffect(() => {
     pendingResultRef.current = pendingResult;
@@ -144,6 +199,8 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
       if (res.ok) {
         const data = await res.json();
         setHistory(data.history ?? []);
+        setRewards(data.rewards ?? []);
+        setTotalReceived(data.totalReceived ?? 0);
       }
     } catch {
       /* ignore */
@@ -151,31 +208,90 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
   }, []);
 
   useEffect(() => {
-    loadHistory();
+    const recovered = consumeSpinRecovery();
+    if (recovered) {
+      setBalance(recovered.balanceAfter);
+      setInfoMessage(
+        `Giro registrado: salió el ${recovered.winningNumber}${
+          recovered.anyWon
+            ? ` · premio ${formatMoney(recovered.totalPayout)}`
+            : ""
+        }. Saldo actualizado.`
+      );
+      void loadHistory();
+    }
+  }, [loadHistory]);
+
+  const refreshStatus = useCallback(() => {
     fetch("/api/roulette/status")
       .then((r) => r.json())
       .then((d) => {
         setActive(d.active !== false);
+        setClosedReason(d.closedReason ?? null);
+        if (d.daily) {
+          setDailyHours({
+            openTime: d.daily.openTime,
+            closeLabel: d.daily.closeLabel,
+          });
+        }
         if (d.limits) setLimits(d.limits);
         if (d.promotions?.banner) setPromoBanner(d.promotions.banner);
         if (typeof d.balance === "number") setBalance(d.balance);
         if (d.promoCreditMessage) setInfoMessage(d.promoCreditMessage);
-        setDailyLimitReached(d.dailyLimitReached === true);
       })
       .catch(() => {});
-  }, [loadHistory]);
+  }, []);
 
   useEffect(() => {
-    if (!error) return;
+    loadHistory();
+    refreshStatus();
+  }, [loadHistory, refreshStatus]);
+
+  useEffect(() => {
+    if (!error || errorSticky) return;
     const t = setTimeout(() => setError(""), 5000);
     return () => clearTimeout(t);
-  }, [error]);
+  }, [error, errorSticky]);
 
   useEffect(() => {
     if (!infoMessage) return;
     const t = setTimeout(() => setInfoMessage(""), 6000);
     return () => clearTimeout(t);
   }, [infoMessage]);
+
+  useEffect(() => {
+    setSelectedBets((prev) =>
+      prev.length ? prev.map((b) => ({ ...b, amount })) : prev
+    );
+  }, [amount]);
+
+  /** Validación en vivo antes de girar (montos 1–5 y saldo). */
+  useEffect(() => {
+    if (spinning || selectedBets.length === 0) {
+      setBetsValid(true);
+      if (!errorSticky) setError("");
+      return;
+    }
+
+    const stake = selectedBets.reduce((sum, b) => sum + b.amount, 0);
+    const amountsOk = selectedBets.every((b) => isAllowedRouletteAmount(b.amount));
+
+    if (!amountsOk) {
+      setBetsValid(false);
+      showError(ROULETTE_AMOUNT_ERROR, true);
+      return;
+    }
+
+    if (stake > balance) {
+      setBetsValid(false);
+      showError("Saldo insuficiente para estas apuestas.", true);
+      return;
+    }
+
+    setBetsValid(true);
+    setError("");
+    setErrorSticky(false);
+  }, [selectedBets, spinning, balance]);
 
   useEffect(() => {
     return () => {
@@ -218,7 +334,7 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
   function repeatLastBets() {
     if (spinning || showingResult || lastPlayedBets.length === 0) return;
     if (lastPlayedStake > balance) {
-      setError("Saldo insuficiente para repetir la jugada.");
+      showError("Saldo insuficiente para repetir la jugada.", true);
       return;
     }
     setSelectedBets(lastPlayedBets.map((b) => ({ ...b })));
@@ -227,9 +343,10 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
   }
 
   function canSpin() {
-    if (!active || spinning || dailyLimitReached) return false;
+    if (!active || spinning || spinRequesting || showingResult) return false;
     if (selectedBets.length === 0) return false;
     if (totalStake <= 0 || totalStake > balance) return false;
+    if (!betsValid) return false;
     return true;
   }
 
@@ -250,29 +367,49 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
       }
       setSelectedBets([]);
       loadHistory();
-      setDailyLimitReached(false);
+      refreshStatus();
     }
     setSpinning(false);
     setShowingResult(true);
     setPendingResult(null);
+    spinLockedRef.current = false;
+    spinIdempotencyRef.current = null;
+    setSpinRequesting(false);
+    clearSpinRecovery();
 
     resultTimerRef.current = setTimeout(() => {
       setShowingResult(false);
       setLastResult(null);
       resultTimerRef.current = null;
     }, 3800);
-  }, [loadHistory]);
+  }, [loadHistory, refreshStatus]);
 
-  async function handleSpin() {
-    if (spinning) return;
+  function requestSpin() {
+    if (spinning || spinRequesting || spinLockedRef.current) return;
     setError("");
+    setErrorSticky(false);
     if (selectedBets.length === 0) {
-      setError("Selecciona al menos una apuesta.");
+      showError("Selecciona al menos una apuesta.");
       return;
     }
     if (totalStake > balance) {
-      setError("Saldo insuficiente.");
+      showError("Saldo insuficiente para estas apuestas.", true);
       return;
+    }
+    setConfirmOpen(true);
+  }
+
+  async function executeSpin() {
+    if (spinning || spinRequesting || spinLockedRef.current) return;
+
+    spinLockedRef.current = true;
+    setSpinRequesting(true);
+    setConfirmOpen(false);
+    setError("");
+    setErrorSticky(false);
+
+    if (!spinIdempotencyRef.current) {
+      spinIdempotencyRef.current = newSpinIdempotencyKey();
     }
 
     const betsToPlay = selectedBets.map((b) => ({ ...b }));
@@ -292,14 +429,21 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
       });
       const val = await valRes.json();
       if (!val.ok) {
-        setError(val.message ?? "No se puede jugar esta apuesta.");
-        if (val.message?.includes("tope de premios")) {
-          setDailyLimitReached(true);
-        }
+        showError(val.message ?? "No se puede jugar esta apuesta.", true);
+        if (typeof val.balance === "number") setBalance(val.balance);
+        spinLockedRef.current = false;
+        spinIdempotencyRef.current = null;
+        setSpinRequesting(false);
         return;
       }
     } catch {
-      setError("No se pudo validar la apuesta. Intenta de nuevo.");
+      showError(
+        "No se pudo validar la apuesta. Revisa tu conexión e intenta de nuevo.",
+        true
+      );
+      spinLockedRef.current = false;
+      spinIdempotencyRef.current = null;
+      setSpinRequesting(false);
       return;
     }
 
@@ -317,10 +461,20 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
       const res = await fetch("/api/roulette/spin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bets: betPayload }),
+        body: JSON.stringify({
+          bets: betPayload,
+          idempotencyKey: spinIdempotencyRef.current,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Error al girar.");
+
+      saveSpinRecovery({
+        balanceAfter: data.balanceAfter,
+        winningNumber: data.winningNumber,
+        anyWon: data.anyWon,
+        totalPayout: data.totalPayout,
+      });
 
       const summary =
         data.betCount > 1
@@ -339,7 +493,20 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
       setTargetNumber(data.winningNumber);
     } catch (e) {
       setSpinning(false);
-      setError(e instanceof Error ? e.message : "Error al girar.");
+      spinLockedRef.current = false;
+      setSpinRequesting(false);
+      showError(
+        e instanceof Error
+          ? e.message
+          : "Error al girar. Si se descontó saldo, actualiza la página.",
+        true
+      );
+      void fetch("/api/roulette/status")
+        .then((r) => r.json())
+        .then((d) => {
+          if (typeof d.balance === "number") setBalance(d.balance);
+        })
+        .catch(() => {});
     }
   }
 
@@ -349,18 +516,20 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
 
       {!active && (
         <p className="roulette-disabled-banner">
-          La Ruleta está desactivada por el administrador.
+          {closedReason ?? "La Ruleta está desactivada por el administrador."}
         </p>
       )}
 
-      {dailyLimitReached && active && (
-        <p className="roulette-limit-banner">
-          Llegaste al tope de premios de hoy. Vuelve mañana para seguir jugando.
-        </p>
-      )}
-
-      {promoBanner && active && !spinView && !dailyLimitReached && (
+      {promoBanner && active && !spinView && (
         <p className="roulette-promo-banner">{promoBanner}</p>
+      )}
+
+      {active && !spinView && (
+        <p className="roulette-fair-play">
+          Ruleta europea (0–36) · cierre diario{" "}
+          {dailyHours?.closeLabel ?? "11:45 PM"} · juega con tu saldo (
+          {formatMoney(balance)})
+        </p>
       )}
 
       <div className="roulette-scroll" ref={scrollRef}>
@@ -401,12 +570,29 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
         </section>
         )}
 
-        {!spinView && (
+        {!spinView && !active && (
+          <section className="roulette-closed-card">
+            <p className="roulette-closed-title">Ruleta no disponible</p>
+            <p className="roulette-closed-text">
+              {closedReason ??
+                "La ruleta está cerrada en este momento. Vuelve dentro del horario de juego."}
+            </p>
+            {dailyHours && (
+              <p className="roulette-closed-hint">
+                Horario de juego diario: {dailyHours.openTime} –{" "}
+                {dailyHours.closeLabel}
+              </p>
+            )}
+          </section>
+        )}
+
+        {!spinView && active && (
         <section className="roulette-bets roulette-bets--enter">
           <div className="roulette-amount-panel">
             <p className="roulette-section-label">Monto por apuesta</p>
             <p className="roulette-amount-hint">
-              Elige un monto y toca las jugadas que quieras. Puedes combinar varias.
+              Hasta {formatMoney(5)} por casilla. Puedes combinar varias en un mismo giro
+              (ej.: número 7 con $3 y rojo con $2).
             </p>
             <div className="roulette-amounts">
               {amountOptions.map((a) => (
@@ -476,11 +662,26 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
             ))}
           </div>
 
+          {selectedBets.length > 0 && totalStake > balance && (
+            <p className="roulette-balance-warning" role="alert">
+              Saldo insuficiente. Necesitas {formatMoney(totalStake - balance)}{" "}
+              más.
+            </p>
+          )}
+
+          {selectedBets.length > 0 && !betsValid && error && (
+            <p className="roulette-balance-warning" role="alert">
+              {error}
+            </p>
+          )}
+
           <div className="roulette-actions">
             <button
               type="button"
               className="roulette-repeat-btn"
-              disabled={spinning || lastPlayedBets.length === 0}
+              disabled={
+                spinning || spinRequesting || lastPlayedBets.length === 0
+              }
               onClick={repeatLastBets}
             >
               Repetir jugada
@@ -489,11 +690,11 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
               type="button"
               className="roulette-spin-btn"
               disabled={!canSpin()}
-              onClick={handleSpin}
+              onClick={requestSpin}
             >
-              {spinning
+              {spinning || spinRequesting
                 ? "Girando…"
-                : selectedBets.length > 1
+                : selectedBets.length > 0
                   ? `Girar · ${formatMoney(totalStake)}`
                   : "Girar"}
             </button>
@@ -572,11 +773,64 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
           )}
         </section>
         )}
+
+        {!spinView && rewards.length > 0 && (
+        <section className="roulette-history roulette-rewards-list">
+          <p className="roulette-section-label">
+            Premios recibidos · Total {formatMoney(totalReceived)}
+          </p>
+          <ul className="roulette-rewards-items">
+            {rewards.map((r) => (
+              <li key={r.id} className="roulette-reward-item">
+                <span className="roulette-reward-type">
+                  {REWARD_TYPE_LABELS[r.rewardType] ?? r.rewardType}
+                </span>
+                <span className="roulette-reward-amount">
+                  +{formatMoney(r.amount)}
+                </span>
+                <span className="roulette-reward-reason">{r.reason}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="roulette-reward-note">
+            Los premios salen del pozo promocional, no alteran el resultado de la
+            ruleta.
+          </p>
+        </section>
+        )}
       </div>
 
-      {error && <div className="play-toast play-toast--error">{error}</div>}
+      <RouletteConfirmModal
+        open={confirmOpen}
+        bets={selectedBets}
+        totalStake={totalStake}
+        balanceBefore={balance}
+        loading={spinRequesting}
+        onConfirm={() => void executeSpin()}
+        onClose={() => setConfirmOpen(false)}
+      />
+
+      {error && (
+        <div className="play-toast play-toast--error" role="alert">
+          {error}
+          {errorSticky && (
+            <button
+              type="button"
+              className="play-toast-dismiss"
+              onClick={() => {
+                setError("");
+                setErrorSticky(false);
+              }}
+            >
+              Entendido
+            </button>
+          )}
+        </div>
+      )}
       {infoMessage && !error && (
-        <div className="play-toast play-toast--info">{infoMessage}</div>
+        <div className="play-toast play-toast--info" role="status">
+          {infoMessage}
+        </div>
       )}
     </div>
   );

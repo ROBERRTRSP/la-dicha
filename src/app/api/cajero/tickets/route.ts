@@ -5,6 +5,7 @@ import {
   getPendingWinnerTickets,
   lookupTicketForCajero,
 } from "@/lib/cajero-service";
+import { recordBancaPrizePaid } from "@/lib/banca-session";
 import { payLotteryTicketPrize } from "@/lib/tickets";
 
 export async function GET(request: Request) {
@@ -40,10 +41,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Ticket requerido." }, { status: 400 });
     }
 
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: String(ticketId) },
+      select: { ticketNumber: true, paymentMethod: true },
+    });
+
     const result = await payLotteryTicketPrize(
       String(ticketId),
       `cajero ${cajero.fullName}`
     );
+
+    if (ticket?.paymentMethod === "CASH") {
+      await recordBancaPrizePaid(
+        cajero.id,
+        result.prize,
+        ticket.ticketNumber
+      );
+    }
+
     return NextResponse.json(result);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Error al cobrar.";

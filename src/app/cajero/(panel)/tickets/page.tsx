@@ -1,6 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { CajeroQrScannerModal } from "@/components/cajero/CajeroQrScannerModal";
+import { fetchCajeroTicketLookup } from "@/lib/cajero-ticket-lookup-client";
+import { parseTicketQrPayload, ticketQrSearchQueries } from "@/lib/ticket-codes";
 import { formatMoney } from "@/lib/utils";
 
 type TicketDetail = {
@@ -21,6 +25,8 @@ type TicketDetail = {
 };
 
 export default function CajeroTicketsPage() {
+  const searchParams = useSearchParams();
+  const pendingRef = useRef<HTMLDivElement>(null);
   const [pending, setPending] = useState<TicketDetail[]>([]);
   const [loadingPending, setLoadingPending] = useState(true);
   const [q, setQ] = useState("");
@@ -28,6 +34,25 @@ export default function CajeroTicketsPage() {
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
   const [collecting, setCollecting] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+
+  const lookupByQuery = useCallback(async (query: string) => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    setError("");
+    setTicket(null);
+    setMsg("");
+
+    const result = await fetchCajeroTicketLookup<{ ticket: TicketDetail }>(
+      trimmed
+    );
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setQ(result.data.ticket.ticketNumber);
+    setTicket(result.data.ticket);
+  }, []);
 
   const loadPending = useCallback(async () => {
     setLoadingPending(true);
@@ -46,19 +71,35 @@ export default function CajeroTicketsPage() {
     loadPending();
   }, [loadPending]);
 
+  useEffect(() => {
+    if (searchParams.get("focus") !== "pending") return;
+    const t = setTimeout(() => {
+      pendingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 200);
+    return () => clearTimeout(t);
+  }, [searchParams, loadingPending, pending.length]);
+
+  useEffect(() => {
+    const initialQ = searchParams.get("q")?.trim();
+    if (!initialQ) return;
+    void lookupByQuery(initialQ);
+  }, [searchParams, lookupByQuery]);
+
   async function lookup(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
-    setTicket(null);
-    setMsg("");
-    const res = await fetch(`/api/cajero/tickets?q=${encodeURIComponent(q)}`);
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error ?? "No encontrado");
-      return;
-    }
-    setTicket(data.ticket);
+    await lookupByQuery(q);
   }
+
+  const handleQrScan = useCallback(
+    (raw: string) => {
+      setQrOpen(false);
+      const parsed = parseTicketQrPayload(raw);
+      const queries = parsed ? ticketQrSearchQueries(parsed) : [raw];
+      if (queries[0]) setQ(queries[0]);
+      void lookupByQuery(raw);
+    },
+    [lookupByQuery]
+  );
 
   function selectTicket(t: TicketDetail) {
     setTicket(t);
@@ -100,7 +141,9 @@ export default function CajeroTicketsPage() {
         Datos del jugador ocultos por privacidad.
       </p>
 
-      <h2 className="admin-subtitle">Premios pendientes de pago</h2>
+      <h2 className="admin-subtitle" ref={pendingRef}>
+        Premios pendientes de pago
+      </h2>
       {loadingPending ? (
         <p className="admin-loading">Cargando…</p>
       ) : pending.length === 0 ? (
@@ -155,11 +198,25 @@ export default function CajeroTicketsPage() {
           onChange={(e) => setQ(e.target.value)}
           placeholder="Número de ticket o código"
           className="staff-search-input"
+          autoComplete="off"
         />
+        <button
+          type="button"
+          className="staff-qr-scan-btn"
+          onClick={() => setQrOpen(true)}
+        >
+          Leer QR
+        </button>
         <button type="submit" className="admin-save-btn">
           Buscar
         </button>
       </form>
+
+      <CajeroQrScannerModal
+        open={qrOpen}
+        onClose={() => setQrOpen(false)}
+        onScan={handleQrScan}
+      />
 
       {error && <p className="staff-error">{error}</p>}
 

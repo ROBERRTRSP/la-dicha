@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { getAuthSecret } from "@/lib/auth-secret";
 
-const SECRET = new TextEncoder().encode(
-  process.env.AUTH_SECRET ?? "la-dicha-dev-secret"
-);
+const SECRET = getAuthSecret();
 
 type Session = { userId: string; role: string };
 

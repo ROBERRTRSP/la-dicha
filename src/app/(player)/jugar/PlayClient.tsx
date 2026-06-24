@@ -8,6 +8,7 @@ import { ART } from "@/lib/visual-assets";
 import { CompactPlayPad } from "@/components/player/CompactPlayPad";
 import { PlayBetsPanel } from "@/components/player/PlayBetsPanel";
 import { LotteryStrip } from "@/components/player/LotteryStrip";
+import { RouletteAccess } from "@/components/player/RouletteAccess";
 import { ConfirmModal } from "@/components/player/ConfirmModal";
 import { TicketSuccess } from "@/components/player/TicketSuccess";
 import {
@@ -19,6 +20,13 @@ import { formatMoney } from "@/lib/utils";
 import type { OpenDrawView } from "@/lib/draws";
 import { generateId } from "@/lib/generate-id";
 import { REPEAT_CART_KEY } from "@/lib/ticket-cart";
+import { BET_AMOUNT_MAX, BET_AMOUNT_MIN } from "@/lib/cart-limits";
+import {
+  findDuplicateInCart,
+  sanitizeStoredCart,
+  validateAndNormalizeCart,
+  validateCartAgainstOpenDraws,
+} from "@/lib/cart-validation";
 import { cartLineTotal, type CartLine } from "@/lib/tickets";
 import { getOpenSuperPales, isSuperPaleId } from "@/lib/super-pale";
 
@@ -36,9 +44,16 @@ export function PlayClient({
   const [amount, setAmount] = useState(5);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [error, setError] = useState("");
+  const [errorSticky, setErrorSticky] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [addedFlash, setAddedFlash] = useState(false);
+  const [selectAllOpen, setSelectAllOpen] = useState(false);
+  const [duplicatePending, setDuplicatePending] = useState<CartLine | null>(
+    null
+  );
+  const [addedFlash, setAddedFlash] = useState("");
+  const [repeatCartLoaded, setRepeatCartLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [betsExpanded, setBetsExpanded] = useState(false);
   const [success, setSuccess] = useState<{
     ticket: {
       id: string;
@@ -92,30 +107,75 @@ export function PlayClient({
     return () => clearInterval(t);
   }, [refreshDraws]);
 
-  useEffect(() => {
-    if (!error) return;
-    const t = setTimeout(() => setError(""), 4000);
-    return () => clearTimeout(t);
-  }, [error]);
+  function showError(message: string, sticky = false) {
+    setError(message);
+    setErrorSticky(sticky);
+  }
 
   useEffect(() => {
+    if (!error || errorSticky) return;
+    const t = setTimeout(() => setError(""), 5000);
+    return () => clearTimeout(t);
+  }, [error, errorSticky]);
+
+  useEffect(() => {
+    if (repeatCartLoaded) return;
     const raw = sessionStorage.getItem(REPEAT_CART_KEY);
-    if (!raw) return;
-    sessionStorage.removeItem(REPEAT_CART_KEY);
-    try {
-      const lines = JSON.parse(raw) as CartLine[];
-      if (!lines.length) return;
-      setCart(lines);
-      setSelected(new Set(lines.flatMap((l) => l.drawIds)));
-    } catch {
-      /* ignore */
+    if (!raw) {
+      setRepeatCartLoaded(true);
+      return;
     }
-  }, []);
+    sessionStorage.removeItem(REPEAT_CART_KEY);
+
+    (async () => {
+      let latestDraws = initialDraws;
+      try {
+        const res = await fetch("/api/draws");
+        if (res.ok) {
+          const data = await res.json();
+          latestDraws = data.draws ?? initialDraws;
+          setDraws(latestDraws);
+        }
+      } catch {
+        /* usar sorteos iniciales */
+      }
+
+      try {
+        const parsed = JSON.parse(raw) as unknown;
+        const { lines, warning } = sanitizeStoredCart(parsed, latestDraws);
+        if (lines.length) setCart(lines);
+        if (warning) showError(warning, true);
+        else if (!lines.length) {
+          showError(
+            "No se pudo cargar la jugada repetida. Las loterías pueden haber cerrado.",
+            true
+          );
+        }
+      } catch {
+        showError("No se pudo cargar la jugada repetida.", true);
+      } finally {
+        setRepeatCartLoaded(true);
+      }
+    })();
+  }, [initialDraws, repeatCartLoaded]);
 
   const total = useMemo(
     () => cart.reduce((s, l) => s + cartLineTotal(l), 0),
     [cart]
   );
+
+  const cartLotteryUnits = useMemo(
+    () => cart.reduce((s, l) => s + l.drawIds.length, 0),
+    [cart]
+  );
+
+  useEffect(() => {
+    if (digits.length > 0) setBetsExpanded(false);
+  }, [digits]);
+
+  useEffect(() => {
+    if (cart.length === 0) setBetsExpanded(false);
+  }, [cart.length]);
 
   const openSuperPales = useMemo(() => getOpenSuperPales(draws), [draws]);
 
@@ -125,6 +185,33 @@ export function PlayClient({
     () => [...openDrawIds, ...openSuperPales.map((s) => s.id)],
     [openDrawIds, openSuperPales]
   );
+
+  function flashAdded(line: CartLine) {
+    const lineTotal = cartLineTotal(line);
+    const units =
+      line.betType === "SUPER_PALE" || line.superPaleCode
+        ? 1
+        : line.drawIds.length;
+    const detail =
+      units > 1
+        ? ` · ${formatMoney(line.amount)} × ${units} loterías`
+        : "";
+    setAddedFlash(`Agregado ${formatMoney(lineTotal)}${detail}`);
+    setTimeout(() => setAddedFlash(""), 2800);
+  }
+
+  function handleSelectAll() {
+    if (draws.length > 3) {
+      setSelectAllOpen(true);
+      return;
+    }
+    setSelected(new Set(allSelectableIds));
+  }
+
+  function applySelectAll() {
+    setSelected(new Set(allSelectableIds));
+    setSelectAllOpen(false);
+  }
 
   function toggleDraw(id: string) {
     setSelected((prev) => {
@@ -148,55 +235,65 @@ export function PlayClient({
   }
 
   function appendDigit(d: string) {
-    setError("");
+    if (error && !errorSticky) setError("");
     if (digits.length >= 6) {
-      setError("Máximo 6 dígitos.");
+      showError("Máximo 6 dígitos.");
       return;
     }
     setDigits((prev) => prev + d);
   }
 
   function appendDoubleZero() {
-    setError("");
+    if (error && !errorSticky) setError("");
     if (digits.length > 4) {
-      setError("Máximo 6 dígitos.");
+      showError("Máximo 6 dígitos.");
       return;
     }
     setDigits((prev) => prev + "00");
   }
 
-  function addToCart() {
-    setError("");
+  function validateAmount(): string | null {
+    if (!Number.isFinite(amount) || amount < BET_AMOUNT_MIN) {
+      return `El monto mínimo es ${formatMoney(BET_AMOUNT_MIN)}.`;
+    }
+    if (amount > BET_AMOUNT_MAX) {
+      return `El monto máximo es ${formatMoney(BET_AMOUNT_MAX)}.`;
+    }
+    return null;
+  }
+
+  function buildPendingLine(): CartLine | null {
     const digitErr = validateDigits(digits);
     if (digitErr) {
-      setError(digitErr);
-      return;
+      showError(digitErr);
+      return null;
     }
     if (selected.size === 0) {
-      setError("Selecciona al menos una lotería abierta.");
-      return;
+      showError("Selecciona al menos una lotería abierta.");
+      return null;
     }
-    if (amount <= 0) {
-      setError("Selecciona un monto válido.");
-      return;
+    const amountErr = validateAmount();
+    if (amountErr) {
+      showError(amountErr);
+      return null;
     }
 
     const selectedSuper = [...selected].filter(isSuperPaleId);
     if (selectedSuper.length > 0) {
       if (selectedSuper.length > 1) {
-        setError("Selecciona solo un Súper Palé a la vez.");
-        return;
+        showError("Selecciona solo un Súper Palé a la vez.");
+        return null;
       }
       if (digits.length !== 4) {
-        setError("Súper Palé: juega 4 dígitos (2 números).");
-        return;
+        showError("Súper Palé: juega 4 dígitos (2 números).");
+        return null;
       }
       const sp = openSuperPales.find((s) => s.id === selectedSuper[0]);
       if (!sp) {
-        setError("Ese Súper Palé ya no está abierto.");
-        return;
+        showError("Ese Súper Palé ya no está abierto.");
+        return null;
       }
-      const line: CartLine = {
+      return {
         id: generateId(),
         betType: "SUPER_PALE",
         digits,
@@ -208,17 +305,16 @@ export function PlayClient({
         superPaleName: sp.name,
         addedAt: Date.now(),
       };
-      setCart((prev) => [...prev, line]);
-      setDigits("");
-      setSelected(new Set());
-      setAddedFlash(true);
-      setTimeout(() => setAddedFlash(false), 2000);
-      return;
     }
 
     const type = detectBetType(digits)!;
     const selectedDraws = draws.filter((d) => selected.has(d.id));
-    const line: CartLine = {
+    if (selectedDraws.length === 0) {
+      showError("Selecciona al menos una lotería abierta.");
+      return null;
+    }
+
+    return {
       id: generateId(),
       betType: type,
       digits,
@@ -228,16 +324,76 @@ export function PlayClient({
       lotteryNames: selectedDraws.map((d) => d.lotteryName),
       addedAt: Date.now(),
     };
+  }
 
+  function commitLine(line: CartLine, clearSuperSelection = false) {
     setCart((prev) => [...prev, line]);
     setDigits("");
-    setAddedFlash(true);
-    setTimeout(() => setAddedFlash(false), 2000);
+    if (clearSuperSelection) setSelected(new Set());
+    flashAdded(line);
+  }
+
+  function addToCart() {
+    if (error && !errorSticky) setError("");
+    const line = buildPendingLine();
+    if (!line) return;
+
+    if (findDuplicateInCart(cart, line)) {
+      setDuplicatePending(line);
+      return;
+    }
+
+    commitLine(line, !!line.superPaleCode);
+  }
+
+  function confirmDuplicateAdd() {
+    if (!duplicatePending) return;
+    commitLine(duplicatePending, !!duplicatePending.superPaleCode);
+    setDuplicatePending(null);
+  }
+
+  async function openConfirm() {
+    setError("");
+    setErrorSticky(false);
+
+    let latestDraws = draws;
+    try {
+      const res = await fetch("/api/draws");
+      if (res.ok) {
+        const data = await res.json();
+        latestDraws = data.draws ?? draws;
+        setDraws(latestDraws);
+      }
+    } catch {
+      /* usar sorteos en memoria */
+    }
+
+    try {
+      validateAndNormalizeCart(cart);
+    } catch (e) {
+      showError(e instanceof Error ? e.message : "Carrito inválido.", true);
+      return;
+    }
+
+    const cartErr = validateCartAgainstOpenDraws(cart, latestDraws);
+    if (cartErr) {
+      showError(cartErr, true);
+      return;
+    }
+
+    const serverTotal = cart.reduce((s, l) => s + cartLineTotal(l), 0);
+    if (serverTotal > balance) {
+      showError("Saldo insuficiente. Contacta a tu cajero para recargar.", true);
+      return;
+    }
+
+    setConfirmOpen(true);
   }
 
   async function confirmSale() {
     setLoading(true);
     setError("");
+    setErrorSticky(false);
     try {
       const res = await fetch("/api/tickets", {
         method: "POST",
@@ -251,7 +407,7 @@ export function PlayClient({
       setCart([]);
       setConfirmOpen(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al confirmar.");
+      showError(e instanceof Error ? e.message : "Error al confirmar.", true);
     } finally {
       setLoading(false);
     }
@@ -269,90 +425,123 @@ export function PlayClient({
 
   return (
     <div
-      className={`play-screen${cart.length > 0 ? " play-screen--has-bets" : ""}`}
+      className={`play-screen${cart.length > 0 ? " play-screen--has-cart" : ""}${betsExpanded ? " play-screen--bets-open" : ""}${digits.length > 0 ? " play-screen--entry" : ""}`}
     >
-      <div className="play-screen-top">
+      <div className="play-screen-scroll">
         <BrandHeader balance={balance} compact />
 
-        <DecorativeBanner src={ART.jugarBanner} className="play-visual-banner" />
+        <DecorativeBanner
+          src={ART.jugarBanner}
+          className="play-visual-banner play-visual-banner--collapsible"
+        />
 
         <LotteryStrip
           draws={draws}
           selected={selected}
           onToggle={toggleDraw}
-          onSelectAll={() => setSelected(new Set(allSelectableIds))}
+          onSelectAll={handleSelectAll}
           onClear={() => setSelected(new Set())}
+        />
+
+        <RouletteAccess />
+
+        <CompactPlayPad
+          digits={digits}
+          amount={amount}
+          onDigit={appendDigit}
+          onDoubleZero={appendDoubleZero}
+          onBackspace={() => setDigits((d) => d.slice(0, -1))}
+          onClear={() => setDigits("")}
+          onAdd={addToCart}
+          onAmountChange={setAmount}
         />
       </div>
 
-      <CompactPlayPad
-        digits={digits}
-        amount={amount}
-        onDigit={appendDigit}
-        onDoubleZero={appendDoubleZero}
-        onBackspace={() => setDigits((d) => d.slice(0, -1))}
-        onClear={() => setDigits("")}
-        onAdd={addToCart}
-        onAmountChange={setAmount}
-      />
+      <div className="play-bottom-dock">
+        <PlayBetsPanel
+          lines={cart}
+          total={total}
+          expanded={betsExpanded}
+          onToggleExpanded={() => setBetsExpanded((v) => !v)}
+          onRemove={(id) => setCart((c) => c.filter((l) => l.id !== id))}
+        />
 
-      <PlayBetsPanel
-        lines={cart}
-        onRemove={(id) => setCart((c) => c.filter((l) => l.id !== id))}
-      />
-
-      <div className="play-confirm-bar">
-        {cart.length > 0 && (
-          <div className="play-footer-summary">
-            <div>
-              <p className="text-[10px] text-slate-400">
-                {cart.length} jugada{cart.length !== 1 ? "s" : ""} · Total
-              </p>
-              <p className="text-lg font-bold text-[#c9a227] leading-tight">
-                {formatMoney(total)}
-              </p>
-            </div>
-            <p className="text-[10px] text-slate-400 text-right">
-              Saldo después
-              <br />
-              <span className="font-semibold text-[#0d9488]">
-                {formatMoney(balance - total)}
-              </span>
+        <div className="play-confirm-bar">
+          {cart.length === 0 && (
+            <p className="play-footer-hint">
+              1. Lotería · 2. Números y monto · 3. Agregar · 4. Confirmar
             </p>
-          </div>
-        )}
-        <button
-          type="button"
-          className="play-confirm-full"
-          disabled={cart.length === 0 || total > balance}
-          onClick={() => {
-            if (cart.length === 0) {
-              setError("Agrega una jugada antes de confirmar.");
-              return;
-            }
-            if (total > balance) {
-              setError("Saldo insuficiente. Contacta a tu cajero.");
-              return;
-            }
-            setConfirmOpen(true);
-          }}
-        >
-          <AiVisual
-            src={ART.btnConfirmar}
-            alt=""
-            width={24}
-            height={24}
-            className="play-confirm-icon"
-          />
-          Confirmar jugada
-        </button>
+          )}
+          {cart.length > 0 && (
+            <div className="play-footer-summary">
+              <div className="play-footer-summary-main">
+                <p className="play-footer-meta">
+                  {cart.length} jugada{cart.length !== 1 ? "s" : ""}
+                  {cartLotteryUnits > 0 &&
+                    ` · ${cartLotteryUnits} lotería${cartLotteryUnits !== 1 ? "s" : ""}`}
+                </p>
+                <p className="play-footer-total">{formatMoney(total)}</p>
+              </div>
+              <div className="play-footer-balance">
+                <span className="play-footer-meta">Saldo después</span>
+                <span className="play-footer-balance-value">
+                  {formatMoney(balance - total)}
+                </span>
+              </div>
+            </div>
+          )}
+          {cart.length > 0 && total > balance && (
+            <p className="play-balance-warning" role="alert">
+              Saldo insuficiente. Necesitas {formatMoney(total - balance)} más.
+            </p>
+          )}
+          <button
+            type="button"
+            className="play-confirm-full"
+            disabled={cart.length === 0 || total > balance || loading}
+            onClick={() => {
+              if (cart.length === 0) {
+                showError("Agrega una jugada antes de confirmar.");
+                return;
+              }
+              void openConfirm();
+            }}
+          >
+            <AiVisual
+              src={ART.btnConfirmar}
+              alt=""
+              width={24}
+              height={24}
+              className="play-confirm-icon"
+            />
+            Confirmar jugada
+          </button>
+        </div>
       </div>
 
       {addedFlash && (
-        <div className="play-added-toast">Jugada agregada</div>
+        <div className="play-added-toast" role="status">
+          {addedFlash}
+        </div>
       )}
 
-      {error && <div className="play-toast">{error}</div>}
+      {error && (
+        <div className="play-toast" role="alert">
+          {error}
+          {errorSticky && (
+            <button
+              type="button"
+              className="play-toast-dismiss"
+              onClick={() => {
+                setError("");
+                setErrorSticky(false);
+              }}
+            >
+              Entendido
+            </button>
+          )}
+        </div>
+      )}
 
       <ConfirmModal
         open={confirmOpen}
@@ -364,6 +553,89 @@ export function PlayClient({
         onConfirm={confirmSale}
         onClose={() => setConfirmOpen(false)}
       />
+
+      {duplicatePending && (
+        <div
+          className="fixed inset-0 z-[70] bg-black/50 flex items-end sm:items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="duplicate-title"
+        >
+          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6">
+            <h2
+              id="duplicate-title"
+              className="text-lg font-bold text-[#1e3a5f] mb-2"
+            >
+              Esta jugada ya está en el ticket
+            </h2>
+            <p className="text-sm text-slate-600 mb-4 leading-relaxed">
+              Mismos números, loterías y monto (
+              <strong>{duplicatePending.numbers}</strong> ·{" "}
+              {formatMoney(cartLineTotal(duplicatePending))}). ¿Quieres
+              agregarla otra vez?
+            </p>
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                type="button"
+                className="play-action-primary min-h-[48px]"
+                onClick={confirmDuplicateAdd}
+              >
+                Agregar de todos modos
+              </button>
+              <button
+                type="button"
+                className="play-action-secondary min-h-[48px]"
+                onClick={() => setDuplicatePending(null)}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectAllOpen && (
+        <div
+          className="fixed inset-0 z-[70] bg-black/50 flex items-end sm:items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="select-all-title"
+        >
+          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6">
+            <h2 id="select-all-title" className="text-lg font-bold text-[#1e3a5f] mb-2">
+              ¿Seleccionar todas las loterías?
+            </h2>
+            <p className="text-sm text-slate-600 mb-4 leading-relaxed">
+              Vas a seleccionar{" "}
+              <strong>
+                {draws.length} lotería{draws.length !== 1 ? "s" : ""}
+                {openSuperPales.length > 0
+                  ? ` y ${openSuperPales.length} súper palé${openSuperPales.length !== 1 ? "s" : ""}`
+                  : ""}
+              </strong>
+              . Cada jugada normal cobrará el monto elegido{" "}
+              <strong>en cada lotería marcada</strong>. Ejemplo: {formatMoney(5)} en 8
+              loterías = {formatMoney(40)} por jugada.
+            </p>
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                type="button"
+                className="play-action-primary min-h-[48px]"
+                onClick={applySelectAll}
+              >
+                Sí, seleccionar todas
+              </button>
+              <button
+                type="button"
+                className="play-action-secondary min-h-[48px]"
+                onClick={() => setSelectAllOpen(false)}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

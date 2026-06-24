@@ -7,6 +7,8 @@ import {
   LOTTERY_CLOSE_MINUTES,
 } from "../src/lib/lottery-schedule";
 import { dayStartInTz } from "../src/lib/timezone";
+import { serializePayoutMultipliers } from "../src/lib/roulette-payouts";
+import { DEFAULT_ROULETTE_SETTINGS } from "../src/lib/roulette-settings";
 
 const prisma = new PrismaClient();
 
@@ -130,26 +132,29 @@ async function main() {
     });
   }
 
+  const cajeroFields = {
+    passwordHash: pwd,
+    active: true,
+    role: "CAJERO" as const,
+  };
+
   await prisma.user.upsert({
     where: { username: "cajero" },
-    update: {},
+    update: { ...cajeroFields, fullName: "Cajero Principal" },
     create: {
       username: "cajero",
-      passwordHash: pwd,
       fullName: "Cajero Principal",
-      role: "CAJERO",
+      ...cajeroFields,
     },
   });
 
   await prisma.user.upsert({
     where: { username: "mostrador" },
-    update: { active: true },
+    update: { ...cajeroFields, fullName: "Venta Mostrador" },
     create: {
       username: "mostrador",
-      passwordHash: pwd,
       fullName: "Venta Mostrador",
-      role: "JUGADOR",
-      wallet: { create: { balance: 0 } },
+      ...cajeroFields,
     },
   });
 
@@ -196,34 +201,88 @@ async function main() {
     });
   }
 
-  await prisma.rouletteSettings.upsert({
+  await prisma.bancaSettings.upsert({
     where: { id: "default" },
-    update: { active: true },
-    create: { id: "default", active: true },
+    update: {
+      bancaName: "ELITE 13",
+      terminalCode: "bei-0013",
+      defaultOpeningBalance: -174.3,
+      expensiveDirectoAmount: 100,
+      maxDirectoPerNumber: 2000,
+      maxPalePerNumber: 2000,
+      maxTripletaPerNumber: 2000,
+      maxSuperPalePerNumber: 2000,
+    },
+    create: {
+      id: "default",
+      bancaName: "ELITE 13",
+      terminalCode: "bei-0013",
+      defaultOpeningBalance: -174.3,
+      expensiveDirectoAmount: 100,
+      maxDirectoPerNumber: 2000,
+      maxPalePerNumber: 2000,
+      maxTripletaPerNumber: 2000,
+      maxSuperPalePerNumber: 2000,
+    },
   });
 
   await prisma.rouletteSettings.upsert({
     where: { id: "default" },
-    update: { active: true },
+    update: {
+      houseEdge: 0.08,
+      playerRtp: 0.92,
+      maxBetAmount: 5,
+      maxStraightBet: 5,
+      maxOutsideBet: 5,
+      maxPayoutPerSpin: 180,
+      maxExposurePerNumber: 180,
+      maxExposurePerSpin: 180,
+      dailyProfitPercent: 3,
+      dailyMinProfitPct: 1,
+      dailyMaxProfitPct: 8,
+      dailyTargetProfitPct: 3,
+      autoAdjustmentEnabled: true,
+      adjustmentType: "BALANCE_CREDIT",
+      houseAlwaysWins: false,
+      dailyOpenTime: "06:00",
+      dailyCloseTime: "23:45",
+      payoutMultipliers: serializePayoutMultipliers(
+        DEFAULT_ROULETTE_SETTINGS.payoutMultipliers
+      ),
+    },
     create: {
       id: "default",
       active: true,
       minBetAmount: 1,
-      maxBetAmount: 100,
+      maxBetAmount: 5,
       maxStraightBet: 5,
-      maxOutsideBet: 50,
-      maxPayoutPerSpin: 500,
-      maxDailyPayoutPerPlayer: 15000,
+      maxOutsideBet: 5,
+      maxPayoutPerSpin: 180,
+      maxDailyPayoutPerPlayer: 0,
       maxExposurePerNumber: 180,
-      maxExposurePerSpin: 800,
-      houseReserve: 10000,
+      maxExposurePerSpin: 180,
+      houseReserve: 400,
       maxRiskPercentOfReserve: 15,
+      houseEdge: 0.08,
+      playerRtp: 0.92,
+      payoutMultipliers: serializePayoutMultipliers(
+        DEFAULT_ROULETTE_SETTINGS.payoutMultipliers
+      ),
       positiveSpinMessage:
         "¡Buena suerte! Cada giro es justo y aleatorio — ¡tú puedes ganar!",
     },
   });
 
-  console.log("Seed OK — demo / 1234 — admin / 1234 — saldo RD$500");
+  const ticketCount = await prisma.ticket.count();
+  await prisma.ticketSequence.upsert({
+    where: { id: "default" },
+    update: {},
+    create: { id: "default", value: ticketCount },
+  });
+
+  console.log(
+    "Seed OK — demo / 1234 — cajero / 1234 — mostrador / 1234 — admin / 1234"
+  );
 }
 
 main()

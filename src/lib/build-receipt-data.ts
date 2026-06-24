@@ -1,4 +1,6 @@
 import type { ReceiptData } from "@/lib/ticket-receipt";
+import { getDisplayTicketNumber, getQrTicketCode } from "@/lib/ticket-codes";
+import { superPaleReceiptTitle } from "@/lib/super-pale";
 import type { Ticket, TicketItem, Draw, User } from "@prisma/client";
 
 type TicketWithItems = Ticket & {
@@ -10,7 +12,9 @@ export function buildReceiptData(
   user?: Pick<User, "fullName" | "username">
 ): ReceiptData {
   return {
-    ticketNumber: ticket.ticketNumber,
+    businessName: "LA DICHA",
+    ticketNumber: getDisplayTicketNumber(ticket),
+    internalTicketCode: ticket.internalTicketCode ?? getQrTicketCode(ticket),
     verificationCode: ticket.verificationCode,
     createdAt: ticket.createdAt.toISOString(),
     totalAmount: ticket.totalAmount,
@@ -31,7 +35,9 @@ export function buildReceiptData(
       betType: item.betType,
       numbers: item.numbers,
       amount: item.amount,
-      lotteryName: item.lotteryName,
+      lotteryName: item.superPaleName
+        ? superPaleReceiptTitle(item.superPaleName)
+        : item.lotteryName,
       drawTime: item.draw.drawTime,
       drawDate: item.draw.drawDate.toISOString(),
       superPaleName: item.superPaleName,

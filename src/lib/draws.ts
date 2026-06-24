@@ -6,6 +6,10 @@ import {
   drawAtInTz,
 } from "./lottery-schedule";
 import { dayStartInTz, nowInTz } from "./timezone";
+import {
+  buildOpenSuperPales,
+  type OpenSuperPaleView,
+} from "./super-pale";
 
 /** Crea/actualiza sorteos de un día (sin inventar resultados). */
 export async function ensureDrawsForDay(day: Date) {
@@ -109,6 +113,34 @@ export async function getOpenDrawsForPlayer(): Promise<OpenDrawView[]> {
       secondsLeft: Math.max(0, differenceInSeconds(d.closesAt, now)),
     }))
     .sort((a, b) => compareDrawTime(a.drawTime, b.drawTime));
+}
+
+/** Vanquero: loterías abiertas + súper palés con sorteos del día completos. */
+export async function getCajeroSellDraws(): Promise<{
+  draws: OpenDrawView[];
+  superPales: OpenSuperPaleView[];
+}> {
+  const draws = await getOpenDrawsForPlayer();
+  const now = new Date();
+  const today = dayStartInTz(now);
+
+  const todayRows = await prisma.draw.findMany({
+    where: {
+      drawDate: today,
+      lottery: { active: true },
+    },
+    include: { lottery: true },
+  });
+
+  const todayDraws = todayRows.map((d) => ({
+    id: d.id,
+    lotteryCode: d.lottery.code,
+    lotteryName: d.lottery.name,
+    drawTime: d.drawTime,
+  }));
+
+  const superPales = buildOpenSuperPales(draws, todayDraws);
+  return { draws, superPales };
 }
 
 export function statusLabel(status: string) {

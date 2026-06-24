@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import QRCode from "qrcode";
 import { requirePlayer } from "@/lib/auth";
+import { generateTicketQrDataUrl } from "@/lib/ticket-qr";
 import { prisma } from "@/lib/db";
 import { BrandHeader } from "@/components/player/BrandHeader";
 import { TicketReceipt } from "@/components/player/TicketReceipt";
 import { buildReceiptData } from "@/lib/build-receipt-data";
+import { isTicketWithinRetention } from "@/lib/ticket-retention";
 import { PrintButton } from "@/components/player/PrintButton";
 
 export default async function TicketDetailPage({
@@ -22,10 +23,13 @@ export default async function TicketDetailPage({
     include: { items: { include: { draw: { include: { lottery: true } } } } },
   });
 
-  if (!ticket) notFound();
+  if (!ticket || !isTicketWithinRetention(ticket.createdAt)) notFound();
 
-  const qrData = `LA-DICHA|${ticket.ticketNumber}|${ticket.verificationCode}`;
-  const qrDataUrl = await QRCode.toDataURL(qrData, { margin: 1, width: 200 });
+  const qrDataUrl = await generateTicketQrDataUrl(
+    ticket.ticketNumber,
+    ticket.verificationCode,
+    ticket.internalTicketCode
+  );
 
   const receiptData = buildReceiptData(ticket, user);
 

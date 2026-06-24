@@ -1,45 +1,75 @@
 import { NextResponse } from "next/server";
+
 import { requirePlayer } from "@/lib/auth";
+
 import { prisma } from "@/lib/db";
+
+import { getEffectiveRouletteSettings } from "@/lib/roulette-bankroll";
+
+import { maxAllowedRisk } from "@/lib/roulette-risk";
+
 import {
-  effectiveMaxSpinExposure,
   getRouletteSettings,
+  resolvePlayerSettings,
 } from "@/lib/roulette-settings";
+
 import { applyWelcomeAndTrialCredits } from "@/lib/roulette-promotions";
-import { getPlayerDailyPayout } from "@/lib/roulette-stats";
+import { getRoulettePlayWindow, formatDailyCloseLabel } from "@/lib/roulette-daily";
+import { ROULETTE_ALLOWED_AMOUNTS } from "@/lib/roulette-validation";
 
 export async function GET() {
   const user = await requirePlayer();
   const settings = await getRouletteSettings();
+  const playWindow = await getRoulettePlayWindow(settings);
+  const rouletteCtx = await getEffectiveRouletteSettings();
+  const playerSettings = resolvePlayerSettings(rouletteCtx.effective);
 
   let promoCreditMessage: string | null = null;
   let balance: number | null = null;
-  let dailyPayout = 0;
   if (user) {
     const promo = await applyWelcomeAndTrialCredits(user.id, settings);
     promoCreditMessage = promo.message;
     const wallet = await prisma.wallet.findUnique({ where: { userId: user.id } });
     balance = wallet?.balance ?? null;
-    dailyPayout = await getPlayerDailyPayout(user.id);
   }
+
+  const allowedRisk = maxAllowedRisk(playerSettings, rouletteCtx.bankroll);
 
   return NextResponse.json({
     balance,
-    active: settings.active,
-    fairPlay: true,
+    active: playWindow.open,
+    closedReason: playWindow.reason,
+    fairPlay: !settings.houseAlwaysWins,
     european: true,
-    houseEdge: 0.027,
-    dailyPayout,
-    maxDailyPayout: settings.maxDailyPayoutPerPlayer,
-    dailyLimitReached: dailyPayout >= settings.maxDailyPayoutPerPlayer,
+    houseEdge: settings.houseEdge,
+    playerRtp: settings.playerRtp,
+    houseAlwaysWins: settings.houseAlwaysWins,
+    daily: {
+      sessionDate: playWindow.sessionDate,
+      status: playWindow.sessionStatus,
+      openTime: playWindow.dailyOpenTime,
+      closeTime: playWindow.dailyCloseTime,
+      closeLabel: formatDailyCloseLabel(playWindow.dailyCloseTime),
+      totals: playWindow.daily,
+    },
+    unlimitedPlay: false,
+    bankroll: {
+      current: rouletteCtx.bankroll.currentBankroll,
+      playable: rouletteCtx.bankroll.playableBankroll,
+      marginHeld: rouletteCtx.bankroll.houseMarginHeld,
+    },
     limits: {
-      minBet: settings.minBetAmount,
-      maxBet: settings.maxBetAmount,
-      maxStraightBet: settings.maxStraightBet,
-      maxOutsideBet: settings.maxOutsideBet,
-      maxPayoutPerSpin: settings.maxPayoutPerSpin,
-      maxExposurePerNumber: settings.maxExposurePerNumber,
-      maxSpinExposure: effectiveMaxSpinExposure(settings),
+      minBet: playerSettings.minBetAmount,
+      maxBet: 5,
+      maxStraightBet: 5,
+      maxOutsideBet: 5,
+      allowedAmounts: [...ROULETTE_ALLOWED_AMOUNTS],
+      maxPayoutPerSpin: playerSettings.maxPayoutPerSpin,
+      maxExposurePerSpin: playerSettings.maxExposurePerSpin,
+      maxExposurePerNumber: playerSettings.maxExposurePerNumber,
+      maxAllowedRisk: Number.isFinite(allowedRisk) ? allowedRisk : null,
+      unlimited: false,
+      dynamicLimits: rouletteCtx.dynamicLimits,
     },
     promotions: {
       banner: settings.promoBannerMessage,

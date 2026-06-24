@@ -1,15 +1,16 @@
 import { prisma } from "./db";
 import type { BetTypeCode } from "./bet-parser";
+import { DEFAULT_LOTTERY_PAYOUT_CONFIG } from "./lottery-payout-config";
 import { getSuperPaleDefinition } from "./super-pale";
 import { dateKeyInTz } from "./timezone";
 
 const MULT = {
-  QUINIELA_1: 56,
-  QUINIELA_2: 12,
-  QUINIELA_3: 4,
-  PALE: 1300,
-  TRIPLETA: 10000,
-  SUPER_PALE: 1300,
+  QUINIELA_1: DEFAULT_LOTTERY_PAYOUT_CONFIG.quiniela1,
+  QUINIELA_2: DEFAULT_LOTTERY_PAYOUT_CONFIG.quiniela2,
+  QUINIELA_3: DEFAULT_LOTTERY_PAYOUT_CONFIG.quiniela3,
+  PALE: DEFAULT_LOTTERY_PAYOUT_CONFIG.pale,
+  TRIPLETA: DEFAULT_LOTTERY_PAYOUT_CONFIG.tripleta,
+  SUPER_PALE: DEFAULT_LOTTERY_PAYOUT_CONFIG.superPale,
 } as const;
 
 function parseNums(numbers: string): string[] {

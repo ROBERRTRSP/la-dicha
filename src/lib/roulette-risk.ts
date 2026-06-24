@@ -1,93 +1,107 @@
 import {
-  calcPayout,
-  formatBetLabel,
   isBetWinner,
-  numberColor,
   type RouletteBetInput,
   type RouletteBetType,
 } from "./roulette";
+import type { RouletteBankrollSnapshot } from "./roulette-bankroll";
+import { formatMoney } from "./utils";
+import {
+  calcBetPayout,
+  getPayoutMultiplier,
+  maxStraightExposureAtStake,
+  type RoulettePayoutMultipliers,
+} from "./roulette-payouts";
 import {
   effectiveMaxSpinExposure,
   type RouletteSettingsData,
 } from "./roulette-settings";
+import {
+  ROULETTE_ALLOWED_AMOUNTS,
+  ROULETTE_AMOUNT_ERROR,
+  isAllowedRouletteAmount,
+} from "./roulette-validation";
 
-export type SpinExposure = {
+export const ROULETTE_LIMIT_MESSAGE =
+  "Esta jugada supera el límite permitido. Reduce el monto.";
+
+export type RiskCheckResult =
+  | { ok: true; exposure: SpinExposureSnapshot }
+  | { ok: false; message: string; exposure?: SpinExposureSnapshot };
+
+export type SpinExposureSnapshot = {
   byNumber: Record<number, number>;
-  byColor: { red: number; black: number; green: number };
-  byBetType: Record<string, number>;
-  maxPayout: number;
-  worstNumber: number;
+  totalSpinExposure: number;
   totalStake: number;
+  maxSingleNumberExposure: number;
 };
 
-export function payoutIfNumberWins(
+const OUTSIDE_TYPES = new Set<RouletteBetType>([
+  "RED",
+  "BLACK",
+  "EVEN",
+  "ODD",
+  "LOW",
+  "HIGH",
+  "DOZEN_1",
+  "DOZEN_2",
+  "DOZEN_3",
+  "COLUMN_1",
+  "COLUMN_2",
+  "COLUMN_3",
+]);
+
+export function buildSpinExposure(
   bets: RouletteBetInput[],
-  winningNumber: number
-): number {
-  return bets.reduce((sum, bet) => {
-    const won = isBetWinner(bet.betType, bet.betChoice, winningNumber);
-    return sum + calcPayout(bet.betType, bet.amount, won);
-  }, 0);
-}
-
-export function calculateSpinExposure(bets: RouletteBetInput[]): SpinExposure {
+  multipliers: RoulettePayoutMultipliers
+): SpinExposureSnapshot {
   const byNumber: Record<number, number> = {};
-  let maxPayout = 0;
-  let worstNumber = 0;
+  for (let n = 0; n <= 36; n++) byNumber[n] = 0;
 
-  for (let n = 0; n <= 36; n++) {
-    const payout = payoutIfNumberWins(bets, n);
-    byNumber[n] = payout;
-    if (payout > maxPayout) {
-      maxPayout = payout;
-      worstNumber = n;
-    }
-  }
-
-  const byColor = { red: 0, black: 0, green: 0 };
-  for (let n = 0; n <= 36; n++) {
-    const c = numberColor(n);
-    byColor[c] = Math.max(byColor[c], byNumber[n]);
-  }
-
-  const byBetType: Record<string, number> = {};
   for (const bet of bets) {
-    let maxForBet = 0;
     for (let n = 0; n <= 36; n++) {
-      const won = isBetWinner(bet.betType, bet.betChoice, n);
-      const p = calcPayout(bet.betType, bet.amount, won);
-      if (p > maxForBet) maxForBet = p;
+      if (isBetWinner(bet.betType, bet.betChoice, n)) {
+        byNumber[n] += calcBetPayout(bet.betType, bet.amount, true, multipliers);
+      }
     }
-    byBetType[bet.betType] = (byBetType[bet.betType] ?? 0) + maxForBet;
   }
+
+  const exposures = Object.values(byNumber);
+  const totalSpinExposure = exposures.length ? Math.max(...exposures) : 0;
+  const maxSingleNumberExposure = totalSpinExposure;
+  const totalStake = bets.reduce((sum, b) => sum + b.amount, 0);
 
   return {
     byNumber,
-    byColor,
-    byBetType,
-    maxPayout,
-    worstNumber,
-    totalStake: bets.reduce((s, b) => s + b.amount, 0),
+    totalSpinExposure,
+    totalStake,
+    maxSingleNumberExposure,
   };
 }
 
-function maxBetForType(
-  betType: RouletteBetType,
-  settings: RouletteSettingsData
+export function maxAllowedRisk(
+  settings: RouletteSettingsData,
+  bankroll?: RouletteBankrollSnapshot
 ): number {
-  return betType === "STRAIGHT"
-    ? settings.maxStraightBet
-    : settings.maxOutsideBet;
-}
+  const spinCap = effectiveMaxSpinExposure(settings);
+  const bankrollRisk =
+    bankroll && settings.maxRiskPercentOfReserve > 0
+      ? (bankroll.playableBankroll * settings.maxRiskPercentOfReserve) / 100
+      : Number.POSITIVE_INFINITY;
 
-export type RiskCheckResult =
-  | { ok: true }
-  | { ok: false; message: string };
+  const caps = [spinCap, bankrollRisk].filter((n) => n > 0 && Number.isFinite(n));
+  const exposureFloor = maxStraightExposureAtStake(
+    Math.max(...ROULETTE_ALLOWED_AMOUNTS),
+    settings.payoutMultipliers
+  );
+  if (caps.length === 0) return exposureFloor;
+  return Math.max(Math.min(...caps), exposureFloor);
+}
 
 export function validateBetsRisk(
   bets: RouletteBetInput[],
   settings: RouletteSettingsData,
-  playerDailyPayout: number
+  multipliers: RoulettePayoutMultipliers,
+  bankroll?: RouletteBankrollSnapshot
 ): RiskCheckResult {
   if (!bets.length) {
     return { ok: false, message: "Selecciona al menos una apuesta." };
@@ -97,91 +111,91 @@ export function validateBetsRisk(
     if (bet.amount < settings.minBetAmount) {
       return {
         ok: false,
-        message: `El monto mínimo por apuesta es RD$${settings.minBetAmount.toFixed(2)}.`,
-      };
-    }
-    if (bet.amount > settings.maxBetAmount) {
-      return {
-        ok: false,
-        message: "Reduce el monto para continuar.",
+        message: `El monto mínimo por apuesta es ${formatMoney(settings.minBetAmount)}.`,
       };
     }
 
-    const typeMax = maxBetForType(bet.betType, settings);
-    if (bet.amount > typeMax) {
-      return {
-        ok: false,
-        message: "Monto máximo permitido para esta apuesta alcanzado.",
-      };
+    if (!isAllowedRouletteAmount(bet.amount)) {
+      return { ok: false, message: ROULETTE_AMOUNT_ERROR };
     }
   }
 
-  const exposure = calculateSpinExposure(bets);
+  const exposure = buildSpinExposure(bets, multipliers);
 
-  if (exposure.maxPayout > settings.maxPayoutPerSpin) {
-    return {
-      ok: false,
-      message:
-        "Esta apuesta supera el límite permitido. Reduce el monto o elige otra opción.",
-    };
-  }
-
-  const spinCap = effectiveMaxSpinExposure(settings);
-  if (exposure.maxPayout > spinCap) {
-    return {
-      ok: false,
-      message:
-        "Esta apuesta supera el límite permitido. Reduce el monto o elige otra opción.",
-    };
-  }
-
-  if (playerDailyPayout >= settings.maxDailyPayoutPerPlayer) {
-    return {
-      ok: false,
-      message:
-        "Llegaste al tope de premios de hoy. Puedes seguir mañana o probar con apuestas más pequeñas otro día.",
-    };
-  }
-
-  if (playerDailyPayout + exposure.maxPayout > settings.maxDailyPayoutPerPlayer) {
-    return {
-      ok: false,
-      message:
-        "Esta jugada superaría el tope de premios del día. Reduce el monto o quita alguna apuesta.",
-    };
+  /** Ruleta RD$1–5: montos ya validados; la casa controla el resultado. */
+  if (bets.every((b) => isAllowedRouletteAmount(b.amount))) {
+    return { ok: true, exposure };
   }
 
   for (const bet of bets) {
-    if (bet.betType !== "STRAIGHT") continue;
-    const num = parseInt(bet.betChoice, 10);
-    if (Number.isNaN(num)) continue;
-
-    if (exposure.byNumber[num] > settings.maxExposurePerNumber) {
-      return {
-        ok: false,
-        message: "Este número alcanzó el límite disponible por ahora.",
-      };
+    if (settings.maxBetAmount > 0 && bet.amount > settings.maxBetAmount) {
+      return { ok: false, message: ROULETTE_LIMIT_MESSAGE };
     }
 
-    const singlePayout = calcPayout("STRAIGHT", bet.amount, true);
-    if (singlePayout > settings.maxExposurePerNumber) {
-      return {
-        ok: false,
-        message: "Este número alcanzó el límite disponible por ahora.",
-      };
+    if (bet.betType === "STRAIGHT") {
+      if (settings.maxStraightBet > 0 && bet.amount > settings.maxStraightBet) {
+        return { ok: false, message: ROULETTE_LIMIT_MESSAGE };
+      }
+    } else if (OUTSIDE_TYPES.has(bet.betType)) {
+      if (settings.maxOutsideBet > 0 && bet.amount > settings.maxOutsideBet) {
+        return { ok: false, message: ROULETTE_LIMIT_MESSAGE };
+      }
     }
   }
 
-  for (const bet of bets) {
-    const label = formatBetLabel(bet.betType, bet.betChoice);
-    const potential = calcPayout(bet.betType, bet.amount, true);
-    if (potential > settings.maxPayoutPerSpin) {
-      return {
-        ok: false,
-        message: `${label}: intenta con otra selección o reduce el monto.`,
-      };
+  const allowedRisk = maxAllowedRisk(settings, bankroll);
+
+  if (Number.isFinite(allowedRisk) && exposure.totalSpinExposure > allowedRisk) {
+    return { ok: false, message: ROULETTE_LIMIT_MESSAGE, exposure };
+  }
+
+  if (
+    settings.maxExposurePerSpin > 0 &&
+    exposure.totalSpinExposure > settings.maxExposurePerSpin
+  ) {
+    return { ok: false, message: ROULETTE_LIMIT_MESSAGE, exposure };
+  }
+
+  if (settings.maxPayoutPerSpin > 0 && exposure.totalSpinExposure > settings.maxPayoutPerSpin) {
+    return { ok: false, message: ROULETTE_LIMIT_MESSAGE, exposure };
+  }
+
+  if (settings.maxExposurePerNumber > 0) {
+    for (let n = 0; n <= 36; n++) {
+      if (exposure.byNumber[n] > settings.maxExposurePerNumber) {
+        return { ok: false, message: ROULETTE_LIMIT_MESSAGE, exposure };
+      }
     }
   }
 
-  return { ok: true };
+  return { ok: true, exposure };
+}
+
+/** Vista previa de una jugada individual antes de agregarla al carrito. */
+export function validateBetAddition(
+  existing: RouletteBetInput[],
+  newBet: RouletteBetInput,
+  settings: RouletteSettingsData,
+  multipliers: RoulettePayoutMultipliers,
+  bankroll?: RouletteBankrollSnapshot
+): RiskCheckResult {
+  const merged = [...existing, newBet];
+  return validateBetsRisk(merged, settings, multipliers, bankroll);
+}
+
+export function formatExposureSummary(
+  exposure: SpinExposureSnapshot,
+  multipliers: RoulettePayoutMultipliers,
+  bets: RouletteBetInput[]
+) {
+  const maxPayoutIfAllWin = bets.reduce(
+    (sum, b) => sum + b.amount + b.amount * getPayoutMultiplier(b.betType, multipliers),
+    0
+  );
+  return {
+    totalStake: exposure.totalStake,
+    totalSpinExposure: exposure.totalSpinExposure,
+    maxSingleNumberExposure: exposure.maxSingleNumberExposure,
+    maxPayoutIfAllWin,
+  };
 }

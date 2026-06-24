@@ -54,27 +54,39 @@ export async function POST(request: Request) {
     }
 
     const balanceBefore = wallet.balance;
-    const balanceAfter = balanceBefore + amt;
-    if (balanceAfter < 0) {
-      return NextResponse.json({ error: "Saldo insuficiente." }, { status: 400 });
-    }
 
-    await prisma.$transaction([
-      prisma.wallet.update({
-        where: { id: wallet.id },
-        data: { balance: balanceAfter },
-      }),
-      prisma.walletTransaction.create({
+    const balanceAfter = await prisma.$transaction(async (tx) => {
+      if (amt < 0) {
+        const updated = await tx.wallet.updateMany({
+          where: { id: wallet.id, balance: { gte: -amt } },
+          data: { balance: { increment: amt } },
+        });
+        if (updated.count === 0) {
+          throw new Error("Saldo insuficiente.");
+        }
+      } else {
+        await tx.wallet.update({
+          where: { id: wallet.id },
+          data: { balance: { increment: amt } },
+        });
+      }
+
+      const fresh = await tx.wallet.findUnique({ where: { id: wallet.id } });
+      if (!fresh) throw new Error("Billetera no encontrada.");
+
+      await tx.walletTransaction.create({
         data: {
           walletId: wallet.id,
           type: amt > 0 ? "DEPOSIT" : "ADJUSTMENT",
           amount: amt,
           balanceBefore,
-          balanceAfter,
+          balanceAfter: fresh.balance,
           note: note ?? `Ajuste admin — ${admin.fullName}`,
         },
-      }),
-    ]);
+      });
+
+      return fresh.balance;
+    });
 
     return NextResponse.json({ balanceAfter });
   } catch (e) {

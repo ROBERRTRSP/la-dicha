@@ -50,8 +50,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Usuario ya existe." }, { status: 400 });
     }
 
-    const passwordHash = await hashPassword(String(password ?? "1234"));
-    const balance = r === "JUGADOR" ? Number(initialBalance) || 0 : 0;
+    const pwd = String(password ?? "").trim();
+    if (pwd.length < 4) {
+      return NextResponse.json(
+        { error: "La contraseña debe tener al menos 4 caracteres." },
+        { status: 400 }
+      );
+    }
+
+    const balance =
+      r === "JUGADOR"
+        ? Math.max(0, Number(initialBalance) || 0)
+        : 0;
+    if (r === "JUGADOR" && Number(initialBalance) < 0) {
+      return NextResponse.json(
+        { error: "El saldo inicial no puede ser negativo." },
+        { status: 400 }
+      );
+    }
+
+    const passwordHash = await hashPassword(pwd);
 
     const user = await prisma.user.create({
       data: {

@@ -6,7 +6,7 @@
     "dev": "next dev -H 0.0.0.0",
     "postinstall": "prisma generate",
     "build": "prisma generate && next build",
-    "vercel-build": "prisma generate && prisma db push --skip-generate && tsx prisma/seed.ts && node scripts/fetch-logos.mjs && next build",
+    "vercel-build": "prisma generate && prisma db push --skip-generate --accept-data-loss && tsx prisma/seed.ts && node scripts/fetch-logos.mjs && next build",
     "start": "next start",
     "lint": "next lint",
     "db:push": "prisma db push",
@@ -20,14 +20,14 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
+    "html5-qrcode": "^2.3.8",
     "jose": "^6.0.11",
-    "lucide-react": "^0.511.0",
     "next": "^15.3.3",
     "qrcode": "^1.5.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "tailwind-merge": "^3.3.0",
-    "zod": "^3.25.36"
+    "server-only": "^0.0.1",
+    "tailwind-merge": "^3.3.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.8",

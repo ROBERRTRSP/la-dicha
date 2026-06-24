@@ -131,7 +131,7 @@ export default function CajeroRecargarPage() {
         </div>
 
         <label className="admin-field">
-          <span>Monto RD$</span>
+          <span>Monto</span>
           <input
             type="number"
             min="1"

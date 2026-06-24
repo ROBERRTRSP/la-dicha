@@ -40,9 +40,14 @@ export function BrandHeader({
           <div className="flex-1 min-w-0" aria-hidden />
         )}
         {balance !== undefined && (
-          <p className="font-bold text-[#0d9488] text-sm shrink-0 tabular-nums">
-            {formatMoney(balance)}
-          </p>
+          <div className="text-right shrink-0">
+            <p className="text-[10px] text-slate-500 font-semibold leading-none">
+              Saldo
+            </p>
+            <p className="font-bold text-[#0d9488] text-sm tabular-nums leading-tight">
+              {formatMoney(balance)}
+            </p>
+          </div>
         )}
       </header>
     );

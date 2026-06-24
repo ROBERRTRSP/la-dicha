@@ -2,10 +2,26 @@
   "buildCommand": "npm run vercel-build",
   "framework": "nextjs",
   "regions": ["iad1"],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "consorciobelendejudea.com" }],
+      "destination": "https://www.consorciobelendejudea.com/:path*",
+      "permanent": true
+    }
+  ],
   "crons": [
     {
-      "path": "/api/cron/sync-results",
-      "schedule": "0 4 * * *"
+      "path": "/api/cron/sync-live",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/roulette-daily-close",
+      "schedule": "45 3 * * *"
+    },
+    {
+      "path": "/api/cron/roulette-rewards",
+      "schedule": "30 3 * * *"
     }
   ]
 }

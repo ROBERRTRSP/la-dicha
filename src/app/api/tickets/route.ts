@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePlayer } from "@/lib/auth";
 import { createTicketFromCart, type CartLine } from "@/lib/tickets";
+import { generateTicketQrDataUrl } from "@/lib/ticket-qr";
 
 export async function POST(request: Request) {
   const user = await requirePlayer();
@@ -17,12 +18,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const { ticket, qrDataUrl } = await createTicketFromCart(user.id, lines);
+    const { ticket } = await createTicketFromCart(user.id, lines);
+    const qrDataUrl = await generateTicketQrDataUrl(
+      ticket.ticketNumber,
+      ticket.verificationCode,
+      ticket.internalTicketCode
+    );
 
     return NextResponse.json({
       ticket: {
         id: ticket.id,
         ticketNumber: ticket.ticketNumber,
+        internalTicketCode: ticket.internalTicketCode,
         verificationCode: ticket.verificationCode,
         totalAmount: ticket.totalAmount,
         balanceBefore: ticket.balanceBefore,

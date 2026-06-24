@@ -1,5 +1,12 @@
 import { prisma } from "./db";
+import { generateTicketQrDataUrl } from "./ticket-qr";
+import { buildTicketSearchQueries, getQrTicketCode } from "./ticket-codes";
 import { hashPassword } from "./auth";
+import { buildReceiptData } from "./build-receipt-data";
+import type { ReceiptData } from "./ticket-receipt";
+import { canCancelTicketForCajero } from "./tickets";
+import { dayStartInTz } from "./timezone";
+import { formatMoney } from "./utils";
 
 export async function createPlayerAccount(input: {
   username: string;
@@ -68,20 +75,27 @@ export async function adjustPlayerWallet(
     if (!user?.wallet) throw new Error("Jugador sin billetera.");
 
     const balanceBefore = user.wallet.balance;
+    let balanceAfter: number;
 
-    if (mode === "subtract" && balanceBefore < amt) {
-      throw new Error(
-        `Saldo insuficiente. Disponible: RD$${balanceBefore.toFixed(2)}.`
-      );
+    if (mode === "add") {
+      const updated = await tx.wallet.update({
+        where: { id: user.wallet.id },
+        data: { balance: { increment: amt } },
+      });
+      balanceAfter = updated.balance;
+    } else {
+      const updated = await tx.wallet.updateMany({
+        where: { id: user.wallet.id, balance: { gte: amt } },
+        data: { balance: { decrement: amt } },
+      });
+      if (updated.count === 0) {
+        throw new Error(
+          `Saldo insuficiente. Disponible: ${formatMoney(balanceBefore)}.`
+        );
+      }
+      const fresh = await tx.wallet.findUnique({ where: { id: user.wallet.id } });
+      balanceAfter = fresh?.balance ?? balanceBefore - amt;
     }
-
-    const updated = await tx.wallet.update({
-      where: { id: user.wallet.id },
-      data:
-        mode === "add"
-          ? { balance: { increment: amt } }
-          : { balance: { decrement: amt } },
-    });
 
     const defaultNote =
       mode === "add" ? "Recarga — cajero" : "Descuento — cajero";
@@ -92,7 +106,7 @@ export async function adjustPlayerWallet(
         type: mode === "add" ? "DEPOSIT" : "WITHDRAWAL",
         amount: amt,
         balanceBefore,
-        balanceAfter: updated.balance,
+        balanceAfter,
         note: note ?? defaultNote,
       },
     });
@@ -101,7 +115,7 @@ export async function adjustPlayerWallet(
       mode,
       amount: amt,
       balanceBefore,
-      balanceAfter: updated.balance,
+      balanceAfter,
       username: user.username,
     };
   });
@@ -171,41 +185,84 @@ export async function getPendingWinnerTickets() {
 }
 
 export async function lookupTicket(query: string) {
-  const q = query.trim();
-  const ticket = await prisma.ticket.findFirst({
-    where: {
-      OR: [
-        { ticketNumber: q },
-        { verificationCode: q },
-        { ticketNumber: { contains: q } },
-      ],
-    },
-    include: {
-      user: { select: { fullName: true, username: true } },
-      items: { include: { draw: { include: { lottery: true } } } },
-    },
-  });
-  return ticket;
+  const queries = buildTicketSearchQueries(query);
+
+  for (const q of queries) {
+    const code = q.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    const ticket = await prisma.ticket.findFirst({
+      where: {
+        OR: [
+          { ticketNumber: q },
+          { internalTicketCode: q },
+          { verificationCode: q },
+          { verificationCode: code },
+          { ticketNumber: { contains: q, mode: "insensitive" } },
+          { internalTicketCode: { contains: q, mode: "insensitive" } },
+        ],
+      },
+      include: {
+        user: { select: { fullName: true, username: true } },
+        items: { include: { draw: { include: { lottery: true } } } },
+      },
+    });
+    if (ticket) return ticket;
+  }
+
+  return null;
 }
 
 export async function lookupTicketForCajero(query: string) {
-  const q = query.trim();
-  const ticket = await prisma.ticket.findFirst({
-    where: {
-      OR: [
-        { ticketNumber: q },
-        { verificationCode: q },
-        { ticketNumber: { contains: q } },
-      ],
-    },
-    include: { items: true },
-  });
+  const ticket = await lookupTicket(query);
   return ticket ? toCajeroTicketView(ticket) : null;
 }
 
-export async function getCajeroDashboardStats(cajeroId: string) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+export async function getTicketReceiptForCajero(query: string): Promise<{
+  id: string;
+  receipt: ReceiptData;
+  qrDataUrl: string;
+  status: string;
+  totalPrize: number;
+  canCancel: boolean;
+} | null> {
+  const ticket = await lookupTicket(query);
+  if (!ticket) return null;
+
+  const receipt = buildReceiptData(ticket, ticket.user ?? undefined);
+  if (ticket.customerName?.trim()) {
+    receipt.playerName = ticket.customerName.trim();
+  }
+  if (ticket.paymentMethod === "CASH") {
+    receipt.paymentMethod = "CASH";
+  }
+
+  const qrDataUrl = await generateTicketQrDataUrl(
+    getQrTicketCode(ticket),
+    ticket.verificationCode,
+    ticket.internalTicketCode
+  );
+  const totalPrize = ticket.items.reduce((s, i) => s + (i.prizeAmount ?? 0), 0);
+
+  return {
+    id: ticket.id,
+    receipt,
+    qrDataUrl,
+    status: ticket.status,
+    totalPrize,
+    canCancel: canCancelTicketForCajero(
+      ticket.status,
+      ticket.items.map((i) => i.draw)
+    ),
+  };
+}
+
+export async function getCajeroDashboardStats(_cajeroId: string) {
+  const today = dayStartInTz();
+  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+  const cashDayFilter = {
+    paymentMethod: "CASH" as const,
+    createdAt: { gte: today, lt: tomorrow },
+    status: { not: "CANCELED" as const },
+  };
 
   const deposits = await prisma.walletTransaction.findMany({
     where: {
@@ -227,13 +284,9 @@ export async function getCajeroDashboardStats(cajeroId: string) {
   });
 
   const cashSales = await prisma.ticket.findMany({
-    where: {
-      paymentMethod: "CASH",
-      soldByCajeroId: cajeroId,
-      createdAt: { gte: today },
-    },
+    where: cashDayFilter,
     orderBy: { createdAt: "desc" },
-    take: 10,
+    take: 40,
     select: {
       ticketNumber: true,
       totalAmount: true,
@@ -243,13 +296,27 @@ export async function getCajeroDashboardStats(cajeroId: string) {
   });
 
   const cashAgg = await prisma.ticket.aggregate({
-    where: {
-      paymentMethod: "CASH",
-      soldByCajeroId: cajeroId,
-      createdAt: { gte: today },
-    },
+    where: cashDayFilter,
     _sum: { totalAmount: true },
     _count: true,
+  });
+
+  const cashPlaysCount = await prisma.ticketItem.count({
+    where: {
+      ticket: cashDayFilter,
+    },
+  });
+
+  const salesHistory = await prisma.ticket.findMany({
+    where: { paymentMethod: "CASH", status: { not: "CANCELED" } },
+    orderBy: { createdAt: "desc" },
+    take: 80,
+    select: {
+      ticketNumber: true,
+      totalAmount: true,
+      customerName: true,
+      createdAt: true,
+    },
   });
 
   return {
@@ -258,8 +325,15 @@ export async function getCajeroDashboardStats(cajeroId: string) {
     winnerTickets,
     cashSales: {
       count: cashAgg._count,
+      playsCount: cashPlaysCount,
       total: cashAgg._sum.totalAmount ?? 0,
       recent: cashSales.map((s) => ({
+        ticketNumber: s.ticketNumber,
+        totalAmount: s.totalAmount,
+        customerName: s.customerName,
+        createdAt: s.createdAt.toISOString(),
+      })),
+      history: salesHistory.map((s) => ({
         ticketNumber: s.ticketNumber,
         totalAmount: s.totalAmount,
         customerName: s.customerName,

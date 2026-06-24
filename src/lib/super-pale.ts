@@ -61,21 +61,57 @@ export function getSuperPaleDefinition(code: string) {
   return SUPER_PALE_DEFINITIONS.find((s) => s.code === code);
 }
 
-/** Súper palés abiertos: cierran con la lotería de referencia (Real o Leidsa). */
-export function getOpenSuperPales(draws: OpenDrawView[]): OpenSuperPaleView[] {
-  const byCode = new Map(draws.map((d) => [d.lotteryCode, d]));
+/** Títulos para recibo / ticket (evita confundir con Leidsa, Gana Más, etc.). */
+export const SUPER_PALE_RECEIPT_TITLES: Record<string, string> = {
+  SP_REAL_GANAMAS: "SUPER PALE REAL-GANA MAS",
+  SP_NAC_LEIDSA: "SUPER PALE NACIONAL-QP",
+};
+
+export function superPaleReceiptTitle(codeOrName?: string | null): string {
+  if (!codeOrName) return "SUPER PALE";
+  if (SUPER_PALE_RECEIPT_TITLES[codeOrName]) {
+    return SUPER_PALE_RECEIPT_TITLES[codeOrName];
+  }
+  const def = getSuperPaleDefinition(codeOrName);
+  if (def) return superPaleReceiptTitle(def.code);
+  if (/s[uú]per\s*pal/i.test(codeOrName)) {
+    return codeOrName
+      .replace(/^S[uú]per\s*Pal[eé]\s+/i, "SUPER PALE ")
+      .replace(/\s*\+\s*/g, "-")
+      .toUpperCase();
+  }
+  return codeOrName.toUpperCase();
+}
+
+export type TodayDrawRef = {
+  id: string;
+  lotteryCode: string;
+  lotteryName: string;
+  drawTime: string;
+};
+
+/**
+ * Súper palés abiertos para venta.
+ * La lotería de cierre debe estar abierta; A y B usan el sorteo de hoy aunque ya hayan cerrado.
+ */
+export function buildOpenSuperPales(
+  openDraws: OpenDrawView[],
+  todayDraws: TodayDrawRef[]
+): OpenSuperPaleView[] {
+  const openByCode = new Map(openDraws.map((d) => [d.lotteryCode, d]));
+  const todayByCode = new Map(todayDraws.map((d) => [d.lotteryCode, d]));
   const open: OpenSuperPaleView[] = [];
 
   for (const def of SUPER_PALE_DEFINITIONS) {
-    const drawClose = byCode.get(def.closesWithLotteryCode);
+    const drawClose = openByCode.get(def.closesWithLotteryCode);
     if (!drawClose) continue;
 
-    const drawA = byCode.get(def.lotteryCodeA);
-    const drawB = byCode.get(def.lotteryCodeB);
+    const drawA = todayByCode.get(def.lotteryCodeA);
+    const drawB = todayByCode.get(def.lotteryCodeB);
     if (!drawA || !drawB) continue;
 
-    const secondsLeft = drawClose.secondsLeft;
-    const status = drawClose.status === "CLOSING_SOON" ? "CLOSING_SOON" : "OPEN";
+    const status =
+      drawClose.status === "CLOSING_SOON" ? "CLOSING_SOON" : "OPEN";
 
     open.push({
       id: superPaleIdFromCode(def.code),
@@ -89,11 +125,22 @@ export function getOpenSuperPales(draws: OpenDrawView[]): OpenSuperPaleView[] {
       lotteryCodeA: drawA.lotteryCode,
       lotteryCodeB: drawB.lotteryCode,
       status,
-      secondsLeft,
+      secondsLeft: drawClose.secondsLeft,
     });
   }
 
   return open.sort((a, b) => compareDrawTime(a.sortTime, b.sortTime));
+}
+
+/** Cliente: fallback usando solo loterías abiertas. */
+export function getOpenSuperPales(draws: OpenDrawView[]): OpenSuperPaleView[] {
+  const todayRefs: TodayDrawRef[] = draws.map((d) => ({
+    id: d.id,
+    lotteryCode: d.lotteryCode,
+    lotteryName: d.lotteryName,
+    drawTime: d.drawTime,
+  }));
+  return buildOpenSuperPales(draws, todayRefs);
 }
 
 export type PlayStripItem =
