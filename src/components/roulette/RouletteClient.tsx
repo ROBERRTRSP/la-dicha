@@ -512,7 +512,7 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
 
   return (
     <div className={cn("roulette-screen", spinView && "roulette-screen--focus")}>
-      <BrandHeader balance={balance} title="Ruleta" backHref="/jugar" />
+      <BrandHeader balance={balance} title="Ruleta" backHref="/ruleta" />
 
       {!active && (
         <p className="roulette-disabled-banner">

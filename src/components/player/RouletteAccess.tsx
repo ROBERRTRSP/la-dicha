@@ -24,7 +24,7 @@ export function RouletteAccess() {
   }
 
   return (
-    <Link href="/ruleta" className="play-roulette-compact" aria-label="Jugar Ruleta La Dicha">
+    <Link href="/ruleta" className="play-roulette-compact" aria-label="Casino La Dicha">
       <AiVisual
         src={ART.ruletaChip}
         alt=""
@@ -32,7 +32,7 @@ export function RouletteAccess() {
         height={28}
         className="play-roulette-compact-art"
       />
-      <span className="play-roulette-compact-label">Ruleta La Dicha</span>
+      <span className="play-roulette-compact-label">Casino La Dicha</span>
       <span className="play-roulette-compact-cta">Jugar →</span>
     </Link>
   );

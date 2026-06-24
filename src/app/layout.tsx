@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "../styles/casino.css";
 
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL ?? "https://consorciobelendejudea.com";

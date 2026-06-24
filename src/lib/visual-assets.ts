@@ -29,9 +29,12 @@ export const ART = {
       green: "/art/roulette/roulette-ball-green.png",
     },
   },
+  casino: {
+    lobbyBg: "/casino/casino-lobby-bg.png",
+    cabinetFrame: "/casino/slot-cabinet-frame.png",
+  },
 } as const;
 
 export function rouletteBallArt(color: "red" | "black" | "green") {
   return ART.roulette.ball[color];
 }
-

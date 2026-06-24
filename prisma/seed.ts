@@ -280,6 +280,12 @@ async function main() {
     create: { id: "default", value: ticketCount },
   });
 
+  await prisma.slotSettings.upsert({
+    where: { id: "default" },
+    update: { active: true, minBetAmount: 1, maxBetAmount: 10 },
+    create: { id: "default", active: true, minBetAmount: 1, maxBetAmount: 10 },
+  });
+
   console.log(
     "Seed OK — demo / 1234 — cajero / 1234 — mostrador / 1234 — admin / 1234"
   );

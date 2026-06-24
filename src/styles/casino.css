@@ -1,0 +1,503 @@
+/* ===== CASINO LA DICHA — lobby + máquinas modernas ===== */
+
+.casino-lobby {
+  position: relative;
+  min-height: 100%;
+  padding-bottom: 24px;
+}
+
+.casino-lobby-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.casino-lobby-content {
+  position: relative;
+  z-index: 1;
+  padding: 12px 16px 32px;
+}
+
+.casino-lobby-welcome {
+  text-align: center;
+  font-size: 13px;
+  color: #cbd5e1;
+  margin: 0 0 16px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+.casino-lobby-section {
+  margin: 20px 0 12px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fef08a;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.casino-game-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.casino-game-card {
+  display: flex;
+  gap: 14px;
+  padding: 12px;
+  border-radius: 16px;
+  text-decoration: none;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.casino-game-card:active {
+  transform: scale(0.98);
+}
+
+.casino-game-card--roulette {
+  border-color: rgba(239, 68, 68, 0.5);
+  background: linear-gradient(135deg, rgba(127, 29, 29, 0.85), rgba(15, 23, 42, 0.9));
+}
+
+.casino-game-card-thumb,
+.casino-game-card-art {
+  flex-shrink: 0;
+  width: 88px;
+  height: 88px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.casino-game-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.casino-game-card-body h2 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.casino-game-card-body p {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.casino-game-card-bonus {
+  display: block;
+  margin-top: 6px;
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+.casino-game-card-cta {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fef08a;
+}
+
+/* ===== MÁQUINA TRAGAMONEDAS ===== */
+.casino-machine {
+  position: relative;
+  min-height: 100%;
+  overflow: hidden;
+}
+
+.casino-machine-bg {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, #1e1b4b 0%, #0f172a 55%, #020617 100%);
+  z-index: 0;
+}
+
+.casino-machine-inner {
+  position: relative;
+  z-index: 1;
+  padding: 8px 12px 28px;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.casino-machine-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.casino-machine-back {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-decoration: none;
+  padding-top: 4px;
+  flex-shrink: 0;
+}
+
+.casino-machine-title {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+
+.casino-machine-title h1 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fef08a;
+}
+
+.casino-machine-title p {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.casino-machine-balance {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.casino-machine-balance span {
+  display: block;
+  font-size: 10px;
+  color: #64748b;
+}
+
+.casino-machine-balance strong {
+  font-size: 14px;
+  color: #4ade80;
+}
+
+.casino-led-panel {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #111 0%, #1a1a1a 100%);
+  border: 2px solid #333;
+  box-shadow: inset 0 0 12px rgba(0, 255, 100, 0.08), 0 0 8px rgba(0, 0, 0, 0.5);
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.casino-led-idle {
+  color: #22d3ee;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
+}
+
+.casino-led-free {
+  color: #f472b6;
+  text-shadow: 0 0 8px rgba(244, 114, 182, 0.8);
+  animation: casino-led-pulse 1s ease-in-out infinite;
+}
+
+.casino-led-win {
+  color: #fde047;
+  text-shadow: 0 0 10px rgba(253, 224, 71, 0.9);
+  animation: casino-led-pulse 0.4s ease-in-out 3;
+}
+
+@keyframes casino-led-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.65;
+  }
+}
+
+.casino-cabinet {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 0.72;
+  max-height: 520px;
+  margin: 0 auto;
+}
+
+.casino-cabinet-frame {
+  position: absolute !important;
+  inset: 0;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.casino-cabinet-window {
+  position: absolute;
+  z-index: 2;
+  left: 11%;
+  right: 11%;
+  top: 18%;
+  bottom: 28%;
+  background: linear-gradient(180deg, #0a0a12 0%, #151525 100%);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.9);
+}
+
+/* Carretes */
+.slot-reels {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
+  height: 100%;
+  padding: 4px;
+}
+
+.slot-reel-col {
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.slot-reel-strip {
+  will-change: transform;
+}
+
+.slot-reel-strip--blur {
+  animation: slot-reel-blur 0.12s linear infinite;
+}
+
+.slot-reel-strip--stop {
+  transition: transform 0.65s cubic-bezier(0.15, 0.85, 0.25, 1);
+}
+
+@keyframes slot-reel-blur {
+  0% {
+    transform: translate3d(0, 0, 0);
+    filter: blur(0);
+  }
+  50% {
+    transform: translate3d(0, -36px, 0);
+    filter: blur(1px);
+  }
+  100% {
+    transform: translate3d(0, -72px, 0);
+    filter: blur(0);
+  }
+}
+
+.slot-reel-cell {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #fff 0%, #e2e8f0 100%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.slot-symbol-svg {
+  display: block;
+}
+
+.casino-win-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(253, 224, 71, 0.35) 0%, transparent 70%);
+  animation: casino-win-flash 1.2s ease-out forwards;
+  pointer-events: none;
+  z-index: 4;
+}
+
+@keyframes casino-win-flash {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.casino-machine--win .casino-cabinet-window {
+  animation: casino-cabinet-shake 0.4s ease-in-out;
+}
+
+@keyframes casino-cabinet-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
+}
+
+.casino-msg {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 10px 0;
+}
+
+.casino-msg--bonus {
+  color: #f472b6;
+}
+
+.casino-msg--error {
+  color: #fca5a5;
+}
+
+.casino-controls {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.casino-bet-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.08em;
+}
+
+.casino-bet-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.casino-bet-chip {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 2px solid #475569;
+  background: radial-gradient(circle at 30% 30%, #64748b, #334155);
+  color: #f8fafc;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #1e293b;
+}
+
+.casino-bet-chip.active {
+  border-color: #fbbf24;
+  background: radial-gradient(circle at 30% 30%, #fde047, #ca8a04);
+  color: #422006;
+  box-shadow: 0 3px 0 #92400e, 0 0 12px rgba(251, 191, 36, 0.5);
+}
+
+.casino-bet-chip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.casino-spin-btn {
+  position: relative;
+  width: 100%;
+  padding: 18px;
+  border: none;
+  border-radius: 50%;
+  max-width: 140px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  background: radial-gradient(circle at 35% 30%, #ef4444 0%, #991b1b 55%, #450a0a 100%);
+  box-shadow:
+    0 0 0 6px #1e293b,
+    0 0 0 10px #fbbf24,
+    0 8px 0 #450a0a,
+    0 12px 24px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.casino-spin-btn:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow:
+    0 0 0 6px #1e293b,
+    0 0 0 10px #fbbf24,
+    0 4px 0 #450a0a;
+}
+
+.casino-spin-btn--active {
+  animation: casino-spin-pulse 0.5s ease-in-out infinite;
+}
+
+@keyframes casino-spin-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 6px #1e293b,
+      0 0 0 10px #fbbf24,
+      0 8px 0 #450a0a,
+      0 0 20px rgba(239, 68, 68, 0.6);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px #1e293b,
+      0 0 0 10px #fde047,
+      0 8px 0 #450a0a,
+      0 0 32px rgba(239, 68, 68, 0.9);
+  }
+}
+
+.casino-spin-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.casino-spin-btn-label {
+  font-size: 13px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.04em;
+}
+
+/* Temas por juego */
+.slot-theme--skunk.casino-machine .casino-machine-bg {
+  background: radial-gradient(ellipse at 50% 0%, #14532d 0%, #0f172a 60%, #020617 100%);
+}
+
+.slot-theme--lamp.casino-machine .casino-machine-bg {
+  background: radial-gradient(ellipse at 50% 0%, #4c1d95 0%, #1e1b4b 55%, #020617 100%);
+}
+
+.slot-theme--ox.casino-machine .casino-machine-bg {
+  background: radial-gradient(ellipse at 50% 0%, #7f1d1d 0%, #292524 55%, #0c0a09 100%);
+}
+
+.slot-theme--wolf.casino-machine .casino-machine-bg {
+  background: radial-gradient(ellipse at 50% 0%, #1e3a8a 0%, #0f172a 55%, #020617 100%);
+}
+
+.casino-lobby .play-header {
+  position: relative;
+  z-index: 2;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+}

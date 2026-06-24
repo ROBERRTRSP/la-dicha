@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 const tabs = [
   { href: "/jugar", label: "Jugar", art: ART.nav.jugar, match: ["/jugar"] },
-  { href: "/ruleta", label: "Ruleta", art: ART.ruletaChip, match: ["/ruleta"] },
+  { href: "/ruleta", label: "Casino", art: ART.ruletaChip, match: ["/ruleta", "/slots"] },
   { href: "/tickets", label: "Tickets", art: ART.nav.tickets, match: ["/tickets"] },
   {
     href: "/resultados",
