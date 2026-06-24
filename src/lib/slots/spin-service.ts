@@ -121,6 +121,8 @@ export async function placeSlotSpin(userId: string, gameId: string, betAmount: n
       balance: balanceAfter,
       grid: result.grid,
       lineWins: result.lineWins,
+      winningCells: result.winningCells,
+      scatterCells: result.scatterCells,
       payout: result.payout,
       profit,
       scatterCount: result.scatterCount,

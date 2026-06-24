@@ -44,9 +44,17 @@ export type LineWin = {
   payout: number;
 };
 
+/** Celda ganadora dentro de la rejilla (columna y fila visibles). */
+export type WinCell = {
+  col: number;
+  row: number;
+};
+
 export type SpinResult = {
   grid: Grid;
   lineWins: LineWin[];
+  winningCells: WinCell[];
+  scatterCells: WinCell[];
   scatterCount: number;
   payout: number;
   bonusTriggered: string | null;

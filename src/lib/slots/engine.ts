@@ -7,6 +7,7 @@ import type {
   LineWin,
   SlotGameConfig,
   SpinResult,
+  WinCell,
 } from "./types";
 
 export function spinGrid(game: SlotGameConfig): Grid {
@@ -107,13 +108,30 @@ export function evaluateSpin(
 
   const betPerLine = betAmount / game.paylineCount;
   const lineWins: LineWin[] = [];
+  const winCellSet = new Set<string>();
+  const lines = PAYLINES_5x3.slice(0, game.paylineCount);
 
-  PAYLINES_5x3.slice(0, game.paylineCount).forEach((line, index) => {
+  lines.forEach((line, index) => {
     const symbols = readPayline(grid, line);
     const win = evaluateLine(symbols, game, betPerLine);
     if (win) {
       lineWins.push({ ...win, lineIndex: index });
+      for (let col = 0; col < win.count; col++) {
+        winCellSet.add(`${col}:${line[col]}`);
+      }
     }
+  });
+
+  const winningCells: WinCell[] = Array.from(winCellSet).map((k) => {
+    const [col, row] = k.split(":").map(Number);
+    return { col, row };
+  });
+
+  const scatterCells: WinCell[] = [];
+  grid.forEach((column, col) => {
+    column.forEach((sym, row) => {
+      if (game.scatterIds.includes(sym)) scatterCells.push({ col, row });
+    });
   });
 
   let linePayout = lineWins.reduce((s, w) => s + w.payout, 0);
@@ -171,6 +189,8 @@ export function evaluateSpin(
   return {
     grid,
     lineWins,
+    winningCells,
+    scatterCells,
     scatterCount,
     payout,
     bonusTriggered,

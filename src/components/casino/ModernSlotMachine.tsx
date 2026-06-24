@@ -10,10 +10,17 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { SlotReels } from "./SlotReels";
+import { SlotSymbolSvg } from "./SlotSymbolSvg";
 import { CASINO_ART } from "@/lib/casino-art";
 import { getSlotGame } from "@/lib/slots/games";
 import { SLOT_BET_OPTIONS } from "@/lib/slots/settings";
-import type { BonusState, Grid, LineWin, SlotGameId } from "@/lib/slots/types";
+import type {
+  BonusState,
+  Grid,
+  LineWin,
+  SlotGameId,
+  WinCell,
+} from "@/lib/slots/types";
 import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +28,8 @@ type SpinResponse = {
   balance: number;
   grid: Grid;
   lineWins: LineWin[];
+  winningCells: WinCell[];
+  scatterCells: WinCell[];
   payout: number;
   message: string | null;
   bonus: BonusState;
@@ -54,6 +63,9 @@ export function ModernSlotMachine({
   const [lastWin, setLastWin] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [winFlash, setWinFlash] = useState(false);
+  const [winCells, setWinCells] = useState<WinCell[]>([]);
+  const [scatterCells, setScatterCells] = useState<WinCell[]>([]);
+  const [jackpotTier, setJackpotTier] = useState<string | null>(null);
   const [bonus, setBonus] = useState<BonusState>({
     freeSpinsLeft: 0,
     multiplier: 1,
@@ -77,6 +89,9 @@ export function ModernSlotMachine({
     setLastWin(null);
     setMessage(null);
     setWinFlash(false);
+    setWinCells([]);
+    setScatterCells([]);
+    setJackpotTier(null);
     setSpinning(true);
     setAwaitingStop(true);
     setStopGeneration((g) => g + 1);
@@ -114,10 +129,13 @@ export function ModernSlotMachine({
     setBalance(result.balance);
     setBonus(result.bonus);
     setLastWin(result.payout);
+    setWinCells(result.winningCells ?? []);
+    setScatterCells(result.scatterCells ?? []);
+    setJackpotTier(result.jackpotTier ?? null);
     if (result.message) setMessage(result.message);
     if (result.payout > 0) {
       setWinFlash(true);
-      window.setTimeout(() => setWinFlash(false), 1200);
+      window.setTimeout(() => setWinFlash(false), 1600);
     }
     setSpinning(false);
     setAwaitingStop(false);
@@ -176,12 +194,25 @@ export function ModernSlotMachine({
               grid={grid}
               spinning={awaitingStop}
               stopGeneration={stopGeneration}
+              winningCells={winCells}
+              scatterCells={scatterCells}
+              highlight={!awaitingStop}
               onAllStopped={handleAllStopped}
             />
             {winFlash && <div className="casino-win-overlay" aria-hidden />}
+            {jackpotTier && (
+              <div className={cn("casino-jackpot-banner", `casino-jackpot-banner--${jackpotTier.toLowerCase()}`)}>
+                JACKPOT {jackpotTier}
+              </div>
+            )}
           </div>
         </div>
 
+        {lastWin != null && lastWin > 0 && (
+          <div className="casino-win-amount" key={stopGeneration}>
+            + {formatMoney(lastWin)}
+          </div>
+        )}
         {message && <p className="casino-msg casino-msg--bonus">{message}</p>}
         {error && <p className="casino-msg casino-msg--error">{error}</p>}
 
@@ -210,14 +241,38 @@ export function ModernSlotMachine({
           >
             <span className="casino-spin-btn-ring" aria-hidden />
             <span className="casino-spin-btn-label">
-              {spinning
-                ? "…"
-                : freeMode
-                  ? "GIRAR GRATIS"
-                  : "GIRAR"}
+              {spinning ? "…" : freeMode ? "GRATIS" : "GIRAR"}
             </span>
           </button>
         </div>
+
+        <section className="casino-paytable">
+          <h3 className="casino-paytable-title">Tabla de pagos · ×5 / ×4 / ×3</h3>
+          <div className="casino-paytable-grid">
+            {Object.values(game.symbols).map((sym) => (
+              <div key={sym.id} className="casino-paytable-item">
+                <SlotSymbolSvg symbolId={sym.id} gameId={gameId} size={40} />
+                <div className="casino-paytable-info">
+                  <span className="casino-paytable-name">
+                    {sym.label}
+                    {sym.isWild && <em className="casino-tag casino-tag--wild">WILD</em>}
+                    {sym.isScatter && (
+                      <em className="casino-tag casino-tag--scatter">BONUS</em>
+                    )}
+                  </span>
+                  <span className="casino-paytable-pays">
+                    {[5, 4, 3]
+                      .map((n) => sym.pays[n as 3 | 4 | 5])
+                      .filter((v): v is number => typeof v === "number")
+                      .map((v) => `×${v}`)
+                      .join(" · ")}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="casino-paytable-foot">{game.bonus.description}</p>
+        </section>
       </div>
     </div>
   );

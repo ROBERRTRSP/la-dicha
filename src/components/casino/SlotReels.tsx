@@ -8,7 +8,7 @@ import {
   useState,
 } from "react";
 import { SlotSymbolSvg } from "./SlotSymbolSvg";
-import type { SlotGameId } from "@/lib/slots/types";
+import type { SlotGameId, WinCell } from "@/lib/slots/types";
 import { getSlotGame } from "@/lib/slots/games";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +34,9 @@ function SlotReelColumn({
   allSymbolIds,
   spinning,
   stopGeneration,
+  winRows,
+  scatterRows,
+  highlight,
   onStopped,
 }: {
   columnIndex: number;
@@ -42,6 +45,9 @@ function SlotReelColumn({
   allSymbolIds: string[];
   spinning: boolean;
   stopGeneration: number;
+  winRows: Set<number>;
+  scatterRows: Set<number>;
+  highlight: boolean;
   onStopped?: () => void;
 }) {
   const [strip, setStrip] = useState<string[]>(() =>
@@ -80,6 +86,8 @@ function SlotReelColumn({
     return () => window.clearTimeout(t);
   }, [phase, onStopped]);
 
+  const lastIndex = strip.length - 3;
+
   return (
     <div className="slot-reel-col">
       <div
@@ -94,11 +102,25 @@ function SlotReelColumn({
             : { transform: `translate3d(0, -${offset}px, 0)` }
         }
       >
-        {strip.map((symId, i) => (
-          <div key={`${stopGeneration}-${i}-${symId}`} className="slot-reel-cell">
-            <SlotSymbolSvg symbolId={symId} gameId={gameId} size={56} />
-          </div>
-        ))}
+        {strip.map((symId, i) => {
+          const visibleRow = i - lastIndex;
+          const isWin =
+            highlight && visibleRow >= 0 && winRows.has(visibleRow);
+          const isScatter =
+            highlight && visibleRow >= 0 && scatterRows.has(visibleRow);
+          return (
+            <div
+              key={`${stopGeneration}-${i}-${symId}`}
+              className={cn(
+                "slot-reel-cell",
+                isWin && "slot-reel-cell--win",
+                isScatter && "slot-reel-cell--scatter"
+              )}
+            >
+              <SlotSymbolSvg symbolId={symId} gameId={gameId} size={56} />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -109,17 +131,41 @@ export function SlotReels({
   grid,
   spinning,
   stopGeneration,
+  winningCells = [],
+  scatterCells = [],
+  highlight = false,
   onAllStopped,
 }: {
   gameId: SlotGameId;
   grid: string[][];
   spinning: boolean;
   stopGeneration: number;
+  winningCells?: WinCell[];
+  scatterCells?: WinCell[];
+  highlight?: boolean;
   onAllStopped?: () => void;
 }) {
   const game = getSlotGame(gameId)!;
   const allIds = useMemo(() => Object.keys(game.symbols), [game.symbols]);
   const stoppedCount = useRef(0);
+
+  const winByCol = useMemo(() => {
+    const map = new Map<number, Set<number>>();
+    for (const c of winningCells) {
+      if (!map.has(c.col)) map.set(c.col, new Set());
+      map.get(c.col)!.add(c.row);
+    }
+    return map;
+  }, [winningCells]);
+
+  const scatterByCol = useMemo(() => {
+    const map = new Map<number, Set<number>>();
+    for (const c of scatterCells) {
+      if (!map.has(c.col)) map.set(c.col, new Set());
+      map.get(c.col)!.add(c.row);
+    }
+    return map;
+  }, [scatterCells]);
 
   const handleStopped = useCallback(() => {
     stoppedCount.current += 1;
@@ -144,9 +190,14 @@ export function SlotReels({
           allSymbolIds={allIds}
           spinning={spinning}
           stopGeneration={stopGeneration}
+          winRows={winByCol.get(colIndex) ?? EMPTY_SET}
+          scatterRows={scatterByCol.get(colIndex) ?? EMPTY_SET}
+          highlight={highlight && !spinning}
           onStopped={handleStopped}
         />
       ))}
     </div>
   );
 }
+
+const EMPTY_SET = new Set<number>();

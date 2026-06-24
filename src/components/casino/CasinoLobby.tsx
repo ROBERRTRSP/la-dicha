@@ -49,26 +49,28 @@ export function CasinoLobby({
         )}
 
         <h3 className="casino-lobby-section">Tragamonedas 5×3</h3>
-        <div className="casino-game-grid">
+        <div className="casino-slot-grid">
           {SLOT_GAME_LIST.map((game) => (
             <Link
               key={game.id}
               href={`/ruleta/${game.id}`}
-              className={`casino-game-card casino-game-card--slot ${game.themeClass}`}
+              className={`casino-slot-tile ${game.themeClass}`}
             >
-              <div className="casino-game-card-thumb">
+              <div className="casino-slot-tile-media">
                 <Image
                   src={CASINO_ART.thumbs[game.id]}
-                  alt={game.name}
-                  width={160}
-                  height={160}
-                  className="casino-game-card-img"
+                  alt=""
+                  fill
+                  sizes="(max-width: 480px) 50vw, 200px"
+                  className="casino-slot-tile-img"
                 />
+                <span className="casino-slot-tile-badge">5×3</span>
               </div>
-              <div className="casino-game-card-body">
+              <div className="casino-slot-tile-body">
                 <h2>{game.name}</h2>
                 <p>{game.tagline}</p>
-                <span className="casino-game-card-bonus">{game.bonus.description}</span>
+                <span className="casino-slot-tile-bonus">{game.bonus.description}</span>
+                <span className="casino-slot-tile-cta">Jugar →</span>
               </div>
             </Link>
           ))}
