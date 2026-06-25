@@ -25,7 +25,10 @@ import {
   visibleSymbolsAtOffset,
   REEL_COLUMN_COUNT,
 } from "../src/lib/slots/reel-motion";
-import { getSlotAnimationConfig } from "../src/lib/slots/animation-config";
+import {
+  estimateMaxSpinDurationMs,
+  getSlotAnimationConfig,
+} from "../src/lib/slots/animation-config";
 import { getSlotGame } from "../src/lib/slots/games";
 import type { SlotGameId } from "../src/lib/slots/types";
 
@@ -197,6 +200,20 @@ for (const gameId of GAME_IDS) {
   assert(
     result.maxDurationMs < 12000,
     `${gameId}: ciclo completo < 12s (${result.maxDurationMs}ms)`
+  );
+
+  const animMobile = getSlotAnimationConfig(gameId, {
+    mobile: true,
+    cellHeight: 72,
+  });
+  const targetMs = estimateMaxSpinDurationMs(animMobile);
+  assert(
+    targetMs >= 4000 && targetMs <= 5200,
+    `${gameId}: duración objetivo 4–5s (${targetMs}ms)`
+  );
+  assert(
+    result.maxDurationMs >= 3500 && result.maxDurationMs <= 6000,
+    `${gameId}: simulación ~4–5s (${result.maxDurationMs}ms)`
   );
 
   for (let c = 0; c < 5; c++) {
