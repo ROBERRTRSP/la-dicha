@@ -55,7 +55,8 @@ export function ReelMetricsProvider({
   const [metrics, setMetrics] = useState<ReelMetrics>(DEFAULT);
 
   const syncMetrics = useCallback((el: HTMLElement) => {
-    const stage = el.closest(".slot-screen-viewport") as HTMLElement | null;
+    const stage = (el.closest(".slot-screen-viewport") ??
+      el.closest(".classic7-screen")) as HTMLElement | null;
     const w = el.clientWidth || stage?.clientWidth || 320;
     const stageH = stage?.clientHeight ?? 0;
     const m = computeMetrics(w, stageH);
@@ -84,7 +85,8 @@ export function ReelMetricsProvider({
     const el = rootRef.current;
     if (!el) return;
 
-    const stage = el.closest(".slot-screen-viewport") as HTMLElement | null;
+    const stage = (el.closest(".slot-screen-viewport") ??
+      el.closest(".classic7-screen")) as HTMLElement | null;
 
     const update = () => syncMetrics(el);
 

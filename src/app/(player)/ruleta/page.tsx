@@ -4,6 +4,7 @@ import { BrandHeader } from "@/components/player/BrandHeader";
 import { CasinoLobby } from "@/components/casino/CasinoLobby";
 import { isRouletteActive } from "@/lib/roulette";
 import { isSlotsActive } from "@/lib/slots/spin-service";
+import { CASINO_ART } from "@/lib/casino-art";
 
 export default async function CasinoPage() {
   const user = await requirePlayer();
@@ -19,7 +20,7 @@ export default async function CasinoPage() {
       <div className="casino-lobby">
         <div
           className="casino-lobby-bg"
-          style={{ backgroundImage: "url(/casino/casino-lobby-bg.png)" }}
+          style={{ backgroundImage: `url(${CASINO_ART.lobbyBg})` }}
           aria-hidden
         />
         <BrandHeader

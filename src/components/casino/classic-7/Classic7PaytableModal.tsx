@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+import { AiVisual } from "@/components/ui/AiVisual";
 import { SlotSymbolSvg } from "../SlotSymbolSvg";
+import { CASINO_ART } from "@/lib/casino-art";
 import { getSlotGame } from "@/lib/slots/games";
 import { formatMoney } from "@/lib/utils";
 
@@ -48,6 +50,13 @@ export function Classic7PaytableModal({
         onClick={(e) => e.stopPropagation()}
       >
         <header className="classic7-paytable-header">
+          <AiVisual
+            src={CASINO_ART.classic7.logo}
+            alt=""
+            width={160}
+            height={40}
+            className="classic7-paytable-logo"
+          />
           <h2 id="classic7-paytable-title">Tabla de pagos</h2>
           <button type="button" className="classic7-paytable-close" onClick={onClose} aria-label="Cerrar">
             ×

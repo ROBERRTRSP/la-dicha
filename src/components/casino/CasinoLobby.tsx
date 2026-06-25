@@ -4,6 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { BrandHeader } from "@/components/player/BrandHeader";
 import { CASINO_ART } from "@/lib/casino-art";
+import {
+  ROULETTE_HREF,
+  slotGameHref,
+  slotLobbyBadge,
+} from "@/lib/casino-routes";
 import { ART } from "@/lib/visual-assets";
 import { SLOT_GAME_LIST } from "@/lib/slots/games";
 import { formatMoney } from "@/lib/utils";
@@ -32,7 +37,7 @@ export function CasinoLobby({
         </p>
 
         {rouletteActive && (
-          <Link href="/ruleta/roulette" className="casino-game-card casino-game-card--roulette">
+          <Link href={ROULETTE_HREF} className="casino-game-card casino-game-card--roulette">
             <div className="casino-game-card-art">
               <Image
                 src={ART.ruletaChip}
@@ -54,16 +59,13 @@ export function CasinoLobby({
           <>
             <h3 className="casino-lobby-section">Tragamonedas</h3>
             <div className="casino-slot-grid">
-              {SLOT_GAME_LIST.map((game) => {
-                const isClassic = game.id === "classic-7";
-                const href = isClassic
-                  ? "/casino/slots/classic-7"
-                  : `/ruleta/${game.id}`;
-                return (
+              {SLOT_GAME_LIST.map((game) => (
                 <Link
                   key={game.id}
-                  href={href}
-                  className={`casino-slot-tile ${game.themeClass}${isClassic ? " casino-slot-tile--classic7" : ""}`}
+                  href={slotGameHref(game.id)}
+                  className={`casino-slot-tile ${game.themeClass}${
+                    game.id === "classic-7" ? " casino-slot-tile--classic7" : ""
+                  }`}
                 >
                   <div className="casino-slot-tile-media">
                     <Image
@@ -74,22 +76,17 @@ export function CasinoLobby({
                       className="casino-slot-tile-img"
                     />
                     <span className="casino-slot-tile-badge">
-                      {isClassic ? "Nuevo" : "5×3"}
+                      {slotLobbyBadge(game)}
                     </span>
                   </div>
                   <div className="casino-slot-tile-body">
                     <h2>{game.name}</h2>
-                    <p>
-                      {isClassic
-                        ? "Slot clásica de 5 rodillos · 1 línea"
-                        : game.tagline}
-                    </p>
+                    <p>{game.tagline}</p>
                     <span className="casino-slot-tile-bonus">{game.bonus.description}</span>
                     <span className="casino-slot-tile-cta">Jugar →</span>
                   </div>
                 </Link>
-              );
-              })}
+              ))}
             </div>
           </>
         )}

@@ -16,7 +16,8 @@
     "slots:optimize-pngs": "node scripts/optimize-slot-pngs.mjs",
     "test:slot-motion": "tsx scripts/test-slot-motion.ts",
     "test:slot-audit": "node scripts/verify-slot-audit.mjs",
-    "test:slot-production": "node scripts/test-slot-production.mjs"
+    "test:slot-production": "node scripts/test-slot-production.mjs",
+    "test:slot-1000": "tsx scripts/test-slot-1000-spins.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

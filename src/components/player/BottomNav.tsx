@@ -5,11 +5,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AiVisual } from "@/components/ui/AiVisual";
 import { ART } from "@/lib/visual-assets";
+import { CASINO_ROUTE_PREFIXES } from "@/lib/casino-routes";
 import { cn } from "@/lib/utils";
 
 const tabs = [
   { href: "/jugar", label: "Jugar", art: ART.nav.jugar, match: ["/jugar"] },
-  { href: "/ruleta", label: "Casino", art: ART.ruletaChip, match: ["/ruleta", "/slots"] },
+  { href: "/ruleta", label: "Casino", art: ART.ruletaChip, match: [...CASINO_ROUTE_PREFIXES] },
   { href: "/tickets", label: "Tickets", art: ART.nav.tickets, match: ["/tickets"] },
   {
     href: "/resultados",

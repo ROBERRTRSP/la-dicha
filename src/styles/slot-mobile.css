@@ -217,4 +217,19 @@
   .slot-header-banner-shimmer {
     animation: none !important;
   }
+
+  /* Clásica 7 · mismo rendimiento móvil que máquinas modernas */
+  .casino-machine--classic7 .slot-symbol-image--classic-7 {
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.55)) saturate(1.04);
+  }
+
+  .classic7-marquee-shimmer,
+  .classic7-spin-btn--ready,
+  .classic7-spin-btn--spinning .classic7-spin-btn-art {
+    animation: none !important;
+  }
+
+  .classic7-reel-frame-art {
+    filter: none;
+  }
 }

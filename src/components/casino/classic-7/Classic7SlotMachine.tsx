@@ -8,19 +8,20 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { AiVisual } from "@/components/ui/AiVisual";
 import { SlotReels } from "../SlotReels";
-import { SlotPaylineFrame } from "../SlotPaylineFrame";
 import { CoinBurst } from "../CoinBurst";
-import { AnimatedBalance } from "../WinDisplay";
 import { Classic7PaytableModal } from "./Classic7PaytableModal";
 import { getSlotGame } from "@/lib/slots/games";
 import { CLASSIC_7_BET_OPTIONS } from "@/lib/slots/settings";
 import { preloadSlotSymbolImages } from "@/lib/slots/symbol-assets";
 import { CASINO_ART } from "@/lib/casino-art";
+import { CASINO_LOBBY_HREF } from "@/lib/casino-routes";
 import type { BonusState, Grid, LineWin, WinCell } from "@/lib/slots/types";
 import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+
+const C7 = CASINO_ART.classic7;
 
 type SpinResponse = {
   balance: number;
@@ -37,8 +38,6 @@ type SpinHistoryEntry = {
   win: number;
   at: number;
 };
-
-const SOUND_KEY = "classic7-sound-enabled";
 
 export function Classic7SlotMachine({ initialBalance }: { initialBalance: number }) {
   const game = getSlotGame("classic-7")!;
@@ -67,7 +66,6 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
   const [paytableOpen, setPaytableOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [history, setHistory] = useState<SpinHistoryEntry[]>([]);
-  const [soundOn, setSoundOn] = useState(true);
 
   const pendingResult = useRef<SpinResponse | null>(null);
   const reelsStoppedRef = useRef(false);
@@ -76,8 +74,6 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
 
   useEffect(() => {
     preloadSlotSymbolImages("classic-7");
-    const stored = localStorage.getItem(SOUND_KEY);
-    if (stored === "0") setSoundOn(false);
     fetch("/api/slots/spin")
       .then((r) => r.json())
       .then((d) => {
@@ -85,14 +81,6 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
       })
       .catch(() => {});
   }, []);
-
-  const toggleSound = () => {
-    setSoundOn((v) => {
-      const next = !v;
-      localStorage.setItem(SOUND_KEY, next ? "1" : "0");
-      return next;
-    });
-  };
 
   const tryFinalizeSpin = useCallback(() => {
     if (!reelsStoppedRef.current || !apiResolvedRef.current) return;
@@ -219,67 +207,67 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
 
   return (
     <div className="casino-machine casino-machine--classic7 classic7-machine">
-      <div className="casino-machine-bg classic7-machine-bg" aria-hidden />
+      <div className="casino-machine-bg classic7-machine-bg" aria-hidden>
+        <AiVisual
+          src={C7.bg}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="classic7-bg-art"
+        />
+        <div className="classic7-bg-vignette" />
+      </div>
       <div className="casino-machine-inner classic7-inner">
-        {bigWin && (
-          <CoinBurst active={bigWin} generation={stopGeneration} variant="coins" />
-        )}
+        <CoinBurst active={winFlash} generation={stopGeneration} variant="coins" />
+        {winFlash && <div className="classic7-win-overlay" aria-hidden />}
 
         <div className="classic7-cabinet slot-theme--classic7">
           <header className="classic7-header">
             <div className="classic7-header-toolbar">
-              <Link href="/ruleta" className="classic7-back">
-                ← Lobby
+              <Link href={CASINO_LOBBY_HREF} className="classic7-back">
+                ← Casino
               </Link>
-              <button
-                type="button"
-                className={cn("classic7-sound-btn", soundOn && "classic7-sound-btn--on")}
-                onClick={toggleSound}
-                aria-pressed={soundOn}
-              >
-                {soundOn ? "Sonido ON" : "Sonido OFF"}
-              </button>
+              <span className="classic7-header-badge">1 línea central</span>
             </div>
             <div className="classic7-marquee">
-              <div className="classic7-marquee-lights" aria-hidden />
-              <div className="classic7-marquee-plate" aria-hidden />
-              <Image
-                src={CASINO_ART.classic7Logo}
-                alt="Classic 7"
+              <div className="classic7-marquee-shimmer" aria-hidden />
+              <AiVisual
+                src={C7.logo}
+                alt="Clásica 7"
                 width={480}
                 height={120}
                 priority
                 className="classic7-marquee-logo"
               />
             </div>
-            <div className="classic7-balance-strip">
-              <div className="classic7-stat">
-                <span className="classic7-stat-label">Balance</span>
-                <AnimatedBalance value={balance} className="classic7-stat-value" />
-              </div>
-            </div>
           </header>
 
           <div className="classic7-body">
             <div className="classic7-reel-wrap">
-              <SlotPaylineFrame
-                paylineCount={1}
-                activeLineIndices={winFlash ? [0] : []}
-                className="classic7-payline-frame"
-              >
-                <div className="classic7-reel-window">
-                  <div className="classic7-payline" aria-hidden>
-                    <span className="classic7-payline-arrow classic7-payline-arrow--left" />
-                    <span className="classic7-payline-line" />
-                    <span className="classic7-payline-arrow classic7-payline-arrow--right" />
-                  </div>
-                  <div
-                    className={cn(
-                      "classic7-screen",
-                      winFlash && "classic7-screen--win",
-                      awaitingStop && "classic7-screen--spinning"
-                    )}
-                  >
+              <div className="classic7-reel-frame-deco" aria-hidden>
+                <AiVisual
+                  src={C7.cabinetFrame}
+                  alt=""
+                  fill
+                  sizes="(max-width: 420px) 96vw, 420px"
+                  className="classic7-reel-frame-art"
+                />
+              </div>
+              <div className="classic7-reel-window">
+                <div className="classic7-payline" aria-hidden>
+                  <span className="classic7-payline-arrow classic7-payline-arrow--left" />
+                  <span className="classic7-payline-line" />
+                  <span className="classic7-payline-arrow classic7-payline-arrow--right" />
+                </div>
+                <div
+                  className={cn(
+                    "classic7-screen",
+                    winFlash && "classic7-screen--win",
+                    awaitingStop && "classic7-screen--spinning"
+                  )}
+                >
+                  <div className="slot-screen-viewport">
                     <SlotReels
                       gameId="classic-7"
                       grid={grid}
@@ -293,18 +281,45 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
                     />
                   </div>
                 </div>
-              </SlotPaylineFrame>
+              </div>
+              <p
+                className={cn(
+                  "classic7-reel-caption",
+                  winFlash && "classic7-reel-caption--win"
+                )}
+              >
+                Línea de pago central
+              </p>
             </div>
 
             {error && <p className="classic7-error">{error}</p>}
             {message && !error && <p className="classic7-message">{message}</p>}
             {bigWin && (
-              <p className="classic7-big-win" role="status">
-                BIG WIN · {formatMoney(lastWin ?? 0)}
-              </p>
+              <div className="classic7-big-win-banner" role="status">
+                <AiVisual
+                  src={C7.ui.bigWin}
+                  alt=""
+                  fill
+                  sizes="320px"
+                  className="classic7-big-win-art"
+                />
+                <p className="classic7-big-win">
+                  BIG WIN · {formatMoney(lastWin ?? 0)}
+                </p>
+              </div>
             )}
 
             <div className="classic7-hud">
+              <div className="classic7-hud-bg" aria-hidden>
+                <AiVisual
+                  src={C7.ui.hudPanel}
+                  alt=""
+                  fill
+                  sizes="420px"
+                  className="classic7-hud-art"
+                />
+              </div>
+              <div className="classic7-hud-grid">
               <div className="classic7-hud-cell">
                 <span>Balance</span>
                 <strong>{formatMoney(balance)}</strong>
@@ -317,9 +332,11 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
                 <span>Premio</span>
                 <strong>{formatMoney(awaitingStop ? 0 : lastWin ?? 0)}</strong>
               </div>
+              </div>
             </div>
 
             <div className="classic7-controls">
+              <div className="classic7-bet-panel">
               <button
                 type="button"
                 className="classic7-side-btn"
@@ -336,22 +353,10 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
               >
                 −
               </button>
-              <button
-                type="button"
-                className={cn(
-                  "classic7-spin-btn",
-                  !spinning && balance >= bet && "classic7-spin-btn--ready",
-                  awaitingStop && "classic7-spin-btn--spinning"
-                )}
-                disabled={spinning || balance < bet}
-                onClick={() => void spin()}
-                aria-busy={awaitingStop}
-              >
-                <span className="classic7-spin-label">
-                  {awaitingStop ? "GIRANDO" : "GIRAR"}
-                </span>
-                <span className="classic7-spin-hint">Classic 7</span>
-              </button>
+              <div className="classic7-bet-readout" aria-live="polite">
+                <span>Monto</span>
+                <strong>{formatMoney(bet)}</strong>
+              </div>
               <button
                 type="button"
                 className="classic7-bet-btn"
@@ -369,6 +374,33 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
               >
                 Máx
               </button>
+              </div>
+
+              <div className="classic7-spin-row">
+              <button
+                type="button"
+                className={cn(
+                  "classic7-spin-btn",
+                  !spinning && balance >= bet && "classic7-spin-btn--ready",
+                  awaitingStop && "classic7-spin-btn--spinning"
+                )}
+                disabled={spinning || balance < bet}
+                onClick={() => void spin()}
+                aria-busy={awaitingStop}
+              >
+                <AiVisual
+                  src={C7.ui.spinBtn}
+                  alt=""
+                  fill
+                  sizes="108px"
+                  className="classic7-spin-btn-art"
+                />
+                <span className="classic7-spin-label">
+                  {awaitingStop ? "GIRANDO" : "GIRAR"}
+                </span>
+                <span className="classic7-spin-hint">Clásica 7</span>
+              </button>
+              </div>
             </div>
 
             <details

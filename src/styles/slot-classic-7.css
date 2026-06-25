@@ -1,4 +1,4 @@
-/* ===== Classic 7 · slot clásica premium rojo/dorado ===== */
+/* ===== Classic 7 · arte IA premium rojo/dorado ===== */
 
 .casino-machine--classic7 {
   --classic7-red: #8b1010;
@@ -8,37 +8,64 @@
   --classic7-chrome: #c0c8d8;
   --casino-reel-cell: radial-gradient(
     circle at 38% 22%,
-    rgba(255, 255, 255, 0.06),
-    rgba(20, 8, 8, 0.96) 72%
+    rgba(255, 255, 255, 0.04),
+    rgba(12, 4, 4, 0.92) 72%
   );
-  --casino-symbol-filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.55))
-    drop-shadow(0 0 8px rgba(232, 192, 90, 0.15)) saturate(1.05);
+  --casino-symbol-filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.65))
+    drop-shadow(0 0 12px rgba(232, 192, 90, 0.22)) saturate(1.08) contrast(1.04);
 }
 
 .casino-machine--classic7 .casino-machine-bg,
 .classic7-machine-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.classic7-bg-art {
+  object-fit: cover;
+  object-position: center top;
+}
+
+.classic7-bg-vignette {
+  position: absolute;
+  inset: 0;
   background:
-    url("/casino/classic-7-bg.svg") center / cover no-repeat,
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(220, 38, 38, 0.22), transparent 55%),
-    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(232, 192, 90, 0.12), transparent 50%),
-    linear-gradient(180deg, #1a0808 0%, #0a0404 100%);
+    radial-gradient(ellipse 90% 60% at 50% 20%, transparent 40%, rgba(0, 0, 0, 0.55) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.45) 100%);
+  pointer-events: none;
 }
 
 .classic7-inner {
   padding: 6px 8px var(--casino-nav-h);
+  position: relative;
+}
+
+.classic7-win-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 80% 50% at 50% 45%,
+    rgba(255, 213, 79, 0.18),
+    transparent 70%
+  );
+  animation: classic7-win-pulse 0.9s ease-in-out infinite alternate;
 }
 
 .classic7-cabinet {
-  width: min(420px, 96vw);
+  width: min(480px, 96vw);
   margin: 0 auto;
   border-radius: 20px;
   overflow: hidden;
-  border: 3px solid var(--classic7-gold);
+  border: 2px solid rgba(232, 192, 90, 0.55);
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.08),
-    0 12px 40px rgba(0, 0, 0, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  background: linear-gradient(180deg, #4a0c0c 0%, #2a0606 48%, #1a0404 100%);
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 16px 48px rgba(0, 0, 0, 0.65),
+    0 0 40px rgba(220, 38, 38, 0.12);
+  background: linear-gradient(180deg, rgba(74, 12, 12, 0.92) 0%, rgba(26, 4, 4, 0.96) 100%);
+  backdrop-filter: blur(6px);
 }
 
 /* Header marquesina */
@@ -56,8 +83,7 @@
   margin-bottom: 8px;
 }
 
-.classic7-back,
-.classic7-sound-btn {
+.classic7-back {
   min-height: 34px;
   padding: 0 12px;
   border-radius: 999px;
@@ -71,37 +97,56 @@
   align-items: center;
 }
 
-.classic7-sound-btn--on {
-  border-color: rgba(232, 192, 90, 0.55);
-  color: var(--classic7-gold-bright);
+.classic7-header-badge {
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(232, 192, 90, 0.28);
+  background: rgba(0, 0, 0, 0.28);
+  color: rgba(255, 229, 102, 0.9);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .classic7-marquee {
   position: relative;
   border-radius: 14px;
   overflow: hidden;
-  min-height: clamp(52px, 14vw, 72px);
-  border: 2px solid var(--classic7-gold);
-  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.45);
+  min-height: clamp(56px, 15vw, 80px);
+  border: 2px solid rgba(232, 192, 90, 0.45);
+  box-shadow:
+    inset 0 0 28px rgba(0, 0, 0, 0.5),
+    0 4px 16px rgba(220, 38, 38, 0.2);
 }
 
-.classic7-marquee-plate {
+.classic7-marquee-shimmer {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, #6b1010 0%, #2a0808 100%);
-}
-
-.classic7-marquee-lights {
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    90deg,
-    rgba(239, 68, 68, 0.2) 0 5px,
-    transparent 5px 12px
-  );
-  mask-image: linear-gradient(180deg, #000 0%, transparent 70%);
-  pointer-events: none;
   z-index: 1;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgba(255, 229, 102, 0.12) 48%,
+    transparent 62%
+  );
+  animation: classic7-marquee-shimmer 3.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes classic7-marquee-shimmer {
+  0%,
+  100% {
+    transform: translateX(-30%);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateX(30%);
+    opacity: 1;
+  }
 }
 
 .classic7-marquee-logo {
@@ -124,34 +169,47 @@
   gap: 8px;
 }
 
-.classic7-payline-frame {
-  gap: 4px;
-}
-
-.classic7-payline-frame .slot-payline-rail--right {
-  display: none;
-}
-
-.classic7-payline-frame .slot-payline-rail--left .slot-payline-badge:not(:first-of-type) {
-  display: none;
-}
-
-.classic7-payline-frame .slot-payline-rail-title {
-  font-size: 8px;
-  color: var(--classic7-gold);
-}
-
 .classic7-reel-wrap {
   position: relative;
+  padding: 4px 2px;
+  min-height: var(--reel-window-h, 204px);
+}
+
+/* Marco decorativo IA · detrás de los rodillos */
+.classic7-reel-frame-deco {
+  position: absolute;
+  inset: -4px -2px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.classic7-reel-frame-art {
+  object-fit: contain;
+  object-position: center;
+  opacity: 0.92;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.35));
 }
 
 .classic7-reel-window {
   position: relative;
+  z-index: 1;
   border-radius: 12px;
-  padding: 6px;
-  background: linear-gradient(180deg, #1a1010 0%, #0a0606 100%);
-  border: 2px solid #5c1010;
+  padding: 4px 6px;
+  background: rgba(8, 2, 2, 0.55);
+  border: 1px solid rgba(232, 192, 90, 0.25);
   box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.65);
+}
+
+.classic7-screen {
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: var(--reel-window-h, 204px);
+}
+
+.classic7-screen .slot-screen-viewport {
+  min-height: var(--reel-window-h, 204px);
+  background: linear-gradient(180deg, #140808 0%, #0a0404 100%);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.75);
 }
 
 .classic7-payline {
@@ -199,10 +257,19 @@
   margin-left: 2px;
 }
 
-.classic7-screen {
-  border-radius: 8px;
-  overflow: hidden;
-  min-height: 0;
+.classic7-reel-caption {
+  margin: 6px 0 0;
+  text-align: center;
+  color: rgba(255, 229, 102, 0.82);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.classic7-reel-caption--win {
+  color: #fff7ad;
+  text-shadow: 0 0 12px rgba(255, 213, 79, 0.55);
 }
 
 .classic7-screen--win {
@@ -222,15 +289,54 @@
   border-color: rgba(232, 192, 90, 0.15);
 }
 
+.classic7-screen--spinning {
+  animation: classic7-reel-spin-glow 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes classic7-reel-spin-glow {
+  from {
+    filter: brightness(1);
+  }
+  to {
+    filter: brightness(1.08);
+  }
+}
+
 .slot-theme--classic7 .slot-reels {
-  background: linear-gradient(180deg, #140808 0%, #0a0404 100%);
+  background: rgba(6, 2, 2, 0.85);
+}
+
+.slot-symbol-image--classic-7 {
+  object-fit: contain;
+  padding: 4%;
+  filter: var(--casino-symbol-filter);
 }
 
 /* HUD */
 .classic7-hud {
+  position: relative;
+  min-height: 56px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.classic7-hud-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.classic7-hud-art {
+  object-fit: fill;
+}
+
+.classic7-hud-grid {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
+  padding: 6px 8px;
 }
 
 .classic7-hud-cell {
@@ -238,10 +344,9 @@
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 8px 6px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(232, 192, 90, 0.25);
+  padding: 6px 4px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.28);
 }
 
 .classic7-hud-cell span {
@@ -266,10 +371,26 @@
 
 /* Controles */
 .classic7-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.classic7-bet-panel {
   display: grid;
-  grid-template-columns: minmax(52px, 1fr) 48px minmax(96px, 1.4fr) 48px minmax(52px, 1fr);
-  gap: 8px;
+  grid-template-columns: minmax(58px, 0.9fr) 44px minmax(86px, 1.2fr) 44px minmax(52px, 0.8fr);
+  gap: 6px;
   align-items: center;
+  padding: 6px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(232, 192, 90, 0.18);
+}
+
+.classic7-spin-row {
+  display: flex;
+  justify-content: center;
 }
 
 .classic7-side-btn,
@@ -289,27 +410,73 @@
   line-height: 1;
 }
 
+.classic7-bet-readout {
+  min-height: 44px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.48), rgba(42, 8, 8, 0.55));
+  border: 1px solid rgba(232, 192, 90, 0.24);
+}
+
+.classic7-bet-readout span {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(232, 192, 90, 0.7);
+}
+
+.classic7-bet-readout strong {
+  margin-top: 2px;
+  color: #fff7ad;
+  font-size: 13px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
 .classic7-spin-btn {
+  position: relative;
   aspect-ratio: 1;
   width: 100%;
-  max-width: 108px;
+  max-width: 118px;
   margin: 0 auto;
+  border: none;
   border-radius: 50%;
-  border: 3px solid var(--classic7-gold);
-  background: radial-gradient(circle at 35% 28%, #ff5555 0%, #b91c1c 55%, #7f0f0f 100%);
-  box-shadow:
-    0 0 20px rgba(239, 68, 68, 0.45),
-    inset 0 2px 0 rgba(255, 255, 255, 0.2);
+  background: transparent;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
   color: #fff;
+  overflow: hidden;
+}
+
+.classic7-spin-btn-art {
+  object-fit: contain;
+  z-index: 0;
 }
 
 .classic7-spin-btn--ready {
   animation: classic7-spin-glow 2s ease-in-out infinite;
+}
+
+.classic7-spin-btn--spinning .classic7-spin-btn-art {
+  animation: classic7-spin-pulse 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes classic7-spin-pulse {
+  from {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  to {
+    transform: scale(1.04);
+    filter: brightness(1.12);
+  }
 }
 
 @keyframes classic7-spin-glow {
@@ -328,15 +495,23 @@
 }
 
 .classic7-spin-label {
-  font-size: clamp(14px, 3.8vw, 17px);
+  position: relative;
+  z-index: 2;
+  font-size: clamp(13px, 3.6vw, 16px);
   font-weight: 900;
   letter-spacing: 0.08em;
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.85),
+    0 0 12px rgba(255, 213, 79, 0.35);
 }
 
 .classic7-spin-hint {
-  font-size: 8px;
-  opacity: 0.85;
-  letter-spacing: 0.12em;
+  position: relative;
+  z-index: 2;
+  font-size: 7px;
+  opacity: 0.9;
+  letter-spacing: 0.14em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 .classic7-error {
@@ -346,8 +521,7 @@
   color: #fca5a5;
 }
 
-.classic7-message,
-.classic7-big-win {
+.classic7-message {
   margin: 0;
   text-align: center;
   font-size: 13px;
@@ -355,8 +529,34 @@
   color: var(--classic7-gold-bright);
 }
 
+.classic7-big-win-banner {
+  position: relative;
+  min-height: 52px;
+  margin: 4px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.classic7-big-win-art {
+  object-fit: cover;
+  opacity: 0.95;
+}
+
 .classic7-big-win {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 10px 16px;
+  text-align: center;
   font-size: clamp(16px, 4.5vw, 22px);
+  font-weight: 900;
+  color: var(--classic7-gold-bright);
+  text-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.85),
+    0 0 16px rgba(255, 213, 79, 0.45);
   animation: classic7-big-win-pop 0.5s ease-out;
 }
 
@@ -420,10 +620,18 @@
 
 .classic7-paytable-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
   padding: 12px 14px;
   border-bottom: 1px solid rgba(232, 192, 90, 0.2);
+}
+
+.classic7-paytable-logo {
+  width: auto;
+  height: 32px;
+  object-fit: contain;
 }
 
 .classic7-paytable-title {
@@ -487,13 +695,20 @@
 }
 
 @media (max-width: 360px) {
-  .classic7-controls {
-    grid-template-columns: 44px 40px 1fr 40px 44px;
-    gap: 6px;
+  .classic7-bet-panel {
+    grid-template-columns: 52px 38px minmax(70px, 1fr) 38px 46px;
+    gap: 5px;
+    padding: 5px;
   }
 
   .classic7-spin-btn {
-    max-width: 92px;
+    max-width: 96px;
+  }
+
+  .classic7-side-btn,
+  .classic7-bet-btn,
+  .classic7-bet-readout {
+    min-height: 40px;
   }
 }
 

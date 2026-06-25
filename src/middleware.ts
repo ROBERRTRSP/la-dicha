@@ -28,6 +28,8 @@ export async function middleware(request: NextRequest) {
   const isPlayer =
     pathname.startsWith("/jugar") ||
     pathname.startsWith("/ruleta") ||
+    pathname.startsWith("/casino") ||
+    pathname.startsWith("/slots") ||
     pathname.startsWith("/tickets") ||
     pathname.startsWith("/resultados");
   const isLogin = pathname === "/login";
@@ -93,6 +95,8 @@ export const config = {
   matcher: [
     "/jugar/:path*",
     "/ruleta/:path*",
+    "/casino/:path*",
+    "/slots/:path*",
     "/tickets/:path*",
     "/resultados/:path*",
     "/login",

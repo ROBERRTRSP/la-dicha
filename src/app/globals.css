@@ -1419,6 +1419,11 @@ body {
   background: linear-gradient(180deg, #1e40af, #0f172a);
 }
 
+.slot-theme--classic7.play-casino-chip--slot {
+  background: linear-gradient(180deg, #991b1b, #450a0a);
+  border-color: rgba(255, 213, 79, 0.45);
+}
+
 .play-footer-summary {
   display: flex;
   justify-content: space-between;

@@ -291,7 +291,7 @@ const CLASSIC_STRIP = [
 
 const CLASSIC_7: SlotGameConfig = {
   id: "classic-7",
-  name: "Classic 7",
+  name: "Clásica 7",
   tagline: "Slot clásica · 1 línea central",
   themeClass: "slot-theme--classic7",
   cols: 5,
