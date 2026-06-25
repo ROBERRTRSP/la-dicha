@@ -9,6 +9,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { AiVisual } from "@/components/ui/AiVisual";
+import { SpinButton } from "../SlotCabinet";
 import { SlotReels } from "../SlotReels";
 import { CoinBurst } from "../CoinBurst";
 import { Classic7PaytableModal } from "./Classic7PaytableModal";
@@ -377,29 +378,14 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
               </div>
 
               <div className="classic7-spin-row">
-              <button
-                type="button"
-                className={cn(
-                  "classic7-spin-btn",
-                  !spinning && balance >= bet && "classic7-spin-btn--ready",
-                  awaitingStop && "classic7-spin-btn--spinning"
-                )}
-                disabled={spinning || balance < bet}
-                onClick={() => void spin()}
-                aria-busy={awaitingStop}
-              >
-                <AiVisual
-                  src={C7.ui.spinBtn}
-                  alt=""
-                  fill
-                  sizes="108px"
-                  className="classic7-spin-btn-art"
+                <SpinButton
+                  label={awaitingStop ? "GIRANDO" : "GIRAR"}
+                  spinning={awaitingStop}
+                  ready={!spinning && !awaitingStop && balance >= bet}
+                  disabled={spinning || balance < bet}
+                  onClick={() => void spin()}
+                  aria-busy={awaitingStop}
                 />
-                <span className="classic7-spin-label">
-                  {awaitingStop ? "GIRANDO" : "GIRAR"}
-                </span>
-                <span className="classic7-spin-hint">Clásica 7</span>
-              </button>
               </div>
             </div>
 
