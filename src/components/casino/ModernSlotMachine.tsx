@@ -7,9 +7,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { OxBonusLegend } from "./OxBonusLegend";
+import { SlotPayTable } from "./SlotPayTable";
 import { SlotReels } from "./SlotReels";
-import { SlotSymbolSvg } from "./SlotSymbolSvg";
 import { AmbientLights } from "./AmbientLights";
 import { CoinBurst } from "./CoinBurst";
 import { AnimatedBalance, WinDisplay } from "./WinDisplay";
@@ -24,6 +23,7 @@ import {
   SpinButton,
 } from "./SlotCabinet";
 import { getSlotGame } from "@/lib/slots/games";
+import { preloadSlotSymbolImages } from "@/lib/slots/symbol-assets";
 import { CASINO_ART } from "@/lib/casino-art";
 import { SLOT_BET_OPTIONS } from "@/lib/slots/settings";
 import type {
@@ -94,9 +94,11 @@ export function ModernSlotMachine({
   const inFlightRef = useRef(false);
 
   useEffect(() => {
+    preloadSlotSymbolImages(gameId);
     fetch("/api/slots/spin")
       .then((r) => r.json())
       .then((d) => {
+        if (typeof d.balance === "number") setBalance(d.balance);
         if (d.bonusStates?.[gameId]) setBonus(d.bonusStates[gameId]);
       })
       .catch(() => {});
@@ -111,7 +113,6 @@ export function ModernSlotMachine({
   }, [gameId]);
 
   const isLamp = gameId === "magic-lamp";
-  const isOx = gameId === "golden-ox";
 
   // El premio se aplica una sola vez y solo cuando AMBOS terminaron:
   // los carretes pararon y el servidor respondió.
@@ -253,9 +254,14 @@ export function ModernSlotMachine({
                     : ""}
                 </span>
               ) : (
-                <span className="slot-rule-text">
-                  5 × 3 · {game.bonus.description}
-                </span>
+                <>
+                  <span className="slot-rule-text">
+                    Apuesta {formatMoney(bet)} · 5×3
+                  </span>
+                  <span className="slot-rule-text slot-rule-text--muted">
+                    {game.bonus.description}
+                  </span>
+                </>
               )}
             </SlotRuleBar>
 
@@ -291,6 +297,11 @@ export function ModernSlotMachine({
             {!awaitingStop && lastWin != null && lastWin > 0 && (
               <WinDisplay amount={lastWin} generation={stopGeneration} />
             )}
+            {!awaitingStop && lastWin === 0 && (
+              <p className="slot-feedback slot-feedback--neutral" aria-live="polite">
+                Sin premio este giro
+              </p>
+            )}
             {message && <p className="slot-feedback slot-feedback--bonus">{message}</p>}
             {error && <p className="slot-feedback slot-feedback--error">{error}</p>}
           </SlotCabinetBody>
@@ -314,48 +325,12 @@ export function ModernSlotMachine({
               ready={!spinning && !awaitingStop && (freeMode || balance >= bet)}
               disabled={spinning || awaitingStop || (!freeMode && balance < bet)}
               onClick={() => void spin()}
+              aria-busy={awaitingStop}
             />
           </SlotCabinetDeck>
         </SlotCabinet>
 
-        <details
-          className={cn(
-            "casino-paytable-details",
-            isOx && "casino-paytable-details--ox"
-          )}
-        >
-          <summary className="casino-paytable-toggle">Tabla de pagos</summary>
-          <section className="casino-paytable">
-            <h3 className="casino-paytable-title">Pagos · ×5 / ×4 / ×3</h3>
-            <div className="casino-paytable-grid">
-              {Object.values(game.symbols).map((sym) => (
-                <div key={sym.id} className="casino-paytable-item">
-                  <SlotSymbolSvg symbolId={sym.id} gameId={gameId} size={36} />
-                  <div className="casino-paytable-info">
-                    <span className="casino-paytable-name">
-                      {sym.label}
-                      {sym.isWild && (
-                        <em className="casino-tag casino-tag--wild">COMODÍN</em>
-                      )}
-                      {sym.isScatter && (
-                        <em className="casino-tag casino-tag--scatter">BONO</em>
-                      )}
-                    </span>
-                    <span className="casino-paytable-pays">
-                      {[5, 4, 3]
-                        .map((n) => sym.pays[n as 3 | 4 | 5])
-                        .filter((v): v is number => typeof v === "number")
-                        .map((v) => `×${v}`)
-                        .join(" · ")}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="casino-paytable-foot">{game.bonus.description}</p>
-            {isOx && <OxBonusLegend />}
-          </section>
-        </details>
+        <SlotPayTable gameId={gameId} bet={bet} />
       </div>
     </div>
   );

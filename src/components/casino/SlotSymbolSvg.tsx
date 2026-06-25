@@ -59,6 +59,9 @@ export function SlotSymbolSvg({
         src={imgSrc}
         alt={sym?.label ?? symbolId}
         draggable={false}
+        loading={isCell ? "eager" : "lazy"}
+        decoding="async"
+        fetchPriority={isCell ? "high" : "auto"}
         onError={() => setImgFailed(true)}
         className={cn(
           "slot-symbol-image",

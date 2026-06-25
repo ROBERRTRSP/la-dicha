@@ -66,18 +66,27 @@ export async function placeSlotSpin(userId: string, gameId: string, betAmount: n
     if (!wallet) throw new Error("Billetera no encontrada.");
 
     const balanceBefore = wallet.balance;
-    if (!isFreeSpin && balanceBefore < betAmount) {
-      throw new Error("Saldo insuficiente.");
+
+    // Débito atómico: evita doble gasto si llegan dos POST concurrentes.
+    if (!isFreeSpin) {
+      const debited = await tx.wallet.updateMany({
+        where: { userId, balance: { gte: betAmount } },
+        data: { balance: { decrement: betAmount } },
+      });
+      if (debited.count !== 1) {
+        throw new Error("Saldo insuficiente.");
+      }
     }
 
-    const balanceAfter = Math.round(
-      (balanceBefore - stake + result.payout) * 100
-    ) / 100;
+    if (result.payout > 0) {
+      await tx.wallet.update({
+        where: { userId },
+        data: { balance: { increment: result.payout } },
+      });
+    }
 
-    await tx.wallet.update({
-      where: { id: wallet.id },
-      data: { balance: balanceAfter },
-    });
+    const updatedWallet = await tx.wallet.findUnique({ where: { userId } });
+    const balanceAfter = updatedWallet?.balance ?? balanceBefore;
 
     if (!isFreeSpin) {
       await tx.walletTransaction.create({

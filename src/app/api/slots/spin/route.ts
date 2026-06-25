@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requirePlayer } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { getBonusState, getSlotSettings, isSlotsActive, placeSlotSpin } from "@/lib/slots/spin-service";
 
 export async function POST(request: Request) {
@@ -41,8 +42,11 @@ export async function GET() {
     bonusStates[id] = await getBonusState(user.id, id);
   }
 
+  const wallet = await prisma.wallet.findUnique({ where: { userId: user.id } });
+
   return NextResponse.json({
     active,
+    balance: wallet?.balance ?? 0,
     minBetAmount: settings.minBetAmount,
     maxBetAmount: settings.maxBetAmount,
     bonusStates,

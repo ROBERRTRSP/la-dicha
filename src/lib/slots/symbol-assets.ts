@@ -60,3 +60,14 @@ export function getSlotSymbolImage(
 ): string | null {
   return SLOT_SYMBOL_IMAGES[gameId]?.[symbolId] ?? null;
 }
+
+/** Precarga los PNG del juego activo para reducir parpadeos en el primer giro. */
+export function preloadSlotSymbolImages(gameId: SlotGameId): void {
+  if (typeof window === "undefined") return;
+  const urls = Object.values(SLOT_SYMBOL_IMAGES[gameId] ?? {});
+  for (const src of urls) {
+    const img = new window.Image();
+    img.decoding = "async";
+    img.src = src;
+  }
+}

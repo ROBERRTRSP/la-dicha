@@ -18,8 +18,20 @@
     animation: none;
   }
 
+  .slot-reel-strip--motion {
+    filter: blur(0.35px) brightness(0.94);
+  }
+
   .slot-reel-strip--motion .slot-reel-cell--spinning .slot-symbol-wrapper {
     transition: none;
+    filter: blur(0.2px) brightness(0.92);
+  }
+
+  .slot-symbol-image,
+  .slot-symbol-image--cell,
+  .slot-symbol-svg--cell {
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5))
+      saturate(1.02) brightness(1.02);
   }
 
   .slot-reel-cell {
@@ -80,6 +92,19 @@
 }
 
 @media (max-height: 700px) {
+  .slot-marquee-tagline {
+    display: none;
+  }
+
+  .slot-rule-bar {
+    padding: 6px 10px;
+    gap: 4px;
+  }
+
+  .casino-paytable-details:not([open]) {
+    flex-shrink: 1;
+  }
+
   .slot-screen {
     padding: 5px;
   }

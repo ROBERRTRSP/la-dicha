@@ -112,12 +112,14 @@ export function SpinButton({
   ready,
   disabled,
   onClick,
+  "aria-busy": ariaBusy,
 }: {
   label: string;
   spinning?: boolean;
   ready?: boolean;
   disabled?: boolean;
   onClick: () => void;
+  "aria-busy"?: boolean;
 }) {
   return (
     <button
@@ -128,6 +130,7 @@ export function SpinButton({
         ready && !spinning && "slot-spin-button--ready"
       )}
       disabled={disabled}
+      aria-busy={ariaBusy}
       onClick={onClick}
     >
       <span className="slot-spin-button-outer" aria-hidden />

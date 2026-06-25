@@ -200,6 +200,7 @@ function SlotReelColumn({
   const finalsRef = useRef(finalSymbols);
   const wantStopRef = useRef(false);
   const resultReadyRef = useRef(false);
+  const visualSyncRef = useRef(0);
 
   useEffect(() => {
     resultReadyRef.current = resultReady ?? false;
@@ -267,6 +268,7 @@ function SlotReelColumn({
 
     stoppedRef.current = false;
     wantStopRef.current = false;
+    visualSyncRef.current = 0;
     setSettling(false);
 
     const startFinals = finalsRef.current;
@@ -309,7 +311,15 @@ function SlotReelColumn({
         totalOffsetRef.current += velocityRef.current * dt;
         const display = loopH > 0 ? totalOffsetRef.current % loopH : totalOffsetRef.current;
         offsetRef.current = display;
-        setOffset(display);
+
+        // Transform directo en DOM a 60fps; React state ~30fps para efecto 3D por celda.
+        if (stripRef.current) {
+          stripRef.current.style.transform = `translate3d(0, -${display}px, 0)`;
+        }
+        if (now - visualSyncRef.current >= 32) {
+          visualSyncRef.current = now;
+          setOffset(display);
+        }
 
         if (
           phaseRef.current === "accel" &&

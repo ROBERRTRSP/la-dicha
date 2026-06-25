@@ -620,6 +620,14 @@
   text-shadow: 0 0 10px rgba(247, 201, 72, 0.65);
 }
 
+.slot-rule-text--muted {
+  font-size: clamp(9px, 2.4vw, 11px);
+  font-weight: 600;
+  color: rgba(180, 190, 210, 0.55);
+  max-width: 100%;
+  text-align: center;
+}
+
 /* ——— Pantalla del slot ——— */
 .slot-screen {
   position: relative;
@@ -952,6 +960,13 @@
 
 .slot-feedback--error {
   color: #fca5a5;
+}
+
+.slot-feedback--neutral {
+  color: var(--casino-muted);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.04em;
 }
 
 /* ——— Panel inferior ——— */

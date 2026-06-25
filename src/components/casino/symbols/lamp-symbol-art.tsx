@@ -146,9 +146,11 @@ export function LampSymbolIcon({
           <ellipse cx="58" cy="50" rx="15" ry="5.5" fill="#fde047" stroke="#ca8a04" strokeWidth="1.5" />
           <ellipse cx="46" cy="42" rx="13" ry="5" fill="#92400e" />
           <ellipse cx="46" cy="38" rx="13" ry="5" fill="#facc15" stroke="#ca8a04" strokeWidth="1.5" />
-          <text x="46" y="42" textAnchor="middle" fontSize="8" fontWeight="900" fill="#92400e" opacity="0.5">
-            ★
-          </text>
+          <polygon
+            points="46,33 47.2,36.5 51,36.5 48,38.8 49.2,42.5 46,40.2 42.8,42.5 44,38.8 41,36.5 44.8,36.5"
+            fill="#92400e"
+            opacity="0.55"
+          />
         </g>
       );
     default:
