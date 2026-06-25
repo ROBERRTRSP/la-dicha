@@ -13,7 +13,9 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:setup": "prisma db push && tsx prisma/seed.ts",
     "logos:fetch": "node scripts/fetch-logos.mjs",
-    "slots:optimize-pngs": "node scripts/optimize-slot-pngs.mjs"
+    "slots:optimize-pngs": "node scripts/optimize-slot-pngs.mjs",
+    "test:slot-motion": "tsx scripts/test-slot-motion.ts",
+    "test:slot-audit": "node scripts/verify-slot-audit.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

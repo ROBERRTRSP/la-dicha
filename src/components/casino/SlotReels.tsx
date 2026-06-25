@@ -13,79 +13,17 @@ import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
 import type { SlotGameId, WinCell } from "@/lib/slots/types";
 import { getSlotGame } from "@/lib/slots/games";
 import { getSlotAnimationConfig } from "@/lib/slots/animation-config";
+import {
+  VISIBLE_ROWS,
+  buildStrip,
+  computeDecelOffsets,
+  drumCellOpacity,
+  drumCellTransform,
+  finalOffset,
+  loopHeightPx,
+  type ReelPhase,
+} from "@/lib/slots/reel-motion";
 import { cn } from "@/lib/utils";
-
-const VISIBLE_ROWS = 3;
-const LOOP_SEGMENT_SIZE = 12;
-
-type ReelPhase = "idle" | "accel" | "spin" | "decel";
-
-function randomSymbol(ids: string[]): string {
-  return ids[Math.floor(Math.random() * ids.length)] ?? ids[0];
-}
-
-function buildLoopSegment(allIds: string[]): string[] {
-  return Array.from({ length: LOOP_SEGMENT_SIZE }, () => randomSymbol(allIds));
-}
-
-function buildStrip(
-  finalCol: string[],
-  allIds: string[],
-  repeatCount: number
-): string[] {
-  const segment = buildLoopSegment(allIds);
-  const body: string[] = [];
-  for (let i = 0; i < repeatCount; i++) {
-    body.push(...segment);
-  }
-  return [...body, ...finalCol];
-}
-
-function loopHeightPx(cellH: number): number {
-  return LOOP_SEGMENT_SIZE * cellH;
-}
-
-function finalOffset(stripLen: number, cellH: number): number {
-  return Math.max(0, (stripLen - VISIBLE_ROWS) * cellH);
-}
-
-function drumCellTransform(
-  stripIndex: number,
-  offset: number,
-  cellH: number,
-  isMotion: boolean,
-  visibleRow: number
-): string | undefined {
-  if (cellH <= 0) return undefined;
-
-  const windowH = VISIBLE_ROWS * cellH;
-  const cellCenterY = stripIndex * cellH + cellH * 0.5 - offset;
-  const norm = (cellCenterY - windowH * 0.5) / (cellH * 1.05);
-
-  if (!isMotion && (visibleRow < 0 || visibleRow >= VISIBLE_ROWS)) {
-    return undefined;
-  }
-
-  const clamped = Math.max(-1.35, Math.min(1.35, norm));
-  const rotateX = clamped * -24;
-  const scale = 1 - Math.abs(clamped) * 0.16;
-
-  return `perspective(680px) rotateX(${rotateX}deg) scale(${scale})`;
-}
-
-function drumCellOpacity(
-  stripIndex: number,
-  offset: number,
-  cellH: number,
-  isMotion: boolean
-): number | undefined {
-  if (!isMotion || cellH <= 0) return undefined;
-
-  const windowH = VISIBLE_ROWS * cellH;
-  const cellCenterY = stripIndex * cellH + cellH * 0.5 - offset;
-  const norm = Math.abs((cellCenterY - windowH * 0.5) / (cellH * 1.05));
-  return Math.max(0.55, 1 - norm * 0.35);
-}
 
 function ReelCell({
   symId,
@@ -180,13 +118,15 @@ function SlotReelColumn({
   );
 
   const [strip, setStrip] = useState<string[]>(() =>
-    buildStrip(finalSymbols, allSymbolIds, anim.loopRepeats)
+    buildStrip(finalSymbols, allSymbolIds, anim.loopRepeats, Math.random)
   );
   const [offset, setOffset] = useState(0);
   const [phase, setPhase] = useState<ReelPhase>("idle");
   const [settling, setSettling] = useState(false);
 
   const stripRef = useRef<HTMLDivElement>(null);
+  const stripDataRef = useRef(strip);
+  const cellHRef = useRef(cellH);
   const phaseRef = useRef<ReelPhase>("idle");
   const offsetRef = useRef(0);
   const totalOffsetRef = useRef(0);
@@ -195,6 +135,7 @@ function SlotReelColumn({
   const lastFrameRef = useRef(0);
   const accelStartRef = useRef(0);
   const stoppedRef = useRef(false);
+  const decelStartedRef = useRef(false);
   const targetOffsetRef = useRef(0);
   const mountedRef = useRef(false);
   const finalsRef = useRef(finalSymbols);
@@ -202,9 +143,21 @@ function SlotReelColumn({
   const resultReadyRef = useRef(false);
   const visualSyncRef = useRef(0);
   const decelFinishTimerRef = useRef(0);
+  const beginDecelRef = useRef<(() => void) | null>(null);
+
+  cellHRef.current = cellH;
+  stripDataRef.current = strip;
 
   useEffect(() => {
     resultReadyRef.current = resultReady ?? false;
+    if (
+      resultReadyRef.current &&
+      wantStopRef.current &&
+      !decelStartedRef.current &&
+      beginDecelRef.current
+    ) {
+      beginDecelRef.current();
+    }
   }, [resultReady]);
 
   useEffect(() => {
@@ -231,7 +184,7 @@ function SlotReelColumn({
   useEffect(() => {
     if (mountedRef.current) return;
     mountedRef.current = true;
-    const s = buildStrip(finalSymbols, allSymbolIds, anim.loopRepeats);
+    const s = buildStrip(finalSymbols, allSymbolIds, anim.loopRepeats, Math.random);
     const fo = finalOffset(s.length, cellH);
     setStrip(s);
     offsetRef.current = fo;
@@ -258,9 +211,11 @@ function SlotReelColumn({
     cancelAnimationFrame(rafRef.current);
     window.clearTimeout(decelFinishTimerRef.current);
     wantStopRef.current = false;
+    decelStartedRef.current = false;
     setSettling(false);
     phaseRef.current = "idle";
     setPhase("idle");
+    beginDecelRef.current = null;
     if (stripRef.current) {
       stripRef.current.style.transition = "";
     }
@@ -283,19 +238,22 @@ function SlotReelColumn({
 
     stoppedRef.current = false;
     wantStopRef.current = false;
+    decelStartedRef.current = false;
     visualSyncRef.current = 0;
     setSettling(false);
 
+    const cellHNow = cellHRef.current;
     const startFinals = finalsRef.current;
-    const newStrip = buildStrip(startFinals, allSymbolIds, anim.loopRepeats);
-    targetOffsetRef.current = finalOffset(newStrip.length, cellH);
+    const newStrip = buildStrip(startFinals, allSymbolIds, anim.loopRepeats, Math.random);
+    targetOffsetRef.current = finalOffset(newStrip.length, cellHNow);
+    stripDataRef.current = newStrip;
 
     setStrip(newStrip);
     offsetRef.current = 0;
     totalOffsetRef.current = 0;
     setOffset(0);
-    phaseRef.current = reducedMotion ? "decel" : "accel";
-    setPhase(reducedMotion ? "decel" : "accel");
+    phaseRef.current = "accel";
+    setPhase("accel");
     velocityRef.current = 0;
     accelStartRef.current = performance.now();
     lastFrameRef.current = accelStartRef.current;
@@ -306,7 +264,7 @@ function SlotReelColumn({
       ? 80 + columnIndex * 40
       : anim.baseSpinMs + columnIndex * anim.columnStopDelayMs;
 
-    const loopH = loopHeightPx(cellH);
+    const loopH = loopHeightPx(cellHNow);
 
     const tick = (now: number) => {
       const dt = Math.min(32, now - lastFrameRef.current);
@@ -314,37 +272,51 @@ function SlotReelColumn({
 
       if (phaseRef.current === "decel") return;
 
-      if (phaseRef.current === "accel") {
-        const elapsed = now - accelStartRef.current;
-        const t = Math.min(1, elapsed / anim.accelMs);
-        velocityRef.current = anim.maxVelocity * t * t;
-      } else if (phaseRef.current === "spin") {
-        velocityRef.current = anim.maxVelocity;
+      if (!reducedMotion) {
+        if (phaseRef.current === "accel") {
+          const elapsed = now - accelStartRef.current;
+          const t = Math.min(1, elapsed / anim.accelMs);
+          velocityRef.current = anim.maxVelocity * t * t;
+        } else if (phaseRef.current === "spin") {
+          velocityRef.current = anim.maxVelocity;
+        }
+      } else {
+        velocityRef.current = 0;
+        if (phaseRef.current === "accel") {
+          phaseRef.current = "spin";
+          setPhase("spin");
+        }
       }
 
       if (phaseRef.current === "accel" || phaseRef.current === "spin") {
-        totalOffsetRef.current += velocityRef.current * dt;
-        const display = loopH > 0 ? totalOffsetRef.current % loopH : totalOffsetRef.current;
-        offsetRef.current = display;
+        if (!reducedMotion) {
+          totalOffsetRef.current += velocityRef.current * dt;
+          const display =
+            loopH > 0 ? totalOffsetRef.current % loopH : totalOffsetRef.current;
+          offsetRef.current = display;
 
-        // Transform directo en DOM a 60fps; React state ~30fps para efecto 3D por celda.
-        if (stripRef.current) {
-          stripRef.current.style.transform = `translate3d(0, -${display}px, 0)`;
-        }
-        if (now - visualSyncRef.current >= 32) {
-          visualSyncRef.current = now;
-          setOffset(display);
+          if (stripRef.current) {
+            stripRef.current.style.transform = `translate3d(0, -${display}px, 0)`;
+          }
+          if (now - visualSyncRef.current >= 32) {
+            visualSyncRef.current = now;
+            setOffset(display);
+          }
         }
 
         if (
+          !reducedMotion &&
           phaseRef.current === "accel" &&
           now - accelStartRef.current >= anim.accelMs
         ) {
           phaseRef.current = "spin";
           setPhase("spin");
         }
-        // Solo frena cuando ya pasó el tiempo mínimo de giro Y el servidor
-        // respondió: así el carrete aterriza en la rejilla real sin saltos.
+
+        if (now >= stopAt) {
+          wantStopRef.current = true;
+        }
+
         if (wantStopRef.current && resultReadyRef.current) {
           beginDecel();
           return;
@@ -353,38 +325,43 @@ function SlotReelColumn({
       }
     };
 
-    // Frena el carrete hacia la rejilla final del servidor.
     const beginDecel = () => {
-      if (phaseRef.current === "decel") return;
+      if (decelStartedRef.current) return;
+      decelStartedRef.current = true;
       cancelAnimationFrame(rafRef.current);
       window.clearTimeout(decelFinishTimerRef.current);
 
       const latestFinals = finalsRef.current;
-      setStrip((prev) => {
-        const tail = prev.slice(-VISIBLE_ROWS).join(",");
-        const nextTail = latestFinals.join(",");
-        if (tail === nextTail) {
-          targetOffsetRef.current = finalOffset(prev.length, cellH);
-          return prev;
-        }
-        const next = [...prev.slice(0, -VISIBLE_ROWS), ...latestFinals];
-        targetOffsetRef.current = finalOffset(next.length, cellH);
-        return next;
-      });
+      const prev = stripDataRef.current;
+      const tail = prev.slice(-VISIBLE_ROWS).join(",");
+      const nextTail = latestFinals.join(",");
+      const nextStrip =
+        tail === nextTail
+          ? prev
+          : [...prev.slice(0, -VISIBLE_ROWS), ...latestFinals];
+
+      const h = cellHRef.current;
+      const finalSnap = finalOffset(nextStrip.length, h);
+      targetOffsetRef.current = finalSnap;
+      stripDataRef.current = nextStrip;
+      setStrip(nextStrip);
 
       phaseRef.current = "decel";
       setPhase("decel");
 
-      const snap = targetOffsetRef.current;
-      const startOffset = offsetRef.current;
+      const { startOffset, snapOffset } = computeDecelOffsets(
+        totalOffsetRef.current,
+        nextStrip.length,
+        h
+      );
       const decelMs = reducedMotion ? 0 : anim.decelMs;
-      totalOffsetRef.current = snap;
+      totalOffsetRef.current = finalSnap;
 
       requestAnimationFrame(() => {
         const el = stripRef.current;
         if (!el) {
-          offsetRef.current = snap;
-          setOffset(snap);
+          offsetRef.current = finalSnap;
+          setOffset(finalSnap);
           finishStop();
           return;
         }
@@ -393,40 +370,34 @@ function SlotReelColumn({
         el.style.transform = `translate3d(0, -${startOffset}px, 0)`;
         void el.offsetHeight;
 
-        if (decelMs > 0) {
+        if (decelMs > 0 && Math.abs(startOffset - snapOffset) >= 1) {
           el.style.transition = `transform ${decelMs}ms ${anim.decelEasing}`;
-          el.style.transform = `translate3d(0, -${snap}px, 0)`;
+          el.style.transform = `translate3d(0, -${snapOffset}px, 0)`;
           decelFinishTimerRef.current = window.setTimeout(() => {
-            if (phaseRef.current === "decel") finishStop();
+            if (phaseRef.current === "decel") {
+              el.style.transform = `translate3d(0, -${finalSnap}px, 0)`;
+              offsetRef.current = finalSnap;
+              setOffset(finalSnap);
+              finishStop();
+            }
           }, decelMs + 100);
         } else {
-          el.style.transform = `translate3d(0, -${snap}px, 0)`;
+          el.style.transform = `translate3d(0, -${finalSnap}px, 0)`;
+          offsetRef.current = finalSnap;
+          setOffset(finalSnap);
+          finishStop();
         }
-
-        offsetRef.current = snap;
-        setOffset(snap);
-        if (decelMs === 0) finishStop();
       });
     };
 
-    // Sin animación (reduced motion) no hay bucle tick: esperamos el
-    // resultado del servidor con un sondeo ligero antes de aterrizar.
-    const waitForResult = () => {
-      if (resultReadyRef.current) {
-        beginDecel();
-        return;
-      }
-      rafRef.current = requestAnimationFrame(waitForResult);
-    };
+    beginDecelRef.current = beginDecel;
 
-    if (!reducedMotion) {
-      rafRef.current = requestAnimationFrame(tick);
-    }
+    rafRef.current = requestAnimationFrame(tick);
 
     const stopTimer = window.setTimeout(() => {
       wantStopRef.current = true;
-      if (reducedMotion) {
-        waitForResult();
+      if (resultReadyRef.current) {
+        beginDecel();
       }
     }, stopAt);
 
@@ -436,6 +407,7 @@ function SlotReelColumn({
     }, stopAt + (reducedMotion ? 50 : anim.decelMs + 120));
 
     return () => {
+      beginDecelRef.current = null;
       cancelAnimationFrame(rafRef.current);
       window.clearTimeout(stopTimer);
       window.clearTimeout(fallbackTimer);
@@ -446,7 +418,6 @@ function SlotReelColumn({
     stopGeneration,
     columnIndex,
     anim,
-    cellH,
     allSymbolIds,
     reducedMotion,
     finishStop,
@@ -455,6 +426,13 @@ function SlotReelColumn({
   const handleTransitionEnd = useCallback(
     (e: React.TransitionEvent) => {
       if (e.propertyName !== "transform" || phaseRef.current !== "decel") return;
+      const el = stripRef.current;
+      const finalSnap = targetOffsetRef.current;
+      if (el) {
+        el.style.transform = `translate3d(0, -${finalSnap}px, 0)`;
+      }
+      offsetRef.current = finalSnap;
+      setOffset(finalSnap);
       finishStop();
     },
     [finishStop]
@@ -463,6 +441,7 @@ function SlotReelColumn({
   const lastIndex = strip.length - VISIBLE_ROWS;
   const isMotion = phase === "accel" || phase === "spin";
   const isDecel = phase === "decel";
+  const isIdle = phase === "idle";
 
   return (
     <div
@@ -483,9 +462,9 @@ function SlotReelColumn({
               isDecel && "slot-reel-strip--decel"
             )}
             style={
-              isDecel
-                ? undefined
-                : { transform: `translate3d(0, -${offset}px, 0)` }
+              isIdle
+                ? { transform: `translate3d(0, -${offset}px, 0)` }
+                : undefined
             }
             onTransitionEnd={handleTransitionEnd}
           >

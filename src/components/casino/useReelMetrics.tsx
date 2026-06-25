@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { computeReelMetrics } from "@/lib/slots/reel-motion";
 
 const MOBILE_MAX_WIDTH = 768;
 
@@ -34,22 +35,8 @@ export function useReelMetrics() {
   return useContext(ReelMetricsContext);
 }
 
-function computeMetrics(viewportWidth: number, stageHeight = 0): ReelMetrics {
-  const fromWidth = Math.floor(viewportWidth * 0.26);
-  const fromStage =
-    stageHeight > 96 ? Math.floor((stageHeight * 0.94) / 3) : 0;
-  const cellHeight = Math.max(
-    58,
-    Math.min(102, Math.max(fromWidth, fromStage))
-  );
-  const symbolSize = Math.round(cellHeight * 0.64);
-  return {
-    cellHeight,
-    symbolSize,
-    windowHeight: cellHeight * 3,
-    viewportWidth,
-    isMobile: viewportWidth <= MOBILE_MAX_WIDTH,
-  };
+function computeMetrics(viewportWidth: number, stageHeight = 0) {
+  return computeReelMetrics(viewportWidth, stageHeight);
 }
 
 function applyVars(el: HTMLElement, m: ReelMetrics) {
