@@ -167,8 +167,15 @@ function SlotReelColumn({
   reducedMotion?: boolean;
   onStopped?: () => void;
 }) {
-  const anim = getSlotAnimationConfig(gameId);
-  const { cellHeight: cellH } = useReelMetrics();
+  const { cellHeight: cellH, isMobile } = useReelMetrics();
+  const anim = useMemo(
+    () =>
+      getSlotAnimationConfig(gameId, {
+        mobile: isMobile,
+        cellHeight: cellH,
+      }),
+    [gameId, isMobile, cellH]
+  );
 
   const [strip, setStrip] = useState<string[]>(() =>
     buildStrip(finalSymbols, allSymbolIds, anim.loopRepeats)

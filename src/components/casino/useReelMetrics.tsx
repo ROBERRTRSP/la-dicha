@@ -10,16 +10,22 @@ import {
   type ReactNode,
 } from "react";
 
+const MOBILE_MAX_WIDTH = 768;
+
 export type ReelMetrics = {
   cellHeight: number;
   symbolSize: number;
   windowHeight: number;
+  viewportWidth: number;
+  isMobile: boolean;
 };
 
 const DEFAULT: ReelMetrics = {
   cellHeight: 60,
   symbolSize: 42,
   windowHeight: 180,
+  viewportWidth: 360,
+  isMobile: true,
 };
 
 const ReelMetricsContext = createContext<ReelMetrics>(DEFAULT);
@@ -35,6 +41,8 @@ function computeMetrics(viewportWidth: number): ReelMetrics {
     cellHeight,
     symbolSize,
     windowHeight: cellHeight * 3,
+    viewportWidth,
+    isMobile: viewportWidth <= MOBILE_MAX_WIDTH,
   };
 }
 

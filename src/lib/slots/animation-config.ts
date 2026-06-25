@@ -48,8 +48,47 @@ export const SLOT_ANIMATION: Record<SlotGameId, SlotAnimConfig> = {
   "moon-wolf": DEFAULT,
 };
 
-export function getSlotAnimationConfig(gameId: SlotGameId): SlotAnimConfig {
-  return SLOT_ANIMATION[gameId] ?? DEFAULT;
+export type SlotAnimOptions = {
+  /** Ancho del viewport del carrete (≤768 = móvil) */
+  mobile?: boolean;
+  /** Altura de celda medida en runtime para igualar velocidad visual */
+  cellHeight?: number;
+};
+
+function scaleAnimForDevice(
+  base: SlotAnimConfig,
+  opts?: SlotAnimOptions
+): SlotAnimConfig {
+  const refCell = base.cellHeight;
+  const cellH = opts?.cellHeight && opts.cellHeight > 0 ? opts.cellHeight : refCell;
+  const cellRatio = cellH / refCell;
+
+  let config: SlotAnimConfig = {
+    ...base,
+    maxVelocity: base.maxVelocity * cellRatio,
+  };
+
+  if (opts?.mobile) {
+    config = {
+      ...config,
+      accelMs: Math.round(config.accelMs * 1.35),
+      maxVelocity: config.maxVelocity * 0.72,
+      columnStopDelayMs: Math.round(config.columnStopDelayMs * 1.4),
+      baseSpinMs: Math.round(config.baseSpinMs * 1.55),
+      decelMs: Math.round(config.decelMs * 1.3),
+      settleMs: Math.round(config.settleMs * 1.1),
+    };
+  }
+
+  return config;
+}
+
+export function getSlotAnimationConfig(
+  gameId: SlotGameId,
+  opts?: SlotAnimOptions
+): SlotAnimConfig {
+  const base = SLOT_ANIMATION[gameId] ?? DEFAULT;
+  return scaleAnimForDevice(base, opts);
 }
 
 export const UI_ANIM = {
