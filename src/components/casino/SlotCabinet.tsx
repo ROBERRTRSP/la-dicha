@@ -26,38 +26,53 @@ export function SlotHeader({
   showBalancePill?: boolean;
 }) {
   return (
-    <header className={cn("slot-header", className)}>
-      <Link href={backHref} className="slot-header-back">
-        ← Casino
-      </Link>
-      {showBalancePill && (
-        <div className="slot-header-balance-pill">
-          <span className="slot-header-balance-pill-label">Saldo</span>
-          {balanceNode ?? (
-            <strong className="slot-header-balance-pill-value">
-              {formatMoney(balance ?? 0)}
-            </strong>
-          )}
-        </div>
-      )}
-      <div className="slot-marquee">
-        <div className="slot-marquee-lights" aria-hidden />
-        <div className="slot-marquee-brand">
-          {logoSrc ? (
-            <Image
-              src={logoSrc}
-              alt={name}
-              width={320}
-              height={96}
-              priority
-              className="slot-marquee-logo"
-            />
-          ) : (
-            <h1 className="slot-marquee-title">{name}</h1>
-          )}
-        </div>
-        <p className="slot-marquee-tagline">{tagline}</p>
+    <header className={cn("slot-header", "slot-header--integrated", className)}>
+      <div className="slot-header-toolbar">
+        <Link href={backHref} className="slot-header-back" aria-label="Volver al casino">
+          <span className="slot-header-back-chevron" aria-hidden>
+            ←
+          </span>
+          <span className="slot-header-back-label">Casino</span>
+        </Link>
+        {showBalancePill && (
+          <div className="slot-header-balance-pill">
+            <span className="slot-header-balance-pill-label">Saldo</span>
+            {balanceNode ?? (
+              <strong className="slot-header-balance-pill-value">
+                {formatMoney(balance ?? 0)}
+              </strong>
+            )}
+          </div>
+        )}
       </div>
+
+      <div className="slot-header-banner">
+        <div className="slot-header-banner-lights" aria-hidden />
+        <div className="slot-header-banner-plate" aria-hidden />
+        <div className="slot-header-banner-frame" aria-hidden />
+        <div className="slot-header-banner-content">
+          {logoSrc ? (
+            <div className="slot-header-banner-art">
+              <Image
+                src={logoSrc}
+                alt={name}
+                fill
+                priority
+                sizes="(max-width: 520px) 94vw, 520px"
+                className="slot-header-banner-image"
+              />
+              <div className="slot-header-banner-vignette" aria-hidden />
+              <div className="slot-header-banner-shimmer" aria-hidden />
+            </div>
+          ) : (
+            <h1 className="slot-marquee-title slot-header-banner-title">{name}</h1>
+          )}
+        </div>
+        {tagline ? (
+          <p className="slot-header-banner-tagline">{tagline}</p>
+        ) : null}
+      </div>
+
       <div className="slot-jackpot-display">
         <span className="slot-jackpot-label">Saldo</span>
         {balanceNode ?? (

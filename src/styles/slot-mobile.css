@@ -140,18 +140,19 @@
     --slot-symbol-max: 65%;
   }
 
-  .slot-marquee-title {
+  .slot-marquee-title,
+  .slot-header-banner-title {
     font-size: 1rem;
   }
 
-  .slot-header--compact .slot-marquee-logo {
-    height: clamp(28px, 8.5vw, 40px);
-    max-width: min(190px, 62vw);
+  .slot-header--compact .slot-header-banner,
+  .slot-header--compact .slot-header-banner-art {
+    min-height: clamp(50px, 14vw, 60px);
   }
 
-  .slot-header--compact .slot-marquee {
-    padding-left: 60px;
-    padding-right: 72px;
+  .slot-header--integrated .slot-header-back {
+    padding: 5px 10px 5px 8px;
+    font-size: 10px;
   }
 
   .slot-jackpot-value,
@@ -161,7 +162,8 @@
 }
 
 @media (max-height: 700px) {
-  .slot-marquee-tagline {
+  .slot-marquee-tagline,
+  .slot-header-banner-tagline {
     display: none;
   }
 
@@ -211,7 +213,8 @@
   .slot-wolf-star,
   .slot-reels--moon-wolf .slot-reel-cell--win .slot-symbol-image--wild,
   .slot-reels--moon-wolf .slot-reel-cell--win .slot-symbol-svg--wild,
-  .slot-coin-burst-piece {
+  .slot-coin-burst-piece,
+  .slot-header-banner-shimmer {
     animation: none !important;
   }
 }
