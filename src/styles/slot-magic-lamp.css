@@ -40,11 +40,21 @@
   border-bottom-color: rgba(168, 85, 247, 0.55);
 }
 
-.slot-theme--lamp .slot-marquee-title {
+.slot-theme--lamp .slot-marquee-title,
+.slot-theme--lamp .slot-marquee-logo {
   background: linear-gradient(180deg, #fff 0%, #e9d5ff 40%, #f7c948 100%);
   -webkit-background-clip: text;
   background-clip: text;
   filter: drop-shadow(0 0 14px rgba(168, 85, 247, 0.55));
+}
+
+.slot-theme--lamp .slot-marquee-logo {
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  filter:
+    drop-shadow(0 2px 10px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 0 20px rgba(168, 85, 247, 0.45));
 }
 
 .slot-theme--lamp .slot-jackpot-display {

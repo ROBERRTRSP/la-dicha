@@ -263,6 +263,7 @@ export function ModernSlotMachine({
           <SlotHeader
             name={game.name}
             tagline={game.tagline}
+            logoSrc={CASINO_ART.thumbs[gameId]}
             className="slot-header--compact"
             showBalancePill
             balanceNode={

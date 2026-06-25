@@ -22,9 +22,18 @@
   gap: 5px;
 }
 
-/* Header compacto: título + saldo rápido arriba a la derecha */
+/* Header compacto: logo + saldo rápido arriba a la derecha */
 .slot-header--compact .slot-marquee {
-  padding: 2px 88px 4px 72px;
+  padding: 4px 88px 6px 72px;
+}
+
+.slot-header--compact .slot-marquee-brand {
+  min-height: 36px;
+}
+
+.slot-header--compact .slot-marquee-logo {
+  height: clamp(32px, 9.5vw, 46px);
+  max-width: min(220px, 68vw);
 }
 
 .slot-header--compact {

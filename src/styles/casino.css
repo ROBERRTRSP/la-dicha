@@ -492,6 +492,23 @@
   line-height: 1.15;
 }
 
+.slot-marquee-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+}
+
+.slot-marquee-logo {
+  width: auto;
+  height: clamp(38px, 11vw, 56px);
+  max-width: min(260px, 74vw);
+  object-fit: contain;
+  filter:
+    drop-shadow(0 2px 10px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 0 18px rgba(247, 201, 72, 0.32));
+}
+
 .slot-marquee-tagline {
   margin: 4px 0 0;
   font-size: clamp(10px, 2.6vw, 12px);

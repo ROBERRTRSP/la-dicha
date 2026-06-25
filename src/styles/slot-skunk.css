@@ -4,6 +4,12 @@
   background: linear-gradient(180deg, #0a140e 0%, #060a08 100%);
 }
 
+.slot-theme--skunk .slot-marquee-logo {
+  filter:
+    drop-shadow(0 2px 10px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 0 18px rgba(120, 200, 140, 0.4));
+}
+
 .slot-theme--skunk {
   --casino-reel-glow: rgba(120, 200, 140, 0.1);
   --casino-symbol-filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.55))

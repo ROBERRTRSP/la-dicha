@@ -82,11 +82,21 @@
   border-bottom-color: rgba(147, 197, 253, 0.45);
 }
 
-.slot-theme--wolf .slot-marquee-title {
+.slot-theme--wolf .slot-marquee-title,
+.slot-theme--wolf .slot-marquee-logo {
   background: linear-gradient(180deg, #fff 0%, #bfdbfe 45%, #e8c05a 100%);
   -webkit-background-clip: text;
   background-clip: text;
   filter: drop-shadow(0 0 14px rgba(147, 197, 253, 0.5));
+}
+
+.slot-theme--wolf .slot-marquee-logo {
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  filter:
+    drop-shadow(0 2px 10px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 0 20px rgba(147, 197, 253, 0.45));
 }
 
 .slot-theme--wolf .slot-jackpot-display {

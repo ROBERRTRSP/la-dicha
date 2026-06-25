@@ -1,5 +1,11 @@
 /* Golden Ox · tema premium oscuro con acentos dorados */
 
+.slot-theme--ox .slot-marquee-logo {
+  filter:
+    drop-shadow(0 2px 10px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 0 18px rgba(232, 192, 90, 0.42));
+}
+
 .slot-theme--ox .slot-reel-cell:not(.slot-reel-cell--win):not(.slot-reel-cell--scatter) {
   background: radial-gradient(
     circle at 38% 22%,

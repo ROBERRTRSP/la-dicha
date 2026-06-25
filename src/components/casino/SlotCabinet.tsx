@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/utils";
@@ -8,6 +9,7 @@ import { formatMoney } from "@/lib/utils";
 export function SlotHeader({
   name,
   tagline,
+  logoSrc,
   balance,
   balanceNode,
   backHref = "/ruleta",
@@ -16,6 +18,7 @@ export function SlotHeader({
 }: {
   name: string;
   tagline: string;
+  logoSrc?: string;
   balance?: number;
   balanceNode?: ReactNode;
   backHref?: string;
@@ -39,7 +42,20 @@ export function SlotHeader({
       )}
       <div className="slot-marquee">
         <div className="slot-marquee-lights" aria-hidden />
-        <h1 className="slot-marquee-title">{name}</h1>
+        <div className="slot-marquee-brand">
+          {logoSrc ? (
+            <Image
+              src={logoSrc}
+              alt={name}
+              width={320}
+              height={96}
+              priority
+              className="slot-marquee-logo"
+            />
+          ) : (
+            <h1 className="slot-marquee-title">{name}</h1>
+          )}
+        </div>
         <p className="slot-marquee-tagline">{tagline}</p>
       </div>
       <div className="slot-jackpot-display">
