@@ -264,10 +264,14 @@ export function ModernSlotMachine({
             name={game.name}
             tagline={game.tagline}
             className="slot-header--compact"
+            showBalancePill
+            balanceNode={
+              <AnimatedBalance value={balance} className="slot-balance-value" />
+            }
           />
 
           <SlotCabinetBody>
-            <SlotRuleBar className="slot-rule-bar--compact">
+            <SlotRuleBar className="slot-rule-bar--compact slot-rule-bar--minimal">
               {freeMode ? (
                 <span className="slot-rule-text slot-rule-text--free">
                   GIROS GRATIS {bonus.freeSpinsLeft}
@@ -277,16 +281,18 @@ export function ModernSlotMachine({
                     : ""}
                 </span>
               ) : (
-                <span className="slot-rule-text">
-                  {game.cols} rodillos × {game.rows} filas · {game.paylineCount}{" "}
-                  líneas de pago
+                <span className="slot-rule-text slot-rule-text--lines">
+                  {game.paylineCount} líneas · {game.cols}×{game.rows}
                 </span>
               )}
             </SlotRuleBar>
 
             <SlotScreen
               winFlash={winFlash}
-              className={settleFlash ? "slot-screen--settled" : undefined}
+              className={cn(
+                "slot-screen--expanded",
+                settleFlash && "slot-screen--settled"
+              )}
             >
               <SlotPaylineFrame
                 activeLineIndices={!awaitingStop ? activeLineIndices : []}
@@ -320,22 +326,25 @@ export function ModernSlotMachine({
                   {formatJackpotBanner(jackpotTier)}
                 </div>
               )}
+              {!awaitingStop && lastWin === 0 && (
+                <p
+                  className="slot-result-strip slot-result-strip--neutral slot-result-strip--overlay"
+                  aria-live="polite"
+                >
+                  Sin premio este giro
+                </p>
+              )}
+              {message && (
+                <p className="slot-result-strip slot-result-strip--bonus slot-result-strip--overlay">
+                  {message}
+                </p>
+              )}
+              {error && (
+                <p className="slot-result-strip slot-result-strip--error slot-result-strip--overlay">
+                  {error}
+                </p>
+              )}
             </SlotScreen>
-
-            {!awaitingStop && lastWin === 0 && (
-              <p
-                className="slot-result-strip slot-result-strip--neutral"
-                aria-live="polite"
-              >
-                Sin premio este giro
-              </p>
-            )}
-            {message && (
-              <p className="slot-result-strip slot-result-strip--bonus">{message}</p>
-            )}
-            {error && (
-              <p className="slot-result-strip slot-result-strip--error">{error}</p>
-            )}
           </SlotCabinetBody>
 
           <SlotCabinetDeck>
@@ -377,6 +386,7 @@ export function ModernSlotMachine({
                   options={SLOT_BET_OPTIONS}
                   disabled={spinning || freeMode}
                   onSelect={setBet}
+                  hideLabel
                 />
               }
               spinButton={

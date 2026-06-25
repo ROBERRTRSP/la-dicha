@@ -12,6 +12,7 @@ export function SlotHeader({
   balanceNode,
   backHref = "/ruleta",
   className,
+  showBalancePill,
 }: {
   name: string;
   tagline: string;
@@ -19,12 +20,23 @@ export function SlotHeader({
   balanceNode?: ReactNode;
   backHref?: string;
   className?: string;
+  showBalancePill?: boolean;
 }) {
   return (
     <header className={cn("slot-header", className)}>
       <Link href={backHref} className="slot-header-back">
         ← Casino
       </Link>
+      {showBalancePill && (
+        <div className="slot-header-balance-pill">
+          <span className="slot-header-balance-pill-label">Saldo</span>
+          {balanceNode ?? (
+            <strong className="slot-header-balance-pill-value">
+              {formatMoney(balance ?? 0)}
+            </strong>
+          )}
+        </div>
+      )}
       <div className="slot-marquee">
         <div className="slot-marquee-lights" aria-hidden />
         <h1 className="slot-marquee-title">{name}</h1>
@@ -80,15 +92,19 @@ export function BetControls({
   options,
   disabled,
   onSelect,
+  hideLabel,
 }: {
   bet: number;
   options: readonly number[];
   disabled?: boolean;
   onSelect: (amount: number) => void;
+  hideLabel?: boolean;
 }) {
   return (
     <div className="slot-bet-controls">
-      <span className="slot-bet-controls-label">APUESTA</span>
+      {!hideLabel && (
+        <span className="slot-bet-controls-label">APUESTA</span>
+      )}
       <div className="slot-bet-controls-row">
         {options.map((amount) => (
           <button
@@ -197,13 +213,13 @@ export function SlotControlDeck({
   return (
     <div className="slot-control-deck">
       {financeHud}
-      {navButtons ? (
-        <div className="slot-control-deck-nav">{navButtons}</div>
-      ) : null}
       <div className="slot-control-deck-main">
         <div className="slot-control-deck-bets">{betControls}</div>
         <div className="slot-control-deck-spin">{spinButton}</div>
       </div>
+      {navButtons ? (
+        <div className="slot-control-deck-nav">{navButtons}</div>
+      ) : null}
     </div>
   );
 }

@@ -27,7 +27,7 @@ export function SlotFinanceHud({
     winPending || win === null
       ? "—"
       : win > 0
-        ? formatMoney(win)
+        ? `+ ${formatMoney(win)}`
         : formatMoney(0);
 
   return (

@@ -4,8 +4,7 @@ import type { ReactNode } from "react";
 import { PAYLINES_5x3 } from "@/lib/slots/paylines";
 import { cn } from "@/lib/utils";
 
-const LEFT_LINES = [1, 2, 3, 4, 5];
-const RIGHT_LINES = [6, 7, 8, 9, 10];
+const ALL_LINES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
 
 function linePath(rows: number[]): string {
   const colX = (col: number) => 10 + col * 20;
@@ -33,9 +32,9 @@ export function SlotPaylineFrame({
     <div className={cn("slot-payline-frame", className)}>
       <div className="slot-payline-rail slot-payline-rail--left" aria-hidden>
         <span className="slot-payline-rail-title">LÍNEAS</span>
-        {LEFT_LINES.filter((n) => n <= paylineCount).map((n) => (
+        {ALL_LINES.filter((n) => n <= paylineCount).map((n) => (
           <span
-            key={n}
+            key={`l-${n}`}
             className={cn(
               "slot-payline-badge",
               activeSet.has(n - 1) && "slot-payline-badge--active"
@@ -67,10 +66,10 @@ export function SlotPaylineFrame({
       </div>
 
       <div className="slot-payline-rail slot-payline-rail--right" aria-hidden>
-        <span className="slot-payline-rail-title">{paylineCount}</span>
-        {RIGHT_LINES.filter((n) => n <= paylineCount).map((n) => (
+        <span className="slot-payline-rail-title">LÍNEAS</span>
+        {ALL_LINES.filter((n) => n <= paylineCount).map((n) => (
           <span
-            key={n}
+            key={`r-${n}`}
             className={cn(
               "slot-payline-badge",
               activeSet.has(n - 1) && "slot-payline-badge--active"
