@@ -2,7 +2,7 @@
 
 @media (max-width: 768px) {
   .slot-reels-viewport {
-    --slot-symbol-max: 70%;
+    --slot-symbol-max: 72%;
     perspective: none;
   }
 
@@ -23,11 +23,21 @@
   }
 
   .slot-reel-cell {
-    border-radius: 10px;
+    border-radius: 8px;
   }
 
   .slot-symbol-wrapper {
-    padding: 8%;
+    padding: 7%;
+  }
+
+  .slot-spin-button {
+    width: min(140px, 38vw);
+    height: min(140px, 38vw);
+  }
+
+  .slot-cabinet-deck {
+    gap: 12px;
+    padding-bottom: 14px;
   }
 }
 
@@ -93,7 +103,9 @@
     animation: none !important;
   }
 
+  .slot-spin-button--ready .slot-spin-button-outer,
   .slot-reel-cell--settle .slot-symbol-wrapper,
+  .slot-screen--settled .slot-screen-viewport,
   .slot-win-display,
   .slot-cabinet--win,
   .casino-jackpot-banner,

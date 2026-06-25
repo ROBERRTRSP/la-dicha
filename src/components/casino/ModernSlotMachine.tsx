@@ -87,6 +87,7 @@ export function ModernSlotMachine({
   });
   const [error, setError] = useState("");
   const [resultReady, setResultReady] = useState(false);
+  const [settleFlash, setSettleFlash] = useState(false);
   const pendingResult = useRef<SpinResponse | null>(null);
   const reelsStoppedRef = useRef(false);
   const apiResolvedRef = useRef(false);
@@ -134,6 +135,8 @@ export function ModernSlotMachine({
     setSpinning(false);
     setAwaitingStop(false);
     inFlightRef.current = false;
+    setSettleFlash(true);
+    window.setTimeout(() => setSettleFlash(false), 380);
   }, []);
 
   // Error / timeout: no aplica premio, libera el giro y re-hidrata el estado.
@@ -256,7 +259,10 @@ export function ModernSlotMachine({
               )}
             </SlotRuleBar>
 
-            <SlotScreen winFlash={winFlash}>
+            <SlotScreen
+              winFlash={winFlash}
+              className={settleFlash ? "slot-screen--settled" : undefined}
+            >
               <SlotReels
                 gameId={gameId}
                 grid={grid}
@@ -305,6 +311,7 @@ export function ModernSlotMachine({
                     : "GIRAR"
               }
               spinning={awaitingStop}
+              ready={!spinning && !awaitingStop && (freeMode || balance >= bet)}
               disabled={spinning || awaitingStop || (!freeMode && balance < bet)}
               onClick={() => void spin()}
             />

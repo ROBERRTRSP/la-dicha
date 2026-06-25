@@ -109,18 +109,24 @@ export function BetControls({
 export function SpinButton({
   label,
   spinning,
+  ready,
   disabled,
   onClick,
 }: {
   label: string;
   spinning?: boolean;
+  ready?: boolean;
   disabled?: boolean;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
-      className={cn("slot-spin-button", spinning && "slot-spin-button--spinning")}
+      className={cn(
+        "slot-spin-button",
+        spinning && "slot-spin-button--spinning",
+        ready && !spinning && "slot-spin-button--ready"
+      )}
       disabled={disabled}
       onClick={onClick}
     >
