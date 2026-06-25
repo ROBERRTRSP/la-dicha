@@ -18,6 +18,7 @@
 .casino-machine--classic7 .casino-machine-bg,
 .classic7-machine-bg {
   background:
+    url("/casino/classic-7-bg.svg") center / cover no-repeat,
     radial-gradient(ellipse 80% 50% at 50% 0%, rgba(220, 38, 38, 0.22), transparent 55%),
     radial-gradient(ellipse 60% 40% at 50% 100%, rgba(232, 192, 90, 0.12), transparent 50%),
     linear-gradient(180deg, #1a0808 0%, #0a0404 100%);

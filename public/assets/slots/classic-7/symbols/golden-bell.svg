@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Campana">
+  <defs>
+    <linearGradient id="bell" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffe566"/>
+      <stop offset="45%" stop-color="#f5b800"/>
+      <stop offset="100%" stop-color="#b8860b"/>
+    </linearGradient>
+  </defs>
+  <path d="M50 16 L68 42 C78 48 82 58 80 68 L20 68 C18 58 22 48 32 42 Z" fill="url(#bell)" stroke="#8b6914" stroke-width="2"/>
+  <rect x="44" y="68" width="12" height="8" rx="2" fill="#c9a020"/>
+  <circle cx="50" cy="78" r="6" fill="#e8c05a" stroke="#8b6914" stroke-width="1.5"/>
+  <ellipse cx="50" cy="38" rx="14" ry="8" fill="rgba(255,255,255,0.35)"/>
+</svg>

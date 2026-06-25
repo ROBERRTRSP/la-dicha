@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Siete rojo">
+  <defs>
+    <linearGradient id="7g" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff4d4d"/>
+      <stop offset="55%" stop-color="#c41e1e"/>
+      <stop offset="100%" stop-color="#7f0f0f"/>
+    </linearGradient>
+    <filter id="7s">
+      <feDropShadow dx="0" dy="3" stdDeviation="2" flood-color="#000" flood-opacity="0.55"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#ffd54f" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <rect x="8" y="14" width="84" height="72" rx="14" fill="url(#7g)" stroke="#ffd54f" stroke-width="3" filter="url(#7s)"/>
+  <text x="50" y="68" text-anchor="middle" font-size="52" font-weight="900" fill="#fff8e7" font-family="Georgia, serif">7</text>
+</svg>

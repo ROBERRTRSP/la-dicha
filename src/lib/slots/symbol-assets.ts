@@ -48,7 +48,16 @@ const SLOT_SYMBOL_IMAGES: Record<SlotGameId, Record<string, string>> = {
     SKUNK: "/assets/slots/treasure-skunk/SKUNK.png",
     LEAF: "/assets/slots/treasure-skunk/LEAF.png",
   },
-  "classic-7": {},
+  "classic-7": {
+    "red-seven": "/assets/slots/classic-7/red-seven.png",
+    "triple-bar": "/assets/slots/classic-7/triple-bar.png",
+    "double-bar": "/assets/slots/classic-7/double-bar.png",
+    "single-bar": "/assets/slots/classic-7/single-bar.png",
+    "golden-bell": "/assets/slots/classic-7/golden-bell.png",
+    diamond: "/assets/slots/classic-7/diamond.png",
+    horseshoe: "/assets/slots/classic-7/horseshoe.png",
+    cherry: "/assets/slots/classic-7/cherry.png",
+  },
 };
 
 /**
