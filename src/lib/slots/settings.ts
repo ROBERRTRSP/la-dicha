@@ -41,6 +41,7 @@ export async function getBonusState(
     freeSpinsLeft: row?.freeSpinsLeft ?? 0,
     multiplier: row?.multiplier ?? 1,
     progressiveMultiplier: row?.progressiveMultiplier ?? 1,
+    freeSpinBetAmount: row?.freeSpinBetAmount ?? 0,
   };
 }
 
@@ -57,11 +58,13 @@ export async function saveBonusState(
       freeSpinsLeft: state.freeSpinsLeft,
       multiplier: state.multiplier,
       progressiveMultiplier: state.progressiveMultiplier,
+      freeSpinBetAmount: state.freeSpinBetAmount ?? 0,
     },
     update: {
       freeSpinsLeft: state.freeSpinsLeft,
       multiplier: state.multiplier,
       progressiveMultiplier: state.progressiveMultiplier,
+      freeSpinBetAmount: state.freeSpinBetAmount ?? 0,
     },
   });
 }

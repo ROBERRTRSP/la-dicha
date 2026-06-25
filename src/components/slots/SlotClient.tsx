@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { BrandHeader } from "@/components/player/BrandHeader";
+import { SlotSymbolSvg } from "@/components/casino/SlotSymbolSvg";
 import { getSlotGame } from "@/lib/slots/games";
 import type { BonusState, Grid, LineWin, SlotGameId } from "@/lib/slots/types";
 import { SLOT_BET_OPTIONS } from "@/lib/slots/settings";
@@ -140,7 +141,11 @@ export function SlotClient({
                       sym?.isScatter && "slot-cell--scatter"
                     )}
                   >
-                    <span className="slot-cell-emoji">{sym?.emoji ?? "?"}</span>
+                    <SlotSymbolSvg
+                      symbolId={symId}
+                      gameId={gameId}
+                      variant="cell"
+                    />
                   </div>
                 );
               })}
@@ -193,7 +198,8 @@ export function SlotClient({
         <ul>
           {Object.values(game.symbols).map((sym) => (
             <li key={sym.id}>
-              <span>{sym.emoji}</span> {sym.label}
+              <SlotSymbolSvg symbolId={sym.id} gameId={gameId} size={22} />{" "}
+              {sym.label}
               {sym.isWild && " · Wild"}
               {sym.isScatter && " · Bonus"}
             </li>

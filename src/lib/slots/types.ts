@@ -7,7 +7,6 @@ export type SlotGameId =
 export type SymbolDef = {
   id: string;
   label: string;
-  emoji: string;
   /** Multiplicador de la apuesta por línea: 3 / 4 / 5 iguales. */
   pays: Partial<Record<3 | 4 | 5, number>>;
   isWild?: boolean;
@@ -68,4 +67,6 @@ export type BonusState = {
   freeSpinsLeft: number;
   multiplier: number;
   progressiveMultiplier: number;
+  /** Apuesta congelada que disparó la ronda de giros gratis (servidor). */
+  freeSpinBetAmount?: number;
 };

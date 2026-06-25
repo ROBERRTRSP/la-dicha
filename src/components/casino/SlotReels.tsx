@@ -149,6 +149,7 @@ function SlotReelColumn({
   allSymbolIds,
   spinning,
   stopGeneration,
+  resultReady,
   winRows,
   scatterRows,
   highlight,
@@ -161,6 +162,7 @@ function SlotReelColumn({
   allSymbolIds: string[];
   spinning: boolean;
   stopGeneration: number;
+  resultReady?: boolean;
   winRows: Set<number>;
   scatterRows: Set<number>;
   highlight: boolean;
@@ -196,6 +198,12 @@ function SlotReelColumn({
   const targetOffsetRef = useRef(0);
   const mountedRef = useRef(false);
   const finalsRef = useRef(finalSymbols);
+  const wantStopRef = useRef(false);
+  const resultReadyRef = useRef(false);
+
+  useEffect(() => {
+    resultReadyRef.current = resultReady ?? false;
+  }, [resultReady]);
 
   useEffect(() => {
     finalsRef.current = finalSymbols;
@@ -236,10 +244,29 @@ function SlotReelColumn({
     }
   }, [cellH, strip.length, spinning]);
 
+  // Parada forzada: si el giro se cancela (error/timeout en el padre) mientras
+  // el carrete sigue en movimiento, vuelve a reposo en lugar de girar sin fin.
+  useEffect(() => {
+    if (spinning || phaseRef.current === "idle") return;
+    cancelAnimationFrame(rafRef.current);
+    wantStopRef.current = false;
+    stoppedRef.current = true;
+    setSettling(false);
+    phaseRef.current = "idle";
+    setPhase("idle");
+    if (stripRef.current) stripRef.current.style.transition = "";
+    if (cellH > 0) {
+      const fo = finalOffset(strip.length, cellH);
+      offsetRef.current = fo;
+      setOffset(fo);
+    }
+  }, [spinning, strip.length, cellH]);
+
   useEffect(() => {
     if (!spinning) return;
 
     stoppedRef.current = false;
+    wantStopRef.current = false;
     setSettling(false);
 
     const startFinals = finalsRef.current;
@@ -291,15 +318,19 @@ function SlotReelColumn({
           phaseRef.current = "spin";
           setPhase("spin");
         }
+        // Solo frena cuando ya pasó el tiempo mínimo de giro Y el servidor
+        // respondió: así el carrete aterriza en la rejilla real sin saltos.
+        if (wantStopRef.current && resultReadyRef.current) {
+          beginDecel();
+          return;
+        }
         rafRef.current = requestAnimationFrame(tick);
       }
     };
 
-    if (!reducedMotion) {
-      rafRef.current = requestAnimationFrame(tick);
-    }
-
-    const stopTimer = window.setTimeout(() => {
+    // Frena el carrete hacia la rejilla final del servidor.
+    const beginDecel = () => {
+      if (phaseRef.current === "decel") return;
       cancelAnimationFrame(rafRef.current);
 
       const latestFinals = finalsRef.current;
@@ -332,6 +363,27 @@ function SlotReelColumn({
         setOffset(snap);
         if (decelMs === 0) finishStop();
       });
+    };
+
+    // Sin animación (reduced motion) no hay bucle tick: esperamos el
+    // resultado del servidor con un sondeo ligero antes de aterrizar.
+    const waitForResult = () => {
+      if (resultReadyRef.current) {
+        beginDecel();
+        return;
+      }
+      rafRef.current = requestAnimationFrame(waitForResult);
+    };
+
+    if (!reducedMotion) {
+      rafRef.current = requestAnimationFrame(tick);
+    }
+
+    const stopTimer = window.setTimeout(() => {
+      wantStopRef.current = true;
+      if (reducedMotion) {
+        waitForResult();
+      }
     }, stopAt);
 
     const fallbackTimer = window.setTimeout(() => {
@@ -433,6 +485,7 @@ function SlotReelsInner({
   grid,
   spinning,
   stopGeneration,
+  resultReady = false,
   winningCells = [],
   scatterCells = [],
   highlight = false,
@@ -442,6 +495,7 @@ function SlotReelsInner({
   grid: string[][];
   spinning: boolean;
   stopGeneration: number;
+  resultReady?: boolean;
   winningCells?: WinCell[];
   scatterCells?: WinCell[];
   highlight?: boolean;
@@ -493,6 +547,7 @@ function SlotReelsInner({
           allSymbolIds={allIds}
           spinning={spinning}
           stopGeneration={stopGeneration}
+          resultReady={resultReady}
           winRows={winByCol.get(colIndex) ?? EMPTY_SET}
           scatterRows={scatterByCol.get(colIndex) ?? EMPTY_SET}
           highlight={highlight}

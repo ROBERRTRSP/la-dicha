@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { SLOT_GAME_LIST } from "@/lib/slots/games";
+import { SlotSymbolSvg } from "@/components/casino/SlotSymbolSvg";
+import type { SlotGameId } from "@/lib/slots/types";
 import { formatMoney } from "@/lib/utils";
 
-const PREVIEW: Record<string, string[]> = {
-  "treasure-skunk": ["🦨", "📦", "🪙", "💎", "💰"],
-  "magic-lamp": ["🪔", "🧞", "💍", "⭐", "🕌"],
-  "golden-ox": ["🐂", "🥇", "🔴", "🔥", "🅰️"],
-  "moon-wolf": ["🐺", "🌙", "⛰️", "🐾", "⭐"],
+const PREVIEW: Record<SlotGameId, string[]> = {
+  "treasure-skunk": ["SKUNK", "CHEST", "COINS", "DIAMOND", "GOLD_BAG"],
+  "magic-lamp": ["LAMP", "GENIE", "RUBY", "STAR", "CARPET"],
+  "golden-ox": ["OX", "INGOT", "RED_COIN", "FIRE", "A"],
+  "moon-wolf": ["WOLF", "MOON", "MOUNTAIN", "CLAW", "STAR"],
 };
 
 export function SlotsLobby() {
@@ -28,8 +30,13 @@ export function SlotsLobby() {
             className={`slots-lobby-card ${game.themeClass}`}
           >
             <div className="slots-lobby-card-symbols">
-              {(PREVIEW[game.id] ?? []).map((emoji) => (
-                <span key={emoji}>{emoji}</span>
+              {(PREVIEW[game.id] ?? []).map((symbolId) => (
+                <SlotSymbolSvg
+                  key={symbolId}
+                  symbolId={symbolId}
+                  gameId={game.id}
+                  size={40}
+                />
               ))}
             </div>
             <h2>{game.name}</h2>

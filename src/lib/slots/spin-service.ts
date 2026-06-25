@@ -25,10 +25,21 @@ export async function placeSlotSpin(userId: string, gameId: string, betAmount: n
 
   const bonusBefore = await getBonusState(userId, gameId);
   const isFreeSpin = bonusBefore.freeSpinsLeft > 0;
-  const effectiveBet = isFreeSpin ? betAmount : betAmount;
 
-  if (!isFreeSpin) {
+  // La apuesta efectiva NUNCA la decide el cliente en giros gratis: se usa la
+  // apuesta congelada que disparó el bono. Esto evita inflar premios enviando
+  // un betAmount arbitrario durante la ronda gratis.
+  let effectiveBet: number;
+  if (isFreeSpin) {
+    const frozenBet = bonusBefore.freeSpinBetAmount ?? 0;
+    if (!frozenBet || frozenBet <= 0) {
+      throw new Error("Estado de giros gratis inválido. Vuelve a intentarlo.");
+    }
+    validateSlotBet(frozenBet, settings.minBetAmount, settings.maxBetAmount);
+    effectiveBet = frozenBet;
+  } else {
     validateSlotBet(betAmount, settings.minBetAmount, settings.maxBetAmount);
+    effectiveBet = betAmount;
   }
 
   const grid = spinGrid(
@@ -36,6 +47,16 @@ export async function placeSlotSpin(userId: string, gameId: string, betAmount: n
   );
   const result = evaluateSpin(gameId, grid, effectiveBet, bonusBefore, isFreeSpin);
   const bonusAfter = nextBonusState(gameId, bonusBefore, result, isFreeSpin);
+
+  // Congelar / mantener / limpiar la apuesta de la ronda de giros gratis.
+  let freeSpinBetAmount = bonusBefore.freeSpinBetAmount ?? 0;
+  if (result.bonusTriggered === "FREE_SPINS" && !isFreeSpin) {
+    freeSpinBetAmount = betAmount;
+  }
+  if (bonusAfter.freeSpinsLeft <= 0) {
+    freeSpinBetAmount = 0;
+  }
+  bonusAfter.freeSpinBetAmount = freeSpinBetAmount;
 
   const stake = isFreeSpin ? 0 : betAmount;
   const profit = Math.round((result.payout - stake) * 100) / 100;
@@ -108,11 +129,13 @@ export async function placeSlotSpin(userId: string, gameId: string, betAmount: n
         freeSpinsLeft: bonusAfter.freeSpinsLeft,
         multiplier: bonusAfter.multiplier,
         progressiveMultiplier: bonusAfter.progressiveMultiplier,
+        freeSpinBetAmount: bonusAfter.freeSpinBetAmount ?? 0,
       },
       update: {
         freeSpinsLeft: bonusAfter.freeSpinsLeft,
         multiplier: bonusAfter.multiplier,
         progressiveMultiplier: bonusAfter.progressiveMultiplier,
+        freeSpinBetAmount: bonusAfter.freeSpinBetAmount ?? 0,
       },
     });
 

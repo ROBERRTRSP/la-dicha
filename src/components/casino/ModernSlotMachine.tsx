@@ -86,7 +86,11 @@ export function ModernSlotMachine({
     progressiveMultiplier: 1,
   });
   const [error, setError] = useState("");
+  const [resultReady, setResultReady] = useState(false);
   const pendingResult = useRef<SpinResponse | null>(null);
+  const reelsStoppedRef = useRef(false);
+  const apiResolvedRef = useRef(false);
+  const inFlightRef = useRef(false);
 
   useEffect(() => {
     fetch("/api/slots/spin")
@@ -108,49 +112,14 @@ export function ModernSlotMachine({
   const isLamp = gameId === "magic-lamp";
   const isOx = gameId === "golden-ox";
 
-  const spin = async () => {
-    if (spinning) return;
-    setError("");
-    setLastWin(null);
-    setMessage(null);
-    setWinFlash(false);
-    setWinCells([]);
-    setScatterCells([]);
-    setJackpotTier(null);
-    setSpinning(true);
-    setAwaitingStop(true);
-    setStopGeneration((g) => g + 1);
+  // El premio se aplica una sola vez y solo cuando AMBOS terminaron:
+  // los carretes pararon y el servidor respondió.
+  const tryFinalizeSpin = useCallback(() => {
+    if (!reelsStoppedRef.current || !apiResolvedRef.current) return;
+    const result = pendingResult.current;
+    if (!result) return;
     pendingResult.current = null;
 
-    try {
-      const res = await fetch("/api/slots/spin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId, betAmount: bet }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "No se pudo girar.");
-        setSpinning(false);
-        setAwaitingStop(false);
-        return;
-      }
-      pendingResult.current = data as SpinResponse;
-      setGrid(data.grid);
-    } catch {
-      setError("Error de conexión.");
-      setSpinning(false);
-      setAwaitingStop(false);
-    }
-  };
-
-  const handleAllStopped = useCallback(() => {
-    const result = pendingResult.current;
-    if (!result) {
-      setSpinning(false);
-      setAwaitingStop(false);
-      return;
-    }
     setBalance(result.balance);
     setBonus(result.bonus);
     setLastWin(result.payout);
@@ -164,8 +133,85 @@ export function ModernSlotMachine({
     }
     setSpinning(false);
     setAwaitingStop(false);
-    pendingResult.current = null;
+    inFlightRef.current = false;
   }, []);
+
+  // Error / timeout: no aplica premio, libera el giro y re-hidrata el estado.
+  const failSpin = useCallback(
+    (msg: string) => {
+      pendingResult.current = null;
+      reelsStoppedRef.current = false;
+      apiResolvedRef.current = false;
+      setResultReady(false);
+      setSpinning(false);
+      setAwaitingStop(false);
+      inFlightRef.current = false;
+      setError(msg);
+      fetch("/api/slots/spin")
+        .then((r) => r.json())
+        .then((d) => {
+          if (typeof d.balance === "number") setBalance(d.balance);
+          if (d.bonusStates?.[gameId]) setBonus(d.bonusStates[gameId]);
+        })
+        .catch(() => {});
+    },
+    [gameId]
+  );
+
+  const spin = async () => {
+    if (spinning || inFlightRef.current) return;
+    inFlightRef.current = true;
+
+    setError("");
+    setLastWin(null);
+    setMessage(null);
+    setWinFlash(false);
+    setWinCells([]);
+    setScatterCells([]);
+    setJackpotTier(null);
+    pendingResult.current = null;
+    reelsStoppedRef.current = false;
+    apiResolvedRef.current = false;
+    setResultReady(false);
+    setSpinning(true);
+    setAwaitingStop(true);
+    setStopGeneration((g) => g + 1);
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 12000);
+
+    try {
+      const res = await fetch("/api/slots/spin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameId, betAmount: bet }),
+        signal: controller.signal,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        failSpin(data.error ?? "No se pudo girar.");
+        return;
+      }
+      pendingResult.current = data as SpinResponse;
+      setGrid(data.grid);
+      apiResolvedRef.current = true;
+      setResultReady(true);
+      tryFinalizeSpin();
+    } catch {
+      failSpin(
+        controller.signal.aborted
+          ? "Tiempo de espera agotado. Intenta de nuevo."
+          : "Error de conexión."
+      );
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  };
+
+  const handleAllStopped = useCallback(() => {
+    reelsStoppedRef.current = true;
+    tryFinalizeSpin();
+  }, [tryFinalizeSpin]);
 
   const freeMode = bonus.freeSpinsLeft > 0;
 
@@ -216,6 +262,7 @@ export function ModernSlotMachine({
                 grid={grid}
                 spinning={awaitingStop}
                 stopGeneration={stopGeneration}
+                resultReady={resultReady}
                 winningCells={winCells}
                 scatterCells={scatterCells}
                 highlight={!awaitingStop}

@@ -1,8 +1,9 @@
 "use client";
 
 import type { ComponentType } from "react";
-import { useId } from "react";
+import { useId, useState } from "react";
 import { getSlotGame } from "@/lib/slots/games";
+import { getSlotSymbolImage } from "@/lib/slots/symbol-assets";
 import type { SlotGameId } from "@/lib/slots/types";
 import { cn } from "@/lib/utils";
 import { LampSymbolArt } from "./symbols/lamp-symbol-art";
@@ -46,6 +47,31 @@ export function SlotSymbolSvg({
   const sym = game?.symbols[symbolId];
   const Art = GAME_ART[gameId];
   const isCell = variant === "cell";
+
+  const imgSrc = getSlotSymbolImage(gameId, symbolId);
+  const [imgFailed, setImgFailed] = useState(false);
+
+  // Render preferente: imagen premium del símbolo. Si falta el asset o falla
+  // la carga, hacemos fallback al arte vectorial SVG (más abajo).
+  if (imgSrc && !imgFailed) {
+    return (
+      <img
+        src={imgSrc}
+        alt={sym?.label ?? symbolId}
+        draggable={false}
+        onError={() => setImgFailed(true)}
+        className={cn(
+          "slot-symbol-image",
+          isCell && "slot-symbol-image--cell",
+          `slot-symbol-image--${gameId}`,
+          sym?.isWild && "slot-symbol-image--wild",
+          sym?.isScatter && "slot-symbol-image--scatter",
+          className
+        )}
+        {...(!isCell && size != null ? { width: size, height: size } : {})}
+      />
+    );
+  }
 
   return (
     <svg
