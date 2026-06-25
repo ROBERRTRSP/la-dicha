@@ -10,6 +10,7 @@ import {
 import { SlotPayTable } from "./SlotPayTable";
 import { SlotReels } from "./SlotReels";
 import { AmbientLights } from "./AmbientLights";
+import { MoonWolfEffects } from "./MoonWolfEffects";
 import { CoinBurst } from "./CoinBurst";
 import { AnimatedBalance, WinDisplay } from "./WinDisplay";
 import {
@@ -105,14 +106,18 @@ export function ModernSlotMachine({
   }, [gameId]);
 
   useEffect(() => {
-    if (gameId !== "magic-lamp") return;
+    if (gameId !== "magic-lamp" && gameId !== "moon-wolf") return;
     const thumb = new window.Image();
-    thumb.src = CASINO_ART.thumbs["magic-lamp"];
+    thumb.src = CASINO_ART.thumbs[gameId];
     const bg = new window.Image();
-    bg.src = CASINO_ART.magicLampBg;
+    bg.src =
+      gameId === "magic-lamp"
+        ? CASINO_ART.magicLampBg
+        : CASINO_ART.moonWolfBg;
   }, [gameId]);
 
   const isLamp = gameId === "magic-lamp";
+  const isWolf = gameId === "moon-wolf";
 
   // El premio se aplica una sola vez y solo cuando AMBOS terminaron:
   // los carretes pararon y el servidor respondió.
@@ -225,16 +230,33 @@ export function ModernSlotMachine({
         "casino-machine",
         game.themeClass,
         isLamp && "casino-machine--magic-lamp",
+        isWolf && "casino-machine--moon-wolf",
+        isWolf && freeMode && "casino-machine--moon-night",
         winFlash && "casino-machine--win"
       )}
     >
       <div className="casino-machine-bg" aria-hidden />
       {isLamp && <div className="casino-machine-theme-bg" aria-hidden />}
+      {isWolf && (
+        <>
+          <div className="casino-machine-theme-bg" aria-hidden />
+          <MoonWolfEffects
+            className="slot-wolf-effects--ambient"
+            intense={freeMode || winFlash}
+          />
+        </>
+      )}
       <div className="casino-machine-floor-glow" aria-hidden />
 
       <div className="casino-machine-inner">
         <SlotCabinet themeClass={game.themeClass} winFlash={winFlash}>
           {isLamp && <AmbientLights className="slot-ambient-lights--cabinet" />}
+          {isWolf && (
+            <MoonWolfEffects
+              className="slot-wolf-effects--cabinet"
+              intense={freeMode || winFlash || awaitingStop}
+            />
+          )}
           <SlotHeader
             name={game.name}
             tagline={game.tagline}
@@ -280,7 +302,11 @@ export function ModernSlotMachine({
                 highlight={!awaitingStop}
                 onAllStopped={handleAllStopped}
               />
-              <CoinBurst active={winFlash} generation={stopGeneration} />
+              <CoinBurst
+                active={winFlash}
+                generation={stopGeneration}
+                variant={isWolf ? "stars" : "coins"}
+              />
               {winFlash && <div className="casino-win-overlay" aria-hidden />}
               {jackpotTier && (
                 <div

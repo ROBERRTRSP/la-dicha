@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200">
+  <defs>
+    <radialGradient id="sky" cx="50%" cy="18%" r="85%">
+      <stop offset="0%" stop-color="#152848"/>
+      <stop offset="45%" stop-color="#0a1428"/>
+      <stop offset="100%" stop-color="#060910"/>
+    </radialGradient>
+    <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e0e7ff" stop-opacity="0.35"/>
+      <stop offset="55%" stop-color="#93c5fd" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="mountainFar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="mountainNear" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="1200" fill="url(#sky)"/>
+  <circle cx="620" cy="180" r="72" fill="url(#moonGlow)"/>
+  <circle cx="620" cy="180" r="38" fill="#e2e8f0" opacity="0.92"/>
+  <circle cx="608" cy="168" r="34" fill="#cbd5e1" opacity="0.35"/>
+  <ellipse cx="400" cy="420" rx="360" ry="280" fill="rgba(99,102,241,0.08)"/>
+  <path d="M0 820 L120 640 L260 720 L400 560 L540 680 L680 580 L800 760 L800 1200 L0 1200 Z" fill="url(#mountainFar)" opacity="0.85"/>
+  <path d="M0 920 L180 760 L320 840 L480 700 L620 820 L800 740 L800 1200 L0 1200 Z" fill="url(#mountainNear)"/>
+  <circle cx="90" cy="120" r="1.5" fill="#e0e7ff" opacity="0.5"/>
+  <circle cx="210" cy="240" r="2" fill="#93c5fd" opacity="0.45"/>
+  <circle cx="340" cy="160" r="1.5" fill="#f8fafc" opacity="0.35"/>
+  <circle cx="480" cy="300" r="2" fill="#c7d2fe" opacity="0.4"/>
+  <circle cx="150" cy="420" r="1.5" fill="#e0e7ff" opacity="0.3"/>
+  <circle cx="720" cy="380" r="2" fill="#93c5fd" opacity="0.35"/>
+  <circle cx="560" cy="520" r="1.5" fill="#f8fafc" opacity="0.25"/>
+</svg>

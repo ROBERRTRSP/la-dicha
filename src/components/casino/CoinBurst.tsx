@@ -12,7 +12,24 @@ const COINS = Array.from({ length: 12 }, (_, i) => ({
   drift: -20 + (i * 13) % 40,
 }));
 
-export function CoinBurst({ active, generation }: { active: boolean; generation: number }) {
+const STARS = Array.from({ length: 14 }, (_, i) => ({
+  id: i,
+  left: 10 + (i * 6) % 80,
+  delay: (i * 0.05) % 0.45,
+  size: 4 + (i % 3) * 2,
+  drift: -30 + (i * 11) % 60,
+  rise: -70 - (i % 5) * 18,
+}));
+
+export function CoinBurst({
+  active,
+  generation,
+  variant = "coins",
+}: {
+  active: boolean;
+  generation: number;
+  variant?: "coins" | "stars";
+}) {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -27,23 +44,43 @@ export function CoinBurst({ active, generation }: { active: boolean; generation:
 
   if (!show) return null;
 
+  const pieces = variant === "stars" ? STARS : COINS;
+
   return (
-    <div className="slot-coin-burst" aria-hidden key={generation}>
-      {COINS.map((c) => (
+    <div
+      className={cn(
+        "slot-coin-burst",
+        variant === "stars" && "slot-coin-burst--stars"
+      )}
+      aria-hidden
+      key={generation}
+    >
+      {pieces.map((piece) => (
         <span
-          key={c.id}
-          className="slot-coin-burst-piece"
+          key={piece.id}
+          className={cn(
+            "slot-coin-burst-piece",
+            variant === "stars" && "slot-coin-burst-piece--star"
+          )}
           style={
             {
-              "--coin-left": `${c.left}%`,
-              "--coin-delay": `${c.delay}s`,
-              "--coin-size": `${c.size}px`,
-              "--coin-drift": `${c.drift}px`,
+              "--coin-left": `${piece.left}%`,
+              "--coin-delay": `${piece.delay}s`,
+              "--coin-size": `${piece.size}px`,
+              "--coin-drift": `${piece.drift}px`,
+              ...(variant === "stars"
+                ? { "--coin-rise": `${(piece as (typeof STARS)[number]).rise}px` }
+                : {}),
             } as CSSProperties
           }
         />
       ))}
-      <div className={cn("slot-coin-burst-flash")} />
+      <div
+        className={cn(
+          "slot-coin-burst-flash",
+          variant === "stars" && "slot-coin-burst-flash--stars"
+        )}
+      />
     </div>
   );
 }

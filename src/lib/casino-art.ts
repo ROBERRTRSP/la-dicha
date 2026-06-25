@@ -3,6 +3,7 @@ export const CASINO_ART = {
   lobbyBg: "/casino/casino-lobby-bg.png",
   cabinetFrame: "/casino/slot-cabinet-frame.png",
   magicLampBg: "/casino/magic-lamp-bg.svg",
+  moonWolfBg: "/casino/moon-wolf-bg.svg",
   thumbs: {
     "treasure-skunk": "/casino/thumb-treasure-skunk.png",
     "magic-lamp": "/casino/thumb-magic-lamp.png",
