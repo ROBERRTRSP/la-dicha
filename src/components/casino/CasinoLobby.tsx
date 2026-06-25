@@ -52,13 +52,18 @@ export function CasinoLobby({
 
         {slotsActive && (
           <>
-            <h3 className="casino-lobby-section">Tragamonedas 5×3</h3>
+            <h3 className="casino-lobby-section">Tragamonedas</h3>
             <div className="casino-slot-grid">
-              {SLOT_GAME_LIST.map((game) => (
+              {SLOT_GAME_LIST.map((game) => {
+                const isClassic = game.id === "classic-7";
+                const href = isClassic
+                  ? "/casino/slots/classic-7"
+                  : `/ruleta/${game.id}`;
+                return (
                 <Link
                   key={game.id}
-                  href={`/ruleta/${game.id}`}
-                  className={`casino-slot-tile ${game.themeClass}`}
+                  href={href}
+                  className={`casino-slot-tile ${game.themeClass}${isClassic ? " casino-slot-tile--classic7" : ""}`}
                 >
                   <div className="casino-slot-tile-media">
                     <Image
@@ -68,16 +73,23 @@ export function CasinoLobby({
                       sizes="(max-width: 480px) 50vw, 200px"
                       className="casino-slot-tile-img"
                     />
-                    <span className="casino-slot-tile-badge">5×3</span>
+                    <span className="casino-slot-tile-badge">
+                      {isClassic ? "Nuevo" : "5×3"}
+                    </span>
                   </div>
                   <div className="casino-slot-tile-body">
                     <h2>{game.name}</h2>
-                    <p>{game.tagline}</p>
+                    <p>
+                      {isClassic
+                        ? "Slot clásica de 5 rodillos · 1 línea"
+                        : game.tagline}
+                    </p>
                     <span className="casino-slot-tile-bonus">{game.bonus.description}</span>
                     <span className="casino-slot-tile-cta">Jugar →</span>
                   </div>
                 </Link>
-              ))}
+              );
+              })}
             </div>
           </>
         )}

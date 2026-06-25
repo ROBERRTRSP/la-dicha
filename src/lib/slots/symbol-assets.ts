@@ -48,6 +48,7 @@ const SLOT_SYMBOL_IMAGES: Record<SlotGameId, Record<string, string>> = {
     SKUNK: "/assets/slots/treasure-skunk/SKUNK.png",
     LEAF: "/assets/slots/treasure-skunk/LEAF.png",
   },
+  "classic-7": {},
 };
 
 /**

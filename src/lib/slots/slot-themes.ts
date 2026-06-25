@@ -57,4 +57,15 @@ export const SLOT_THEMES: Record<SlotGameId, SlotThemeConfig> = {
       reelBg: "#0a1810",
     },
   },
+  "classic-7": {
+    id: "classic-7",
+    title: "Classic 7",
+    subtitle: "Slot clásica · 1 línea central",
+    colors: {
+      primary: "#ef4444",
+      secondary: "#e8c05a",
+      glow: "#ffd54f",
+      reelBg: "#1a0808",
+    },
+  },
 };

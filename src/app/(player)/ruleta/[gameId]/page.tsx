@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { requirePlayer } from "@/lib/auth";
 import { ModernSlotMachine } from "@/components/casino/ModernSlotMachine";
+import { Classic7SlotMachine } from "@/components/casino/classic-7/Classic7SlotMachine";
 import { isSlotGameId } from "@/lib/slots/games";
 import type { SlotGameId } from "@/lib/slots/types";
 import { isSlotsActive } from "@/lib/slots/spin-service";
@@ -19,10 +20,16 @@ export default async function CasinoSlotPage({
   const active = await isSlotsActive();
   if (!active) redirect("/ruleta");
 
+  const balance = user.wallet?.balance ?? 0;
+
+  if (gameId === "classic-7") {
+    return <Classic7SlotMachine initialBalance={balance} />;
+  }
+
   return (
     <ModernSlotMachine
       gameId={gameId as SlotGameId}
-      initialBalance={user.wallet?.balance ?? 0}
+      initialBalance={balance}
     />
   );
 }

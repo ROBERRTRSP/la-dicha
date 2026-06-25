@@ -1,0 +1,506 @@
+/* ===== Classic 7 · slot clásica premium rojo/dorado ===== */
+
+.casino-machine--classic7 {
+  --classic7-red: #8b1010;
+  --classic7-red-deep: #3a0808;
+  --classic7-gold: #e8c05a;
+  --classic7-gold-bright: #ffe566;
+  --classic7-chrome: #c0c8d8;
+  --casino-reel-cell: radial-gradient(
+    circle at 38% 22%,
+    rgba(255, 255, 255, 0.06),
+    rgba(20, 8, 8, 0.96) 72%
+  );
+  --casino-symbol-filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 0 8px rgba(232, 192, 90, 0.15)) saturate(1.05);
+}
+
+.casino-machine--classic7 .casino-machine-bg,
+.classic7-machine-bg {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(220, 38, 38, 0.22), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(232, 192, 90, 0.12), transparent 50%),
+    linear-gradient(180deg, #1a0808 0%, #0a0404 100%);
+}
+
+.classic7-inner {
+  padding: 6px 8px var(--casino-nav-h);
+}
+
+.classic7-cabinet {
+  width: min(420px, 96vw);
+  margin: 0 auto;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 3px solid var(--classic7-gold);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 12px 40px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, #4a0c0c 0%, #2a0606 48%, #1a0404 100%);
+}
+
+/* Header marquesina */
+.classic7-header {
+  padding: 8px 10px 10px;
+  background: linear-gradient(180deg, #5c1010 0%, #3a0808 100%);
+  border-bottom: 2px solid var(--classic7-gold);
+}
+
+.classic7-header-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.classic7-back,
+.classic7-sound-btn {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid rgba(232, 192, 90, 0.35);
+  background: rgba(0, 0, 0, 0.45);
+  color: #f8fafc;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.classic7-sound-btn--on {
+  border-color: rgba(232, 192, 90, 0.55);
+  color: var(--classic7-gold-bright);
+}
+
+.classic7-marquee {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  min-height: clamp(52px, 14vw, 72px);
+  border: 2px solid var(--classic7-gold);
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.45);
+}
+
+.classic7-marquee-plate {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #6b1010 0%, #2a0808 100%);
+}
+
+.classic7-marquee-lights {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(239, 68, 68, 0.2) 0 5px,
+    transparent 5px 12px
+  );
+  mask-image: linear-gradient(180deg, #000 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.classic7-marquee-logo {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+.classic7-balance-strip {
+  display: none;
+}
+
+.classic7-body {
+  padding: 8px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.classic7-payline-frame {
+  gap: 4px;
+}
+
+.classic7-payline-frame .slot-payline-rail--right {
+  display: none;
+}
+
+.classic7-payline-frame .slot-payline-rail--left .slot-payline-badge:not(:first-of-type) {
+  display: none;
+}
+
+.classic7-payline-frame .slot-payline-rail-title {
+  font-size: 8px;
+  color: var(--classic7-gold);
+}
+
+.classic7-reel-wrap {
+  position: relative;
+}
+
+.classic7-reel-window {
+  position: relative;
+  border-radius: 12px;
+  padding: 6px;
+  background: linear-gradient(180deg, #1a1010 0%, #0a0606 100%);
+  border: 2px solid #5c1010;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.65);
+}
+
+.classic7-payline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  padding: 0 2px;
+}
+
+.classic7-payline-line {
+  flex: 1;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #ef4444 8%,
+    #ffd54f 50%,
+    #ef4444 92%,
+    transparent
+  );
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.65);
+  border-radius: 2px;
+}
+
+.classic7-payline-arrow {
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+
+.classic7-payline-arrow--left {
+  border-right: 10px solid #ef4444;
+  margin-right: 2px;
+}
+
+.classic7-payline-arrow--right {
+  border-left: 10px solid #ef4444;
+  margin-left: 2px;
+}
+
+.classic7-screen {
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.classic7-screen--win {
+  animation: classic7-win-pulse 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes classic7-win-pulse {
+  from {
+    box-shadow: inset 0 0 16px rgba(239, 68, 68, 0.25);
+  }
+  to {
+    box-shadow: inset 0 0 28px rgba(232, 192, 90, 0.45);
+  }
+}
+
+.slot-theme--classic7 .slot-reel-col {
+  border-color: rgba(232, 192, 90, 0.15);
+}
+
+.slot-theme--classic7 .slot-reels {
+  background: linear-gradient(180deg, #140808 0%, #0a0404 100%);
+}
+
+/* HUD */
+.classic7-hud {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.classic7-hud-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 6px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(232, 192, 90, 0.25);
+}
+
+.classic7-hud-cell span {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(232, 192, 90, 0.75);
+}
+
+.classic7-hud-cell strong {
+  font-size: clamp(12px, 3.2vw, 15px);
+  font-weight: 900;
+  color: #f8fafc;
+  font-variant-numeric: tabular-nums;
+}
+
+.classic7-hud-cell--win strong {
+  color: #86efac;
+  text-shadow: 0 0 8px rgba(134, 239, 172, 0.4);
+}
+
+/* Controles */
+.classic7-controls {
+  display: grid;
+  grid-template-columns: minmax(52px, 1fr) 48px minmax(96px, 1.4fr) 48px minmax(52px, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.classic7-side-btn,
+.classic7-bet-btn {
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid rgba(232, 192, 90, 0.35);
+  background: linear-gradient(180deg, #2a1010 0%, #1a0808 100%);
+  color: var(--classic7-gold-bright);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.classic7-bet-btn {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.classic7-spin-btn {
+  aspect-ratio: 1;
+  width: 100%;
+  max-width: 108px;
+  margin: 0 auto;
+  border-radius: 50%;
+  border: 3px solid var(--classic7-gold);
+  background: radial-gradient(circle at 35% 28%, #ff5555 0%, #b91c1c 55%, #7f0f0f 100%);
+  box-shadow:
+    0 0 20px rgba(239, 68, 68, 0.45),
+    inset 0 2px 0 rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: #fff;
+}
+
+.classic7-spin-btn--ready {
+  animation: classic7-spin-glow 2s ease-in-out infinite;
+}
+
+@keyframes classic7-spin-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(255, 213, 79, 0.55), inset 0 2px 0 rgba(255, 255, 255, 0.25);
+  }
+}
+
+.classic7-spin-btn:disabled {
+  opacity: 0.55;
+  animation: none;
+}
+
+.classic7-spin-label {
+  font-size: clamp(14px, 3.8vw, 17px);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.classic7-spin-hint {
+  font-size: 8px;
+  opacity: 0.85;
+  letter-spacing: 0.12em;
+}
+
+.classic7-error {
+  margin: 0;
+  text-align: center;
+  font-size: 12px;
+  color: #fca5a5;
+}
+
+.classic7-message,
+.classic7-big-win {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--classic7-gold-bright);
+}
+
+.classic7-big-win {
+  font-size: clamp(16px, 4.5vw, 22px);
+  animation: classic7-big-win-pop 0.5s ease-out;
+}
+
+@keyframes classic7-big-win-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Historial */
+.classic7-history {
+  font-size: 11px;
+  color: rgba(248, 250, 252, 0.75);
+}
+
+.classic7-history summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--classic7-gold);
+  padding: 4px 0;
+}
+
+.classic7-history ul {
+  margin: 6px 0 0;
+  padding-left: 16px;
+}
+
+.classic7-history-empty {
+  margin: 4px 0 0;
+  opacity: 0.7;
+}
+
+/* Paytable modal */
+.classic7-paytable-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.78);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+
+.classic7-paytable-dialog {
+  width: min(440px, 100%);
+  max-height: min(82vh, 560px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #3a0c0c 0%, #1a0404 100%);
+  border: 2px solid var(--classic7-gold);
+}
+
+.classic7-paytable-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(232, 192, 90, 0.2);
+}
+
+.classic7-paytable-title {
+  margin: 0;
+  font-size: 14px;
+  color: var(--classic7-gold);
+}
+
+.classic7-paytable-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid rgba(232, 192, 90, 0.3);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 20px;
+}
+
+.classic7-paytable-body {
+  overflow-y: auto;
+  padding: 12px 14px 16px;
+}
+
+.classic7-paytable-intro {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(248, 250, 252, 0.88);
+}
+
+.classic7-paytable-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.classic7-paytable-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(232, 192, 90, 0.15);
+}
+
+.classic7-paytable-row ul {
+  margin: 4px 0 0;
+  padding-left: 14px;
+  font-size: 11px;
+  color: rgba(226, 232, 240, 0.85);
+}
+
+/* Lobby tile */
+.casino-slot-tile--classic7 .casino-slot-tile-badge {
+  background: #dc2626;
+  color: #fff;
+}
+
+@media (max-width: 360px) {
+  .classic7-controls {
+    grid-template-columns: 44px 40px 1fr 40px 44px;
+    gap: 6px;
+  }
+
+  .classic7-spin-btn {
+    max-width: 92px;
+  }
+}
+
+.player-shell:has(.casino-machine--classic7) .bottom-nav {
+  background: rgba(20, 6, 6, 0.96);
+  border-top-color: rgba(232, 192, 90, 0.15);
+}
+
+.player-shell:has(.casino-machine--classic7) .nav-item.active {
+  color: #fca5a5;
+}

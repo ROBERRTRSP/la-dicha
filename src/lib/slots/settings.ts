@@ -21,12 +21,31 @@ export async function isSlotsActive() {
 
 export const SLOT_BET_OPTIONS = [1, 2, 5, 10] as const;
 
-export function validateSlotBet(amount: number, min: number, max: number) {
-  if (!SLOT_BET_OPTIONS.includes(amount as (typeof SLOT_BET_OPTIONS)[number])) {
-    throw new Error("Apuesta no válida. Usa 1, 2, 5 o 10.");
+export const CLASSIC_7_BET_OPTIONS = [1, 2, 5, 10, 25, 50, 100] as const;
+
+export function betOptionsForGame(gameId: string) {
+  return gameId === "classic-7" ? CLASSIC_7_BET_OPTIONS : SLOT_BET_OPTIONS;
+}
+
+export function validateSlotBet(
+  amount: number,
+  min: number,
+  max: number,
+  gameId?: string
+) {
+  const options = betOptionsForGame(gameId ?? "");
+  const effectiveMax =
+    gameId === "classic-7" ? Math.max(max, 100) : max;
+  const valid = (options as readonly number[]).includes(amount);
+  if (!valid) {
+    throw new Error(
+      gameId === "classic-7"
+        ? "Apuesta no válida. Usa 1, 2, 5, 10, 25, 50 o 100."
+        : "Apuesta no válida. Usa 1, 2, 5 o 10."
+    );
   }
-  if (amount < min || amount > max) {
-    throw new Error(`Apuesta entre ${min.toFixed(2)} y ${max.toFixed(2)}.`);
+  if (amount < min || amount > effectiveMax) {
+    throw new Error(`Apuesta entre ${min.toFixed(2)} y ${effectiveMax.toFixed(2)}.`);
   }
 }
 

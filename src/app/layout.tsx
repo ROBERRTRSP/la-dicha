@@ -6,6 +6,7 @@ import "../styles/slot-mobile.css";
 import "../styles/slot-golden-ox.css";
 import "../styles/slot-skunk.css";
 import "../styles/slot-wolf.css";
+import "../styles/slot-classic-7.css";
 import "../styles/slot-layout.css";
 
 const APP_URL =

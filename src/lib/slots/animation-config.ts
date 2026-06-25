@@ -46,6 +46,17 @@ export const SLOT_ANIMATION: Record<SlotGameId, SlotAnimConfig> = {
   "magic-lamp": PREMIUM,
   "golden-ox": DEFAULT,
   "moon-wolf": DEFAULT,
+  "classic-7": {
+    ...DEFAULT,
+    loopRepeats: 9,
+    accelMs: 280,
+    maxVelocity: 3.6,
+    columnStopDelayMs: 300,
+    baseSpinMs: 1200,
+    decelMs: 750,
+    settleMs: 200,
+    decelEasing: "cubic-bezier(0.14, 0.92, 0.18, 1.04)",
+  },
 };
 
 export type SlotAnimOptions = {

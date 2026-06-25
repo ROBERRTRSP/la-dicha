@@ -266,11 +266,96 @@ const MOON_WOLF: SlotGameConfig = {
   },
 };
 
+const CLASSIC_STRIP = [
+  "cherry",
+  "single-bar",
+  "double-bar",
+  "golden-bell",
+  "cherry",
+  "triple-bar",
+  "horseshoe",
+  "diamond",
+  "cherry",
+  "single-bar",
+  "red-seven",
+  "double-bar",
+  "cherry",
+  "golden-bell",
+  "single-bar",
+  "horseshoe",
+  "cherry",
+  "triple-bar",
+  "diamond",
+  "red-seven",
+];
+
+const CLASSIC_7: SlotGameConfig = {
+  id: "classic-7",
+  name: "Classic 7",
+  tagline: "Slot clásica · 1 línea central",
+  themeClass: "slot-theme--classic7",
+  cols: 5,
+  rows: 3,
+  wildId: "__none__",
+  scatterIds: [],
+  paylineCount: 1,
+  symbols: {
+    "red-seven": {
+      id: "red-seven",
+      label: "Siete rojo",
+      pays: { 3: 20, 4: 100, 5: 500 },
+    },
+    "triple-bar": {
+      id: "triple-bar",
+      label: "Triple BAR",
+      pays: { 3: 15, 4: 75, 5: 250 },
+    },
+    "double-bar": {
+      id: "double-bar",
+      label: "Double BAR",
+      pays: { 3: 10, 4: 50, 5: 150 },
+    },
+    "single-bar": {
+      id: "single-bar",
+      label: "BAR",
+      pays: { 3: 8, 4: 30, 5: 100 },
+    },
+    "golden-bell": {
+      id: "golden-bell",
+      label: "Campana",
+      pays: { 3: 5, 4: 20, 5: 75 },
+    },
+    diamond: {
+      id: "diamond",
+      label: "Diamante",
+      pays: { 3: 4, 4: 15, 5: 60 },
+    },
+    horseshoe: {
+      id: "horseshoe",
+      label: "Herradura",
+      pays: { 3: 3, 4: 10, 5: 40 },
+    },
+    cherry: {
+      id: "cherry",
+      label: "Cereza",
+      pays: { 2: 1, 3: 2, 4: 8, 5: 25 },
+    },
+  },
+  reelStrips: Array.from({ length: 5 }, () => [...CLASSIC_STRIP]),
+  bonus: {
+    type: "classic_none",
+    scatterCount: 99,
+    freeSpinsAwarded: 0,
+    description: "1 línea central · clásica americana",
+  },
+};
+
 export const SLOT_GAMES: Record<SlotGameId, SlotGameConfig> = {
   "treasure-skunk": TREASURE_SKUNK,
   "magic-lamp": MAGIC_LAMP,
   "golden-ox": GOLDEN_OX,
   "moon-wolf": MOON_WOLF,
+  "classic-7": CLASSIC_7,
 };
 
 export const SLOT_GAME_LIST = Object.values(SLOT_GAMES);

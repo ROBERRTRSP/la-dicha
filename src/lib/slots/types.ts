@@ -2,13 +2,14 @@ export type SlotGameId =
   | "treasure-skunk"
   | "magic-lamp"
   | "golden-ox"
-  | "moon-wolf";
+  | "moon-wolf"
+  | "classic-7";
 
 export type SymbolDef = {
   id: string;
   label: string;
-  /** Multiplicador de la apuesta por línea: 3 / 4 / 5 iguales. */
-  pays: Partial<Record<3 | 4 | 5, number>>;
+  /** Multiplicador de la apuesta por línea: 2 / 3 / 4 / 5 iguales. */
+  pays: Partial<Record<2 | 3 | 4 | 5, number>>;
   isWild?: boolean;
   isScatter?: boolean;
 };
@@ -27,7 +28,12 @@ export type SlotGameConfig = {
   reelStrips: string[][];
   paylineCount: number;
   bonus: {
-    type: "chest_free" | "lamp_multiplier" | "ox_jackpot" | "moon_progressive";
+    type:
+      | "chest_free"
+      | "lamp_multiplier"
+      | "ox_jackpot"
+      | "moon_progressive"
+      | "classic_none";
     scatterCount: number;
     freeSpinsAwarded: number;
     description: string;
@@ -39,7 +45,7 @@ export type Grid = string[][];
 export type LineWin = {
   lineIndex: number;
   symbolId: string;
-  count: 3 | 4 | 5;
+  count: 2 | 3 | 4 | 5;
   payout: number;
 };
 

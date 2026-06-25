@@ -11,6 +11,7 @@ const PREVIEW: Record<SlotGameId, string[]> = {
   "magic-lamp": ["LAMP", "GENIE", "RUBY", "STAR", "CARPET"],
   "golden-ox": ["OX", "INGOT", "RED_COIN", "FIRE", "A"],
   "moon-wolf": ["WOLF", "MOON", "MOUNTAIN", "CLAW", "STAR"],
+  "classic-7": ["red-seven", "triple-bar", "cherry", "golden-bell", "diamond"],
 };
 
 export function SlotsLobby() {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePlayer } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { SLOT_GAME_LIST } from "@/lib/slots/games";
 import { getBonusState, getSlotSettings, isSlotsActive, placeSlotSpin } from "@/lib/slots/spin-service";
 
 export async function POST(request: Request) {
@@ -33,13 +34,8 @@ export async function GET() {
   const settings = await getSlotSettings();
   const active = await isSlotsActive();
   const bonusStates: Record<string, Awaited<ReturnType<typeof getBonusState>>> = {};
-  for (const id of [
-    "treasure-skunk",
-    "magic-lamp",
-    "golden-ox",
-    "moon-wolf",
-  ] as const) {
-    bonusStates[id] = await getBonusState(user.id, id);
+  for (const game of SLOT_GAME_LIST) {
+    bonusStates[game.id] = await getBonusState(user.id, game.id);
   }
 
   const wallet = await prisma.wallet.findUnique({ where: { userId: user.id } });

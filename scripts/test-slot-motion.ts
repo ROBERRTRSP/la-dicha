@@ -57,6 +57,7 @@ const GAME_IDS: SlotGameId[] = [
   "treasure-skunk",
   "magic-lamp",
   "golden-ox",
+  "classic-7",
 ];
 
 const SYMBOLS = ["a", "k", "q", "j", "wild", "scatter"];

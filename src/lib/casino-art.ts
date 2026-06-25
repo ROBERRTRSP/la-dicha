@@ -9,7 +9,9 @@ export const CASINO_ART = {
     "magic-lamp": "/casino/thumb-magic-lamp.png",
     "golden-ox": "/casino/thumb-golden-ox.png",
     "moon-wolf": "/casino/thumb-moon-wolf.png",
+    "classic-7": "/casino/thumb-classic-7.svg",
   },
+  classic7Logo: "/assets/casino/slots/classic-7/logo.svg",
   roulette: "/art/ruleta-chip.png",
   goldenOx: {
     symbols: {

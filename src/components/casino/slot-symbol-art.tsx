@@ -284,4 +284,5 @@ export const SLOT_THEME_ACCENT: Record<string, string> = {
   "magic-lamp": "#c084fc",
   "golden-ox": "#fbbf24",
   "moon-wolf": "#93c5fd",
+  "classic-7": "#ef4444",
 };

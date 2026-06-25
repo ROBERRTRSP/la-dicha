@@ -51,10 +51,18 @@ function evaluateLine(
     else break;
   }
 
-  if (count < 3) return null;
+  const symDef = game.symbols[paySym];
+  const minMatch = symDef?.pays[2] ? 2 : 3;
+  if (count < minMatch) return null;
 
-  const matchCount = Math.min(count, 5) as 3 | 4 | 5;
-  const pays = game.symbols[paySym]?.pays[matchCount];
+  let matchCount: 2 | 3 | 4 | 5 | null = null;
+  if (count >= 5 && symDef?.pays[5]) matchCount = 5;
+  else if (count >= 4 && symDef?.pays[4]) matchCount = 4;
+  else if (count >= 3 && symDef?.pays[3]) matchCount = 3;
+  else if (count >= 2 && symDef?.pays[2]) matchCount = 2;
+  if (!matchCount) return null;
+
+  const pays = symDef?.pays[matchCount];
   if (!pays) return null;
 
   return {

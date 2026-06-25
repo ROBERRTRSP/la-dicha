@@ -35,10 +35,10 @@ export async function placeSlotSpin(userId: string, gameId: string, betAmount: n
     if (!frozenBet || frozenBet <= 0) {
       throw new Error("Estado de giros gratis inválido. Vuelve a intentarlo.");
     }
-    validateSlotBet(frozenBet, settings.minBetAmount, settings.maxBetAmount);
+    validateSlotBet(frozenBet, settings.minBetAmount, settings.maxBetAmount, gameId);
     effectiveBet = frozenBet;
   } else {
-    validateSlotBet(betAmount, settings.minBetAmount, settings.maxBetAmount);
+    validateSlotBet(betAmount, settings.minBetAmount, settings.maxBetAmount, gameId);
     effectiveBet = betAmount;
   }
 

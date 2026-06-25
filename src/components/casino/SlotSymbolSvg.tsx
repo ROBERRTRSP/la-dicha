@@ -10,6 +10,7 @@ import { LampSymbolArt } from "./symbols/lamp-symbol-art";
 import { OxSymbolArt } from "./symbols/ox-symbol-art";
 import { WolfSymbolArt } from "./symbols/wolf-symbol-art";
 import { SkunkSymbolArt } from "./symbols/skunk-symbol-art";
+import { Classic7SymbolArt } from "./symbols/classic-7-symbol-art";
 import { SlotSymbolArt, SLOT_THEME_ACCENT } from "./slot-symbol-art";
 
 const GAME_ART: Partial<
@@ -27,6 +28,7 @@ const GAME_ART: Partial<
   "golden-ox": OxSymbolArt,
   "moon-wolf": WolfSymbolArt,
   "treasure-skunk": SkunkSymbolArt,
+  "classic-7": Classic7SymbolArt,
 };
 
 export function SlotSymbolSvg({
