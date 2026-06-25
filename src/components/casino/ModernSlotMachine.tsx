@@ -353,6 +353,7 @@ export function ModernSlotMachine({
               financeHud={
                 <SlotFinanceHud
                   balance={balance}
+                  hideBalance
                   balanceNode={
                     <AnimatedBalance
                       value={balance}

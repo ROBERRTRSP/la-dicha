@@ -4,7 +4,45 @@ import type { ReactNode } from "react";
 import { PAYLINES_5x3 } from "@/lib/slots/paylines";
 import { cn } from "@/lib/utils";
 
-const ALL_LINES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
+const LEFT_LINES = [1, 2, 3, 4, 5] as const;
+const RIGHT_LINES = [6, 7, 8, 9, 10] as const;
+
+function PaylineRail({
+  lines,
+  side,
+  activeSet,
+  paylineCount,
+}: {
+  lines: readonly number[];
+  side: "left" | "right";
+  activeSet: Set<number>;
+  paylineCount: number;
+}) {
+  return (
+    <div
+      className={cn(
+        "slot-payline-rail",
+        side === "left" ? "slot-payline-rail--left" : "slot-payline-rail--right"
+      )}
+      aria-hidden
+    >
+      <span className="slot-payline-rail-title">LÍNEAS</span>
+      {lines
+        .filter((n) => n <= paylineCount)
+        .map((n) => (
+          <span
+            key={`${side}-${n}`}
+            className={cn(
+              "slot-payline-badge",
+              activeSet.has(n - 1) && "slot-payline-badge--active"
+            )}
+          >
+            {n}
+          </span>
+        ))}
+    </div>
+  );
+}
 
 function linePath(rows: number[]): string {
   const colX = (col: number) => 10 + col * 20;
@@ -30,20 +68,12 @@ export function SlotPaylineFrame({
 
   return (
     <div className={cn("slot-payline-frame", className)}>
-      <div className="slot-payline-rail slot-payline-rail--left" aria-hidden>
-        <span className="slot-payline-rail-title">LÍNEAS</span>
-        {ALL_LINES.filter((n) => n <= paylineCount).map((n) => (
-          <span
-            key={`l-${n}`}
-            className={cn(
-              "slot-payline-badge",
-              activeSet.has(n - 1) && "slot-payline-badge--active"
-            )}
-          >
-            {n}
-          </span>
-        ))}
-      </div>
+      <PaylineRail
+        lines={LEFT_LINES}
+        side="left"
+        activeSet={activeSet}
+        paylineCount={paylineCount}
+      />
 
       <div className="slot-payline-reels">
         <svg
@@ -65,20 +95,12 @@ export function SlotPaylineFrame({
         {children}
       </div>
 
-      <div className="slot-payline-rail slot-payline-rail--right" aria-hidden>
-        <span className="slot-payline-rail-title">LÍNEAS</span>
-        {ALL_LINES.filter((n) => n <= paylineCount).map((n) => (
-          <span
-            key={`r-${n}`}
-            className={cn(
-              "slot-payline-badge",
-              activeSet.has(n - 1) && "slot-payline-badge--active"
-            )}
-          >
-            {n}
-          </span>
-        ))}
-      </div>
+      <PaylineRail
+        lines={RIGHT_LINES}
+        side="right"
+        activeSet={activeSet}
+        paylineCount={paylineCount}
+      />
     </div>
   );
 }

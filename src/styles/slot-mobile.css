@@ -53,14 +53,25 @@
     padding: 7%;
   }
 
-  .slot-spin-button {
-    width: min(140px, 38vw);
-    height: min(140px, 38vw);
+  .slot-control-deck .slot-spin-button,
+  .slot-cabinet-deck .slot-control-deck .slot-spin-button {
+    width: min(108px, 28vw);
+    height: min(108px, 28vw);
   }
 
   .slot-cabinet-deck {
-    gap: 12px;
-    padding-bottom: 14px;
+    gap: 8px;
+    padding-bottom: 10px;
+  }
+
+  /* Bordes neón laterales distraen y roban foco en pantalla pequeña */
+  .slot-cabinet-edge {
+    display: none;
+  }
+
+  .slot-cabinet-aura {
+    opacity: 0.18;
+    filter: blur(14px);
   }
 }
 
@@ -94,6 +105,16 @@
 
   .slot-marquee-title {
     font-size: 1rem;
+  }
+
+  .slot-header--compact .slot-marquee-logo {
+    height: clamp(28px, 8.5vw, 40px);
+    max-width: min(190px, 62vw);
+  }
+
+  .slot-header--compact .slot-marquee {
+    padding-left: 60px;
+    padding-right: 72px;
   }
 
   .slot-jackpot-value,

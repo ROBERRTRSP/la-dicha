@@ -13,6 +13,7 @@ export function SlotFinanceHud({
   freeMode,
   lineCount = 10,
   className,
+  hideBalance,
 }: {
   balance: number;
   balanceNode?: ReactNode;
@@ -22,6 +23,8 @@ export function SlotFinanceHud({
   freeMode?: boolean;
   lineCount?: number;
   className?: string;
+  /** Oculta saldo cuando ya aparece en el header (evita duplicado). */
+  hideBalance?: boolean;
 }) {
   const winLabel =
     winPending || win === null
@@ -31,13 +34,23 @@ export function SlotFinanceHud({
         : formatMoney(0);
 
   return (
-    <div className={cn("slot-finance-hud", className)} role="group" aria-label="Estado financiero">
-      <div className="slot-finance-cell slot-finance-cell--balance">
-        <span className="slot-finance-label">Saldo</span>
-        <strong className="slot-finance-value slot-finance-value--balance">
-          {balanceNode ?? formatMoney(balance)}
-        </strong>
-      </div>
+    <div
+      className={cn(
+        "slot-finance-hud",
+        hideBalance && "slot-finance-hud--compact",
+        className
+      )}
+      role="group"
+      aria-label="Estado financiero"
+    >
+      {!hideBalance && (
+        <div className="slot-finance-cell slot-finance-cell--balance">
+          <span className="slot-finance-label">Saldo</span>
+          <strong className="slot-finance-value slot-finance-value--balance">
+            {balanceNode ?? formatMoney(balance)}
+          </strong>
+        </div>
+      )}
       <div className="slot-finance-cell slot-finance-cell--bet">
         <span className="slot-finance-label">Apuesta total</span>
         <strong className="slot-finance-value">

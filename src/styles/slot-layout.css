@@ -24,7 +24,12 @@
 
 /* Header compacto: logo + saldo rápido arriba a la derecha */
 .slot-header--compact .slot-marquee {
-  padding: 4px 88px 6px 72px;
+  padding: 4px 80px 6px 68px;
+}
+
+.slot-header--compact .slot-header-back {
+  max-width: 64px;
+  font-size: 10px;
 }
 
 .slot-header--compact .slot-marquee-brand {
@@ -32,8 +37,10 @@
 }
 
 .slot-header--compact .slot-marquee-logo {
-  height: clamp(32px, 9.5vw, 46px);
-  max-width: min(220px, 68vw);
+  height: clamp(44px, 12vw, 58px);
+  max-width: min(280px, 78vw);
+  object-fit: contain;
+  object-position: center;
 }
 
 .slot-header--compact {
@@ -91,6 +98,10 @@
   padding: 8px 12px;
   background: linear-gradient(180deg, #0e121c 0%, #080c14 100%);
   border-bottom: 1px solid rgba(232, 192, 90, 0.12);
+}
+
+.slot-finance-hud--compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .slot-finance-cell {
@@ -191,7 +202,7 @@
 
 .slot-payline-rail {
   display: grid;
-  grid-template-rows: auto repeat(10, minmax(0, 1fr));
+  grid-template-rows: auto repeat(5, minmax(0, 1fr));
   align-items: stretch;
   gap: 1px;
   height: 100%;
@@ -336,6 +347,10 @@
   border-bottom: none;
   padding: 0;
   background: transparent;
+}
+
+.slot-control-deck .slot-finance-hud--compact .slot-finance-cell {
+  min-height: 48px;
 }
 
 .slot-control-deck .slot-bet-controls {
