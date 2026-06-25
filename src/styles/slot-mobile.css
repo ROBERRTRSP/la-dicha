@@ -8,6 +8,7 @@
 
   .slot-reel-window {
     perspective: none;
+    overflow: hidden;
   }
 
   .slot-reel-col:nth-child(n) .slot-reel-drum {
@@ -18,13 +19,23 @@
     animation: none;
   }
 
-  .slot-reel-strip--motion {
-    filter: blur(0.35px) brightness(0.94);
+  /* Filtros/blur en transform congelan el strip en iOS/Android */
+  .slot-reel-strip,
+  .slot-reel-strip--motion,
+  .slot-reel-strip--decel,
+  .slot-reel-strip--motion .slot-reel-cell--spinning .slot-symbol-wrapper {
+    filter: none !important;
+    transition: none !important;
   }
 
-  .slot-reel-strip--motion .slot-reel-cell--spinning .slot-symbol-wrapper {
-    transition: none;
-    filter: blur(0.2px) brightness(0.92);
+  .slot-reel-strip {
+    transform-style: flat;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+
+  .slot-reel-col--stopping .slot-reel-drum {
+    animation: none !important;
   }
 
   .slot-symbol-image,

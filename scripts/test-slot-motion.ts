@@ -13,7 +13,9 @@ import {
   computeReelMetrics,
   drumCellOpacity,
   drumCellTransform,
+  easeOutCubic,
   finalOffset,
+  interpolateDecelOffset,
   loopHeightPx,
   ReelMotionSimulator,
   simulateMachineSpin,
@@ -312,6 +314,17 @@ console.log("\n=== 12. Decel offsets: siempre avanza hacia la rejilla ===");
     "snapOffset nunca retrocede"
   );
   assertEq(mid.snapOffset, final, "snapOffset aterriza en finalOffset");
+}
+
+console.log("\n=== 13. Móvil: deceleración rAF (interpolación) ===");
+{
+  const start = 120;
+  const end = 6800;
+  const mid = interpolateDecelOffset(start, end, 0.5);
+  assert(mid > start && mid < end, "interpolación avanza sin saltos");
+  assertEq(interpolateDecelOffset(start, end, 1), end, "t=1 llega al destino");
+  assertEq(easeOutCubic(0), 0, "easeOutCubic inicia en 0");
+  assertEq(easeOutCubic(1), 1, "easeOutCubic termina en 1");
 }
 
 console.log(`\n=== RESULTADO: ${passed} passed, ${failed} failed ===\n`);

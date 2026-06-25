@@ -111,6 +111,20 @@ export function computeDecelOffsets(
   return { startOffset, snapOffset: targetOffset };
 }
 
+/** Curva ease-out para deceleración en rAF (Safari iOS). */
+export function easeOutCubic(t: number): number {
+  const c = Math.max(0, Math.min(1, t));
+  return 1 - Math.pow(1 - c, 3);
+}
+
+export function interpolateDecelOffset(
+  start: number,
+  end: number,
+  progress: number
+): number {
+  return start + (end - start) * easeOutCubic(progress);
+}
+
 export function computeReelMetrics(viewportWidth: number, stageHeight = 0) {
   const fromWidth = Math.floor(viewportWidth * 0.26);
   const fromStage =

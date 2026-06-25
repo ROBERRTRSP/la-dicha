@@ -67,7 +67,17 @@ export function ReelMetricsProvider({
     const paylineFrame = el.closest(".slot-payline-frame") as HTMLElement | null;
     if (paylineFrame) applyVars(paylineFrame, m);
 
-    setMetrics(m);
+    setMetrics((prev) => {
+      if (
+        Math.abs(prev.cellHeight - m.cellHeight) < 4 &&
+        Math.abs(prev.windowHeight - m.windowHeight) < 12 &&
+        prev.isMobile === m.isMobile &&
+        Math.abs(prev.viewportWidth - m.viewportWidth) < 8
+      ) {
+        return prev;
+      }
+      return m;
+    });
   }, []);
 
   useLayoutEffect(() => {
