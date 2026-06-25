@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SlotPayTableContent } from "./SlotPayTable";
 import type { SlotGameId } from "@/lib/slots/types";
 import { cn } from "@/lib/utils";
+
+export type SlotRulesSection = "rules" | "paytable";
 
 export function SlotRulesButton({
   onClick,
@@ -32,13 +34,20 @@ export function SlotRulesPanel({
   onClose,
   gameId,
   bet,
+  initialSection = "rules",
 }: {
   open: boolean;
   onClose: () => void;
   gameId: SlotGameId;
   bet: number;
+  initialSection?: SlotRulesSection;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const [section, setSection] = useState<SlotRulesSection>(initialSection);
+
+  useEffect(() => {
+    if (open) setSection(initialSection);
+  }, [open, initialSection]);
 
   useEffect(() => {
     if (!open) return;
@@ -62,9 +71,37 @@ export function SlotRulesPanel({
         onClick={(e) => e.stopPropagation()}
       >
         <header className="slot-rules-header">
-          <h2 id="slot-rules-title" className="slot-rules-title">
-            Reglas y pagos
-          </h2>
+          <div className="slot-rules-header-main">
+            <h2 id="slot-rules-title" className="slot-rules-title">
+              {section === "rules" ? "Reglas del juego" : "Tabla de pagos"}
+            </h2>
+            <div className="slot-rules-tabs" role="tablist">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={section === "rules"}
+                className={cn(
+                  "slot-rules-tab",
+                  section === "rules" && "slot-rules-tab--active"
+                )}
+                onClick={() => setSection("rules")}
+              >
+                Reglas
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={section === "paytable"}
+                className={cn(
+                  "slot-rules-tab",
+                  section === "paytable" && "slot-rules-tab--active"
+                )}
+                onClick={() => setSection("paytable")}
+              >
+                Pagos
+              </button>
+            </div>
+          </div>
           <button
             type="button"
             className="slot-rules-close"
@@ -75,14 +112,22 @@ export function SlotRulesPanel({
           </button>
         </header>
         <div className="slot-rules-body">
-          <div className="slot-rules-intro">
-            <p>
-              Gira los <strong>5 rodillos</strong> y gana alineando símbolos en
-              las <strong>10 líneas de pago</strong> de izquierda a derecha.
-              Elige tu apuesta total y pulsa <strong>GIRAR</strong>.
-            </p>
-          </div>
-          <SlotPayTableContent gameId={gameId} bet={bet} />
+          {section === "rules" ? (
+            <div className="slot-rules-intro">
+              <p>
+                Gira los <strong>5 rodillos</strong> y gana alineando símbolos en
+                las <strong>10 líneas de pago</strong> de izquierda a derecha.
+                Elige tu apuesta total y pulsa <strong>GIRAR</strong>.
+              </p>
+              <p>
+                Los símbolos <strong>Wild</strong> sustituyen a otros (excepto
+                Scatter). Tres o más <strong>Scatter</strong> activan giros gratis
+                según la tabla de pagos.
+              </p>
+            </div>
+          ) : (
+            <SlotPayTableContent gameId={gameId} bet={bet} />
+          )}
         </div>
       </div>
     </div>

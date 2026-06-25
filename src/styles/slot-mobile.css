@@ -19,13 +19,50 @@
     animation: none;
   }
 
-  /* Filtros/blur en transform congelan el strip en iOS/Android */
+  /* Sin filter en strip (iOS congela); smear vertical vía scale + viñeta */
   .slot-reel-strip,
-  .slot-reel-strip--motion,
-  .slot-reel-strip--decel,
-  .slot-reel-strip--motion .slot-reel-cell--spinning .slot-symbol-wrapper {
+  .slot-reel-strip--decel {
+    transition: none !important;
+  }
+
+  .slot-reel-strip--motion {
     filter: none !important;
     transition: none !important;
+  }
+
+  .slot-reel-strip--motion .slot-reel-cell--spinning .slot-symbol-wrapper {
+    filter: none !important;
+    transform: scaleY(1.045);
+    opacity: 0.9;
+  }
+
+  .slot-reel-window--motion::before,
+  .slot-reel-window--motion::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 24%;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  .slot-reel-window--motion::before {
+    top: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(6, 10, 18, 0.62) 0%,
+      transparent 100%
+    );
+  }
+
+  .slot-reel-window--motion::after {
+    bottom: 0;
+    background: linear-gradient(
+      0deg,
+      rgba(6, 10, 18, 0.62) 0%,
+      transparent 100%
+    );
   }
 
   .slot-reel-strip {

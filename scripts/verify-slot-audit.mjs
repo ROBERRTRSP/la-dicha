@@ -143,7 +143,9 @@ for (const [pattern, label] of checks) {
   if (inMobile || inCasino) ok(label);
   else fail(`Falta ${label}`);
 }
-if (/min\(140px,\s*38vw\)/.test(mobileCss)) ok("GIRAR min(140px, 38vw)");
+if (/min\(108px,\s*28vw\)/.test(mobileCss)) ok("GIRAR min(108px, 28vw)");
+else if (/min\(140px,\s*38vw\)/.test(mobileCss)) ok("GIRAR min(140px, 38vw)");
+else fail("Falta tamaño responsive del botón GIRAR");
 
 console.log(`\n=== RESULTADO: ${passed} passed, ${failed} failed ===\n`);
 process.exit(failed > 0 ? 1 : 0);

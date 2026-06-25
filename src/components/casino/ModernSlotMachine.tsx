@@ -7,11 +7,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { SlotPayTable } from "./SlotPayTable";
+import { SlotRulesButton, SlotRulesPanel, type SlotRulesSection } from "./SlotRulesPanel";
 import { SlotReels } from "./SlotReels";
 import { SlotFinanceHud } from "./SlotFinanceHud";
 import { SlotPaylineFrame } from "./SlotPaylineFrame";
-import { SlotRulesButton, SlotRulesPanel } from "./SlotRulesPanel";
 import { AmbientLights } from "./AmbientLights";
 import { MoonWolfEffects } from "./MoonWolfEffects";
 import { CoinBurst } from "./CoinBurst";
@@ -93,6 +92,7 @@ export function ModernSlotMachine({
   const [resultReady, setResultReady] = useState(false);
   const [settleFlash, setSettleFlash] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [rulesSection, setRulesSection] = useState<SlotRulesSection>("rules");
   const pendingResult = useRef<SpinResponse | null>(null);
   const reelsStoppedRef = useRef(false);
   const apiResolvedRef = useRef(false);
@@ -369,11 +369,19 @@ export function ModernSlotMachine({
               }
               navButtons={
                 <>
-                  <SlotRulesButton onClick={() => setRulesOpen(true)} />
+                  <SlotRulesButton
+                    onClick={() => {
+                      setRulesSection("rules");
+                      setRulesOpen(true);
+                    }}
+                  />
                   <button
                     type="button"
                     className="slot-rules-btn slot-rules-btn--secondary"
-                    onClick={() => setRulesOpen(true)}
+                    onClick={() => {
+                      setRulesSection("paytable");
+                      setRulesOpen(true);
+                    }}
                   >
                     <span className="slot-rules-btn-icon" aria-hidden>
                       $
@@ -422,13 +430,7 @@ export function ModernSlotMachine({
           onClose={() => setRulesOpen(false)}
           gameId={gameId}
           bet={bet}
-        />
-
-        {/* Tabla accesible vía botón Pagos / Reglas en el panel inferior */}
-        <SlotPayTable
-          gameId={gameId}
-          bet={bet}
-          className="slot-paytable-compact"
+          initialSection={rulesSection}
         />
       </div>
     </div>

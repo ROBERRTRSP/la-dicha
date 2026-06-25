@@ -14,9 +14,12 @@ import {
   drumCellOpacity,
   drumCellTransform,
   easeOutCubic,
+  easeOutBack,
   finalOffset,
   interpolateDecelOffset,
   loopHeightPx,
+  settleBounceOffset,
+  SETTLE_BOUNCE_MS,
   ReelMotionSimulator,
   simulateMachineSpin,
   visibleSymbolsAtOffset,
@@ -76,6 +79,19 @@ assertEq(loopHeightPx(72), 12 * 72, "loopHeight = 12 celdas");
     visible.join(",") === "a,k,q",
     "visibleSymbolsAtOffset muestra rejilla final"
   );
+}
+
+console.log("\n=== 2b. Deceleración y rebote final ===");
+{
+  assert(easeOutCubic(0) === 0 && easeOutCubic(1) === 1, "easeOutCubic extremos");
+  assert(easeOutBack(1) === 1, "easeOutBack termina en 1");
+  const mid = interpolateDecelOffset(0, 100, 0.5);
+  assert(mid > 70 && mid < 95, "interpolateDecelOffset progreso medio (curva acelerada al final)");
+  const bounceStart = settleBounceOffset(500, 72, 0);
+  const bounceMid = settleBounceOffset(500, 72, 0.5);
+  assert(bounceStart === 500, "rebote inicia en offset final");
+  assert(bounceMid < 500, "rebote sube ligeramente a mitad");
+  assertEq(SETTLE_BOUNCE_MS, 260, "SETTLE_BOUNCE_MS constante");
 }
 
 console.log("\n=== 2. Efecto 3D por celda durante giro ===");

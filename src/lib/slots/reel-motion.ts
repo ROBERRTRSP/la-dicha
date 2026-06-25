@@ -117,13 +117,38 @@ export function easeOutCubic(t: number): number {
   return 1 - Math.pow(1 - c, 3);
 }
 
+/** Curva con ligero overshoot — sensación de freno mecánico al parar. */
+export function easeOutBack(t: number, overshoot = 1.15): number {
+  const c = Math.max(0, Math.min(1, t));
+  const inv = c - 1;
+  return 1 + inv * inv * ((overshoot + 1) * inv + overshoot);
+}
+
 export function interpolateDecelOffset(
   start: number,
   end: number,
   progress: number
 ): number {
-  return start + (end - start) * easeOutCubic(progress);
+  const t = Math.max(0, Math.min(1, progress));
+  const eased =
+    t < 0.92
+      ? easeOutCubic(t / 0.92) * 0.92
+      : 0.92 + easeOutBack((t - 0.92) / 0.08, 0.9) * 0.08;
+  return start + (end - start) * eased;
 }
+
+/** Rebote final del strip tras la deceleración (px desde arriba). */
+export function settleBounceOffset(
+  finalOffsetPx: number,
+  cellHeight: number,
+  progress: number
+): number {
+  const t = Math.max(0, Math.min(1, progress));
+  const overshoot = Math.sin(t * Math.PI) * cellHeight * 0.06 * (1 - t * 0.55);
+  return finalOffsetPx - overshoot;
+}
+
+export const SETTLE_BOUNCE_MS = 260;
 
 export function computeReelMetrics(viewportWidth: number, stageHeight = 0) {
   const fromWidth = Math.floor(viewportWidth * 0.26);

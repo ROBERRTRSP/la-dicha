@@ -22,6 +22,8 @@ import {
   finalOffset,
   interpolateDecelOffset,
   loopHeightPx,
+  settleBounceOffset,
+  SETTLE_BOUNCE_MS,
   type ReelPhase,
 } from "@/lib/slots/reel-motion";
 import { cn } from "@/lib/utils";
@@ -298,6 +300,44 @@ function SlotReelColumn({
       ? 80 + columnIndex * 40
       : animNow.baseSpinMs + columnIndex * animNow.columnStopDelayMs;
 
+    const runSettleBounce = (
+      el: HTMLElement,
+      finalSnap: number,
+      h: number,
+      onDone: () => void
+    ) => {
+      if (reducedMotionRef.current) {
+        el.style.transform = `translate3d(0, -${finalSnap}px, 0)`;
+        offsetRef.current = finalSnap;
+        setOffset(finalSnap);
+        onDone();
+        return;
+      }
+
+      const bounceStart = performance.now();
+      el.style.transition = "none";
+
+      const bounceTick = (now: number) => {
+        if (phaseRef.current !== "decel") return;
+        const progress =
+          SETTLE_BOUNCE_MS > 0 ? (now - bounceStart) / SETTLE_BOUNCE_MS : 1;
+        const y = settleBounceOffset(finalSnap, h, progress);
+        el.style.transform = `translate3d(0, -${y}px, 0)`;
+
+        if (progress < 1) {
+          decelRafRef.current = requestAnimationFrame(bounceTick);
+          return;
+        }
+
+        el.style.transform = `translate3d(0, -${finalSnap}px, 0)`;
+        offsetRef.current = finalSnap;
+        setOffset(finalSnap);
+        onDone();
+      };
+
+      decelRafRef.current = requestAnimationFrame(bounceTick);
+    };
+
     const runDecelRaf = (
       el: HTMLElement,
       startOffset: number,
@@ -319,10 +359,9 @@ function SlotReelColumn({
           return;
         }
 
-        el.style.transform = `translate3d(0, -${finalSnap}px, 0)`;
-        offsetRef.current = finalSnap;
-        setOffset(finalSnap);
-        finishStopRef.current();
+        runSettleBounce(el, finalSnap, cellHRef.current, () => {
+          finishStopRef.current();
+        });
       };
 
       decelRafRef.current = requestAnimationFrame(decelTick);
@@ -385,7 +424,7 @@ function SlotReelColumn({
                 setOffset(finalSnap);
                 finishStopRef.current();
               }
-            }, decelMs + 150);
+            }, decelMs + SETTLE_BOUNCE_MS + 150);
           } else {
             void el.offsetHeight;
             el.style.transition = `transform ${decelMs}ms ${animLive.decelEasing}`;
@@ -397,7 +436,7 @@ function SlotReelColumn({
                 setOffset(finalSnap);
                 finishStopRef.current();
               }
-            }, decelMs + 150);
+            }, decelMs + SETTLE_BOUNCE_MS + 150);
           }
         } else {
           el.style.transform = `translate3d(0, -${finalSnap}px, 0)`;
@@ -515,12 +554,40 @@ function SlotReelColumn({
       if (e.propertyName !== "transform" || phaseRef.current !== "decel") return;
       const el = stripRef.current;
       const finalSnap = targetOffsetRef.current;
-      if (el) {
-        el.style.transform = `translate3d(0, -${finalSnap}px, 0)`;
+      if (!el) {
+        finishStop();
+        return;
       }
-      offsetRef.current = finalSnap;
-      setOffset(finalSnap);
-      finishStop();
+
+      if (reducedMotionRef.current) {
+        el.style.transform = `translate3d(0, -${finalSnap}px, 0)`;
+        offsetRef.current = finalSnap;
+        setOffset(finalSnap);
+        finishStop();
+        return;
+      }
+
+      el.style.transition = "none";
+      const bounceStart = performance.now();
+      const h = cellHRef.current;
+
+      const bounceTick = (now: number) => {
+        if (phaseRef.current !== "decel") return;
+        const progress =
+          SETTLE_BOUNCE_MS > 0 ? (now - bounceStart) / SETTLE_BOUNCE_MS : 1;
+        const y = settleBounceOffset(finalSnap, h, progress);
+        el.style.transform = `translate3d(0, -${y}px, 0)`;
+        if (progress < 1) {
+          decelRafRef.current = requestAnimationFrame(bounceTick);
+          return;
+        }
+        el.style.transform = `translate3d(0, -${finalSnap}px, 0)`;
+        offsetRef.current = finalSnap;
+        setOffset(finalSnap);
+        finishStop();
+      };
+
+      decelRafRef.current = requestAnimationFrame(bounceTick);
     },
     [finishStop]
   );
@@ -540,7 +607,12 @@ function SlotReelColumn({
     >
       <div className="slot-reel-drum">
         <div className="slot-reel-lip slot-reel-lip--top" aria-hidden />
-        <div className="slot-reel-window">
+        <div
+          className={cn(
+            "slot-reel-window",
+            isMotion && "slot-reel-window--motion"
+          )}
+        >
           <div
             ref={stripRef}
             className={cn(

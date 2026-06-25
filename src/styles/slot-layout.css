@@ -438,12 +438,45 @@
 
 .slot-rules-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   padding: 14px 16px;
   border-bottom: 1px solid rgba(232, 192, 90, 0.15);
   flex-shrink: 0;
+}
+
+.slot-rules-header-main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.slot-rules-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.slot-rules-tab {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(0, 0, 0, 0.28);
+  color: rgba(226, 232, 240, 0.78);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.slot-rules-tab--active {
+  border-color: rgba(232, 192, 90, 0.45);
+  background: rgba(232, 192, 90, 0.12);
+  color: var(--casino-gold);
 }
 
 .slot-rules-title {
@@ -484,6 +517,10 @@
   font-size: 13px;
   line-height: 1.5;
   color: rgba(226, 232, 240, 0.88);
+}
+
+.slot-rules-intro p + p {
+  margin-top: 10px;
 }
 
 /* Paytable oculta fuera del panel (acceso por botón) */
