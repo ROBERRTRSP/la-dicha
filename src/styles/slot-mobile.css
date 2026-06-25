@@ -140,6 +140,8 @@
   .slot-wolf-moonbeam,
   .slot-wolf-aurora,
   .slot-wolf-star,
+  .slot-reels--moon-wolf .slot-reel-cell--win .slot-symbol-image--wild,
+  .slot-reels--moon-wolf .slot-reel-cell--win .slot-symbol-svg--wild,
   .slot-coin-burst-piece {
     animation: none !important;
   }

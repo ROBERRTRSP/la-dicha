@@ -232,20 +232,13 @@ export function ModernSlotMachine({
         isLamp && "casino-machine--magic-lamp",
         isWolf && "casino-machine--moon-wolf",
         isWolf && freeMode && "casino-machine--moon-night",
+        awaitingStop && "casino-machine--reels-active",
         winFlash && "casino-machine--win"
       )}
     >
       <div className="casino-machine-bg" aria-hidden />
       {isLamp && <div className="casino-machine-theme-bg" aria-hidden />}
-      {isWolf && (
-        <>
-          <div className="casino-machine-theme-bg" aria-hidden />
-          <MoonWolfEffects
-            className="slot-wolf-effects--ambient"
-            intense={freeMode || winFlash}
-          />
-        </>
-      )}
+      {isWolf && <div className="casino-machine-theme-bg" aria-hidden />}
       <div className="casino-machine-floor-glow" aria-hidden />
 
       <div className="casino-machine-inner">
@@ -254,7 +247,7 @@ export function ModernSlotMachine({
           {isWolf && (
             <MoonWolfEffects
               className="slot-wolf-effects--cabinet"
-              intense={freeMode || winFlash || awaitingStop}
+              intense={freeMode || winFlash}
             />
           )}
           <SlotHeader

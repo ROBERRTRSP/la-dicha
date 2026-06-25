@@ -201,6 +201,7 @@ function SlotReelColumn({
   const wantStopRef = useRef(false);
   const resultReadyRef = useRef(false);
   const visualSyncRef = useRef(0);
+  const decelFinishTimerRef = useRef(0);
 
   useEffect(() => {
     resultReadyRef.current = resultReady ?? false;
@@ -213,7 +214,11 @@ function SlotReelColumn({
   const finishStop = useCallback(() => {
     if (stoppedRef.current) return;
     stoppedRef.current = true;
-    if (stripRef.current) stripRef.current.style.transition = "";
+    window.clearTimeout(decelFinishTimerRef.current);
+    if (stripRef.current) {
+      stripRef.current.style.transition = "";
+      stripRef.current.style.transform = `translate3d(0, -${offsetRef.current}px, 0)`;
+    }
     setSettling(true);
     window.setTimeout(() => {
       setSettling(false);
@@ -249,19 +254,29 @@ function SlotReelColumn({
   // el carrete sigue en movimiento, vuelve a reposo en lugar de girar sin fin.
   useEffect(() => {
     if (spinning || phaseRef.current === "idle") return;
+    const wasActive = !stoppedRef.current;
     cancelAnimationFrame(rafRef.current);
+    window.clearTimeout(decelFinishTimerRef.current);
     wantStopRef.current = false;
-    stoppedRef.current = true;
     setSettling(false);
     phaseRef.current = "idle";
     setPhase("idle");
-    if (stripRef.current) stripRef.current.style.transition = "";
+    if (stripRef.current) {
+      stripRef.current.style.transition = "";
+    }
     if (cellH > 0) {
       const fo = finalOffset(strip.length, cellH);
       offsetRef.current = fo;
       setOffset(fo);
+      if (stripRef.current) {
+        stripRef.current.style.transform = `translate3d(0, -${fo}px, 0)`;
+      }
     }
-  }, [spinning, strip.length, cellH]);
+    if (wasActive) {
+      stoppedRef.current = true;
+      onStopped?.();
+    }
+  }, [spinning, strip.length, cellH, onStopped]);
 
   useEffect(() => {
     if (!spinning) return;
@@ -342,6 +357,7 @@ function SlotReelColumn({
     const beginDecel = () => {
       if (phaseRef.current === "decel") return;
       cancelAnimationFrame(rafRef.current);
+      window.clearTimeout(decelFinishTimerRef.current);
 
       const latestFinals = finalsRef.current;
       setStrip((prev) => {
@@ -360,15 +376,33 @@ function SlotReelColumn({
       setPhase("decel");
 
       const snap = targetOffsetRef.current;
+      const startOffset = offsetRef.current;
       const decelMs = reducedMotion ? 0 : anim.decelMs;
       totalOffsetRef.current = snap;
+
       requestAnimationFrame(() => {
-        if (stripRef.current) {
-          stripRef.current.style.transition =
-            decelMs > 0
-              ? `transform ${decelMs}ms ${anim.decelEasing}`
-              : "none";
+        const el = stripRef.current;
+        if (!el) {
+          offsetRef.current = snap;
+          setOffset(snap);
+          finishStop();
+          return;
         }
+
+        el.style.transition = "none";
+        el.style.transform = `translate3d(0, -${startOffset}px, 0)`;
+        void el.offsetHeight;
+
+        if (decelMs > 0) {
+          el.style.transition = `transform ${decelMs}ms ${anim.decelEasing}`;
+          el.style.transform = `translate3d(0, -${snap}px, 0)`;
+          decelFinishTimerRef.current = window.setTimeout(() => {
+            if (phaseRef.current === "decel") finishStop();
+          }, decelMs + 100);
+        } else {
+          el.style.transform = `translate3d(0, -${snap}px, 0)`;
+        }
+
         offsetRef.current = snap;
         setOffset(snap);
         if (decelMs === 0) finishStop();
@@ -405,6 +439,7 @@ function SlotReelColumn({
       cancelAnimationFrame(rafRef.current);
       window.clearTimeout(stopTimer);
       window.clearTimeout(fallbackTimer);
+      window.clearTimeout(decelFinishTimerRef.current);
     };
   }, [
     spinning,
@@ -447,7 +482,11 @@ function SlotReelColumn({
               isMotion && "slot-reel-strip--motion",
               isDecel && "slot-reel-strip--decel"
             )}
-            style={{ transform: `translate3d(0, -${offset}px, 0)` }}
+            style={
+              isDecel
+                ? undefined
+                : { transform: `translate3d(0, -${offset}px, 0)` }
+            }
             onTransitionEnd={handleTransitionEnd}
           >
             {strip.map((symId, i) => {
