@@ -9,15 +9,19 @@ import {
 } from "react";
 import { SlotPayTable } from "./SlotPayTable";
 import { SlotReels } from "./SlotReels";
+import { SlotFinanceHud } from "./SlotFinanceHud";
+import { SlotPaylineFrame } from "./SlotPaylineFrame";
+import { SlotRulesButton, SlotRulesPanel } from "./SlotRulesPanel";
 import { AmbientLights } from "./AmbientLights";
 import { MoonWolfEffects } from "./MoonWolfEffects";
 import { CoinBurst } from "./CoinBurst";
-import { AnimatedBalance, WinDisplay } from "./WinDisplay";
+import { AnimatedBalance } from "./WinDisplay";
 import {
   BetControls,
   SlotCabinet,
   SlotCabinetBody,
   SlotCabinetDeck,
+  SlotControlDeck,
   SlotHeader,
   SlotRuleBar,
   SlotScreen,
@@ -34,11 +38,9 @@ import type {
   SlotGameId,
   WinCell,
 } from "@/lib/slots/types";
-import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
 import { formatJackpotBanner } from "@/lib/slots/jackpot-labels";
-
 type SpinResponse = {
   balance: number;
   grid: Grid;
@@ -79,6 +81,7 @@ export function ModernSlotMachine({
   const [message, setMessage] = useState<string | null>(null);
   const [winFlash, setWinFlash] = useState(false);
   const [winCells, setWinCells] = useState<WinCell[]>([]);
+  const [lineWins, setLineWins] = useState<LineWin[]>([]);
   const [scatterCells, setScatterCells] = useState<WinCell[]>([]);
   const [jackpotTier, setJackpotTier] = useState<string | null>(null);
   const [bonus, setBonus] = useState<BonusState>({
@@ -89,6 +92,7 @@ export function ModernSlotMachine({
   const [error, setError] = useState("");
   const [resultReady, setResultReady] = useState(false);
   const [settleFlash, setSettleFlash] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
   const pendingResult = useRef<SpinResponse | null>(null);
   const reelsStoppedRef = useRef(false);
   const apiResolvedRef = useRef(false);
@@ -131,6 +135,7 @@ export function ModernSlotMachine({
     setBonus(result.bonus);
     setLastWin(result.payout);
     setWinCells(result.winningCells ?? []);
+    setLineWins(result.lineWins ?? []);
     setScatterCells(result.scatterCells ?? []);
     setJackpotTier(result.jackpotTier ?? null);
     if (result.message) setMessage(result.message);
@@ -176,6 +181,7 @@ export function ModernSlotMachine({
     setMessage(null);
     setWinFlash(false);
     setWinCells([]);
+    setLineWins([]);
     setScatterCells([]);
     setJackpotTier(null);
     pendingResult.current = null;
@@ -223,6 +229,10 @@ export function ModernSlotMachine({
   }, [tryFinalizeSpin]);
 
   const freeMode = bonus.freeSpinsLeft > 0;
+  const activeLineIndices = useMemo(
+    () => lineWins.map((w) => w.lineIndex),
+    [lineWins]
+  );
 
   return (
     <div
@@ -253,13 +263,11 @@ export function ModernSlotMachine({
           <SlotHeader
             name={game.name}
             tagline={game.tagline}
-            balanceNode={
-              <AnimatedBalance value={balance} className="slot-balance-value" />
-            }
+            className="slot-header--compact"
           />
 
           <SlotCabinetBody>
-            <SlotRuleBar>
+            <SlotRuleBar className="slot-rule-bar--compact">
               {freeMode ? (
                 <span className="slot-rule-text slot-rule-text--free">
                   GIROS GRATIS {bonus.freeSpinsLeft}
@@ -269,14 +277,10 @@ export function ModernSlotMachine({
                     : ""}
                 </span>
               ) : (
-                <>
-                  <span className="slot-rule-text">
-                    Apuesta {formatMoney(bet)} · 5×3
-                  </span>
-                  <span className="slot-rule-text slot-rule-text--muted">
-                    {game.bonus.description}
-                  </span>
-                </>
+                <span className="slot-rule-text">
+                  {game.cols} rodillos × {game.rows} filas · {game.paylineCount}{" "}
+                  líneas de pago
+                </span>
               )}
             </SlotRuleBar>
 
@@ -284,17 +288,22 @@ export function ModernSlotMachine({
               winFlash={winFlash}
               className={settleFlash ? "slot-screen--settled" : undefined}
             >
-              <SlotReels
-                gameId={gameId}
-                grid={grid}
-                spinning={awaitingStop}
-                stopGeneration={stopGeneration}
-                resultReady={resultReady}
-                winningCells={winCells}
-                scatterCells={scatterCells}
-                highlight={!awaitingStop}
-                onAllStopped={handleAllStopped}
-              />
+              <SlotPaylineFrame
+                activeLineIndices={!awaitingStop ? activeLineIndices : []}
+                paylineCount={game.paylineCount}
+              >
+                <SlotReels
+                  gameId={gameId}
+                  grid={grid}
+                  spinning={awaitingStop}
+                  stopGeneration={stopGeneration}
+                  resultReady={resultReady}
+                  winningCells={winCells}
+                  scatterCells={scatterCells}
+                  highlight={!awaitingStop}
+                  onAllStopped={handleAllStopped}
+                />
+              </SlotPaylineFrame>
               <CoinBurst
                 active={winFlash}
                 generation={stopGeneration}
@@ -313,43 +322,102 @@ export function ModernSlotMachine({
               )}
             </SlotScreen>
 
-            {!awaitingStop && lastWin != null && lastWin > 0 && (
-              <WinDisplay amount={lastWin} generation={stopGeneration} />
-            )}
             {!awaitingStop && lastWin === 0 && (
-              <p className="slot-feedback slot-feedback--neutral" aria-live="polite">
+              <p
+                className="slot-result-strip slot-result-strip--neutral"
+                aria-live="polite"
+              >
                 Sin premio este giro
               </p>
             )}
-            {message && <p className="slot-feedback slot-feedback--bonus">{message}</p>}
-            {error && <p className="slot-feedback slot-feedback--error">{error}</p>}
+            {message && (
+              <p className="slot-result-strip slot-result-strip--bonus">{message}</p>
+            )}
+            {error && (
+              <p className="slot-result-strip slot-result-strip--error">{error}</p>
+            )}
           </SlotCabinetBody>
 
           <SlotCabinetDeck>
-            <BetControls
-              bet={bet}
-              options={SLOT_BET_OPTIONS}
-              disabled={spinning || freeMode}
-              onSelect={setBet}
-            />
-            <SpinButton
-              label={
-                awaitingStop
-                  ? "GIRANDO"
-                  : freeMode
-                    ? "GRATIS"
-                    : "GIRAR"
+            <SlotControlDeck
+              financeHud={
+                <SlotFinanceHud
+                  balance={balance}
+                  balanceNode={
+                    <AnimatedBalance
+                      value={balance}
+                      className="slot-balance-value"
+                    />
+                  }
+                  bet={bet}
+                  win={lastWin}
+                  winPending={awaitingStop}
+                  freeMode={freeMode}
+                  lineCount={game.paylineCount}
+                />
               }
-              spinning={awaitingStop}
-              ready={!spinning && !awaitingStop && (freeMode || balance >= bet)}
-              disabled={spinning || awaitingStop || (!freeMode && balance < bet)}
-              onClick={() => void spin()}
-              aria-busy={awaitingStop}
+              navButtons={
+                <>
+                  <SlotRulesButton onClick={() => setRulesOpen(true)} />
+                  <button
+                    type="button"
+                    className="slot-rules-btn slot-rules-btn--secondary"
+                    onClick={() => setRulesOpen(true)}
+                  >
+                    <span className="slot-rules-btn-icon" aria-hidden>
+                      $
+                    </span>
+                    <span className="slot-rules-btn-label">Pagos</span>
+                  </button>
+                </>
+              }
+              betControls={
+                <BetControls
+                  bet={bet}
+                  options={SLOT_BET_OPTIONS}
+                  disabled={spinning || freeMode}
+                  onSelect={setBet}
+                />
+              }
+              spinButton={
+                <SpinButton
+                  label={
+                    awaitingStop
+                      ? "GIRANDO"
+                      : freeMode
+                        ? "GRATIS"
+                        : "GIRAR"
+                  }
+                  spinning={awaitingStop}
+                  ready={
+                    !spinning && !awaitingStop && (freeMode || balance >= bet)
+                  }
+                  disabled={
+                    spinning ||
+                    awaitingStop ||
+                    (!freeMode && balance < bet)
+                  }
+                  onClick={() => void spin()}
+                  aria-busy={awaitingStop}
+                />
+              }
             />
           </SlotCabinetDeck>
         </SlotCabinet>
 
-        <SlotPayTable gameId={gameId} bet={bet} />
+        <SlotRulesPanel
+          open={rulesOpen}
+          onClose={() => setRulesOpen(false)}
+          gameId={gameId}
+          bet={bet}
+        />
+
+        {/* Tabla accesible vía botón Pagos / Reglas en el panel inferior */}
+        <SlotPayTable
+          gameId={gameId}
+          bet={bet}
+          className="slot-paytable-compact"
+        />
       </div>
     </div>
   );

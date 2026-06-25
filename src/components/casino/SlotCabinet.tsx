@@ -171,8 +171,41 @@ export function SlotCabinet({
   );
 }
 
-export function SlotCabinetDeck({ children }: { children: ReactNode }) {
-  return <footer className="slot-cabinet-deck">{children}</footer>;
+export function SlotCabinetDeck({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <footer className={cn("slot-cabinet-deck", className)}>{children}</footer>
+  );
+}
+
+export function SlotControlDeck({
+  financeHud,
+  navButtons,
+  betControls,
+  spinButton,
+}: {
+  financeHud?: ReactNode;
+  navButtons?: ReactNode;
+  betControls: ReactNode;
+  spinButton: ReactNode;
+}) {
+  return (
+    <div className="slot-control-deck">
+      {financeHud}
+      {navButtons ? (
+        <div className="slot-control-deck-nav">{navButtons}</div>
+      ) : null}
+      <div className="slot-control-deck-main">
+        <div className="slot-control-deck-bets">{betControls}</div>
+        <div className="slot-control-deck-spin">{spinButton}</div>
+      </div>
+    </div>
+  );
 }
 
 export function SlotCabinetBody({ children }: { children: ReactNode }) {
