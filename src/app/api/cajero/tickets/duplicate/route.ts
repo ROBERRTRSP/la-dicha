@@ -8,7 +8,7 @@ import {
 import { lookupTicket } from "@/lib/cajero-service";
 import { loadPlayLimitContext } from "@/lib/play-limit-context";
 import { fetchTodaySoldPlayItems } from "@/lib/play-limits";
-import { getOpenDrawsForPlayer } from "@/lib/draws";
+import { getCajeroSellDraws } from "@/lib/draws";
 import {
   getDisplayTicketNumber,
   getQrTicketCode,
@@ -60,10 +60,11 @@ export async function GET(request: Request) {
     );
   }
 
-  const openDraws = await getOpenDrawsForPlayer();
+  const { draws: openDraws, superPales } = await getCajeroSellDraws();
   const lotteries = buildDuplicateLotteryOptions(
     mapItems(ticket.items),
-    openDraws
+    openDraws,
+    superPales
   );
 
   return NextResponse.json({
@@ -135,7 +136,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const openDraws = await getOpenDrawsForPlayer();
+  const { draws: openDraws, superPales } = await getCajeroSellDraws();
   const limitCtx = await loadPlayLimitContext();
   const soldItems = await fetchTodaySoldPlayItems();
   const cart = Array.isArray(body.cart) ? body.cart : [];
@@ -146,7 +147,8 @@ export async function POST(request: Request) {
     openDraws,
     limitCtx,
     soldItems,
-    cart
+    cart,
+    superPales
   );
 
   if (result.lines.length === 0) {

@@ -31,9 +31,17 @@ export async function beginSpinIdempotency(
   if (existing) {
     const cached = parseCached(existing);
     if (cached) return { cached };
-    throw new Error(
-      "Este giro ya está en proceso. Espera un momento e intenta de nuevo."
-    );
+    const stale =
+      existing.expiresAt < new Date() || !existing.responseJson.trim();
+    if (stale) {
+      await prisma.rouletteSpinIdempotency.delete({
+        where: { userId_idempotencyKey: { userId, idempotencyKey } },
+      });
+    } else {
+      throw new Error(
+        "Este giro ya está en proceso. Espera un momento e intenta de nuevo."
+      );
+    }
   }
 
   try {
@@ -55,9 +63,18 @@ export async function beginSpinIdempotency(
       });
       const cached = row ? parseCached(row) : null;
       if (cached) return { cached };
-      throw new Error(
-        "Este giro ya está en proceso. Espera un momento e intenta de nuevo."
-      );
+      if (
+        row &&
+        (row.expiresAt < new Date() || !row.responseJson.trim())
+      ) {
+        await prisma.rouletteSpinIdempotency.delete({
+          where: { userId_idempotencyKey: { userId, idempotencyKey } },
+        });
+      } else {
+        throw new Error(
+          "Este giro ya está en proceso. Espera un momento e intenta de nuevo."
+        );
+      }
     }
     throw e;
   }

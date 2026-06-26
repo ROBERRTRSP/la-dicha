@@ -126,7 +126,6 @@ export function ConfirmModal({
           <button
             type="button"
             onClick={onClose}
-            disabled={loading}
             className="min-h-[48px] font-semibold text-slate-500"
           >
             Volver a editar

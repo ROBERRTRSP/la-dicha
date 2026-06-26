@@ -92,9 +92,10 @@ function isSuperPaleOpen(
 
 export function buildDuplicateLotteryOptions(
   items: TicketItemForDuplicate[],
-  openDraws: OpenDrawView[]
+  openDraws: OpenDrawView[],
+  openSuperPalesInput?: OpenSuperPaleView[]
 ): DuplicateLotteryOption[] {
-  const openSuperPales = getOpenSuperPales(openDraws);
+  const openSuperPales = openSuperPalesInput ?? getOpenSuperPales(openDraws);
   const map = new Map<string, DuplicateLotteryOption>();
 
   for (const item of items) {
@@ -198,13 +199,14 @@ function buildSuperPaleLine(
 /** Convierte jugadas filtradas en líneas de carrito. */
 export function ticketItemsToCartLines(
   items: TicketItemForDuplicate[],
-  openDraws: OpenDrawView[]
+  openDraws: OpenDrawView[],
+  openSuperPalesInput?: OpenSuperPaleView[]
 ): { lines: CartLine[]; warning?: string } {
   if (items.length === 0) {
     throw new Error("No hay jugadas para duplicar.");
   }
 
-  const openSuperPales = getOpenSuperPales(openDraws);
+  const openSuperPales = openSuperPalesInput ?? getOpenSuperPales(openDraws);
   const groups = new Map<string, TicketItemForDuplicate[]>();
 
   for (const item of items) {
@@ -302,7 +304,8 @@ export function applyDuplicateWithValidation(
   openDraws: OpenDrawView[],
   limitCtx: PlayLimitContext,
   soldItems: SoldPlayItem[],
-  existingCart: CartLine[] = []
+  existingCart: CartLine[] = [],
+  openSuperPalesInput?: OpenSuperPaleView[]
 ): DuplicateTicketApplyResult {
   const selected = new Set(selectedKeys);
   const filtered = filterItemsByLotteryKeys(items, selected);
@@ -316,7 +319,11 @@ export function applyDuplicateWithValidation(
     };
   }
 
-  const { lines, warning } = ticketItemsToCartLines(filtered, openDraws);
+  const { lines, warning } = ticketItemsToCartLines(
+    filtered,
+    openDraws,
+    openSuperPalesInput
+  );
   const accepted: CartLine[] = [];
   const errors: string[] = [];
   const cartAccumulator = [...existingCart];

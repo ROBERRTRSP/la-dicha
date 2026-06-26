@@ -12,7 +12,7 @@ import {
   MAX_LOTTERIES_PER_LINE,
 } from "./cart-limits";
 import type { OpenDrawView } from "./draws";
-import { getOpenSuperPales, getSuperPaleDefinition } from "./super-pale";
+import { getSuperPaleDefinition, getOpenSuperPales, type OpenSuperPaleView } from "./super-pale";
 import { formatMoney } from "./utils";
 import { cartLineTotal, type CartLine } from "./cart-line";
 
@@ -180,13 +180,14 @@ export function validateAndNormalizeCart(rawLines: unknown): {
 /** Valida que las jugadas del carrito sigan siendo vendibles con los sorteos abiertos actuales. */
 export function validateCartAgainstOpenDraws(
   lines: CartLine[],
-  openDraws: OpenDrawView[]
+  openDraws: OpenDrawView[],
+  openSuperPalesInput?: OpenSuperPaleView[]
 ): string | null {
   if (!lines.length) return "Agrega una jugada antes de confirmar.";
 
   const openDrawIds = new Set(openDraws.map((d) => d.id));
   const openSuperCodes = new Set(
-    getOpenSuperPales(openDraws).map((s) => s.code)
+    (openSuperPalesInput ?? getOpenSuperPales(openDraws)).map((s) => s.code)
   );
 
   for (const line of lines) {
@@ -238,24 +239,43 @@ export type SanitizedCartResult = {
  */
 export function sanitizeStoredCart(
   raw: unknown,
-  openDraws: OpenDrawView[]
+  openDraws: OpenDrawView[],
+  openSuperPalesInput?: OpenSuperPaleView[]
 ): SanitizedCartResult {
   if (!Array.isArray(raw) || raw.length === 0) {
     return { lines: [], removedMessages: [], warning: null };
   }
 
+  const openSuperPales = openSuperPalesInput ?? getOpenSuperPales(openDraws);
   const openDrawIds = new Set(openDraws.map((d) => d.id));
-  const openSuperCodes = new Set(
-    getOpenSuperPales(openDraws).map((s) => s.code)
-  );
+  const openSuperCodes = new Set(openSuperPales.map((s) => s.code));
+
+  const hydratedRaw = raw.map((entry) => {
+    if (!entry || typeof entry !== "object") return entry;
+    const row = entry as Record<string, unknown>;
+    const code =
+      typeof row.superPaleCode === "string" ? row.superPaleCode : undefined;
+    if (!code && row.betType !== "SUPER_PALE") return entry;
+    const sp = openSuperPales.find((s) => s.code === code);
+    if (!sp) return entry;
+    return {
+      ...row,
+      betType: "SUPER_PALE",
+      superPaleCode: sp.code,
+      superPaleName: sp.name,
+      drawIds: [sp.drawIdA, sp.drawIdB],
+      lotteryNames: [sp.lotteryNameA, sp.lotteryNameB],
+      lotteryCodes: [sp.lotteryCodeA, sp.lotteryCodeB],
+    };
+  });
 
   const valid: CartLine[] = [];
   const removedMessages: string[] = [];
 
-  for (let i = 0; i < raw.length; i++) {
+  for (let i = 0; i < hydratedRaw.length; i++) {
     const label = `Jugada #${i + 1}`;
     try {
-      const line = normalizeCartLine(raw[i], i);
+      const line = normalizeCartLine(hydratedRaw[i], i);
 
       if (line.betType === "SUPER_PALE" || line.superPaleCode) {
         const code = line.superPaleCode ?? "";

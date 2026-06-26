@@ -28,16 +28,23 @@ import {
   validateCartAgainstOpenDraws,
 } from "@/lib/cart-validation";
 import { cartLineTotal, type CartLine } from "@/lib/tickets";
-import { getOpenSuperPales, isSuperPaleId } from "@/lib/super-pale";
+import type { OpenSuperPaleView } from "@/lib/super-pale";
+import { isSuperPaleId } from "@/lib/super-pale";
+import { MAX_CART_LINES, MAX_CART_TOTAL } from "@/lib/cart-limits";
 
 export function PlayClient({
   initialDraws,
+  initialSuperPales = [],
   balance: initialBalance,
 }: {
   initialDraws: OpenDrawView[];
+  initialSuperPales?: OpenSuperPaleView[];
   balance: number;
 }) {
   const [draws, setDraws] = useState(initialDraws);
+  const [superPales, setSuperPales] = useState<OpenSuperPaleView[]>(
+    initialSuperPales
+  );
   const [balance, setBalance] = useState(initialBalance);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [digits, setDigits] = useState("");
@@ -82,10 +89,11 @@ export function PlayClient({
         const data = await res.json();
         const nextDraws: OpenDrawView[] = data.draws ?? [];
         setDraws(nextDraws);
+        setSuperPales(data.superPales ?? []);
         setSelected((prev) => {
           const openDrawIds = new Set(nextDraws.map((d) => d.id));
           const openSuperIds = new Set(
-            getOpenSuperPales(nextDraws).map((s) => s.id)
+            (data.superPales ?? []).map((s: OpenSuperPaleView) => s.id)
           );
           return new Set(
             [...prev].filter(
@@ -129,12 +137,15 @@ export function PlayClient({
 
     (async () => {
       let latestDraws = initialDraws;
+      let latestSuperPales: OpenSuperPaleView[] = [];
       try {
         const res = await fetch("/api/draws");
         if (res.ok) {
           const data = await res.json();
           latestDraws = data.draws ?? initialDraws;
+          latestSuperPales = data.superPales ?? [];
           setDraws(latestDraws);
+          setSuperPales(latestSuperPales);
         }
       } catch {
         /* usar sorteos iniciales */
@@ -142,7 +153,11 @@ export function PlayClient({
 
       try {
         const parsed = JSON.parse(raw) as unknown;
-        const { lines, warning } = sanitizeStoredCart(parsed, latestDraws);
+        const { lines, warning } = sanitizeStoredCart(
+          parsed,
+          latestDraws,
+          latestSuperPales
+        );
         if (lines.length) setCart(lines);
         if (warning) showError(warning, true);
         else if (!lines.length) {
@@ -177,14 +192,11 @@ export function PlayClient({
     if (cart.length === 0) setBetsExpanded(false);
   }, [cart.length]);
 
-  const openSuperPales = useMemo(() => getOpenSuperPales(draws), [draws]);
+  const openSuperPales = superPales;
 
   const openDrawIds = useMemo(() => draws.map((d) => d.id), [draws]);
 
-  const allSelectableIds = useMemo(
-    () => [...openDrawIds, ...openSuperPales.map((s) => s.id)],
-    [openDrawIds, openSuperPales]
-  );
+  const allSelectableIds = useMemo(() => openDrawIds, [openDrawIds]);
 
   function flashAdded(line: CartLine) {
     const lineTotal = cartLineTotal(line);
@@ -327,6 +339,16 @@ export function PlayClient({
   }
 
   function commitLine(line: CartLine, clearSuperSelection = false) {
+    const nextTotal =
+      cart.reduce((s, l) => s + cartLineTotal(l), 0) + cartLineTotal(line);
+    if (cart.length >= MAX_CART_LINES) {
+      showError(`Máximo ${MAX_CART_LINES} jugadas por ticket.`);
+      return;
+    }
+    if (nextTotal > MAX_CART_TOTAL) {
+      showError(`El total no puede superar ${formatMoney(MAX_CART_TOTAL)}.`);
+      return;
+    }
     setCart((prev) => [...prev, line]);
     setDigits("");
     if (clearSuperSelection) setSelected(new Set());
@@ -357,12 +379,15 @@ export function PlayClient({
     setErrorSticky(false);
 
     let latestDraws = draws;
+    let latestSuperPales = superPales;
     try {
       const res = await fetch("/api/draws");
       if (res.ok) {
         const data = await res.json();
         latestDraws = data.draws ?? draws;
+        latestSuperPales = data.superPales ?? superPales;
         setDraws(latestDraws);
+        setSuperPales(latestSuperPales);
       }
     } catch {
       /* usar sorteos en memoria */
@@ -375,7 +400,11 @@ export function PlayClient({
       return;
     }
 
-    const cartErr = validateCartAgainstOpenDraws(cart, latestDraws);
+    const cartErr = validateCartAgainstOpenDraws(
+      cart,
+      latestDraws,
+      latestSuperPales
+    );
     if (cartErr) {
       showError(cartErr, true);
       return;

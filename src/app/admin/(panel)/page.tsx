@@ -16,16 +16,43 @@ type Stats = {
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
+    setError("");
     fetch("/api/admin/dashboard")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("No se pudo cargar el panel.");
+        return r.json();
+      })
       .then(setStats)
-      .catch(() => {});
+      .catch((e) => {
+        setStats(null);
+        setError(e instanceof Error ? e.message : "Error de conexión.");
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  if (!stats) {
+  if (loading) {
     return <p className="admin-loading">Cargando panel…</p>;
+  }
+
+  if (error || !stats) {
+    return (
+      <div>
+        <h1 className="admin-page-title">Panel Administrador</h1>
+        <p className="admin-error">{error || "No hay datos disponibles."}</p>
+        <button
+          type="button"
+          className="admin-save-btn"
+          onClick={() => window.location.reload()}
+        >
+          Reintentar
+        </button>
+      </div>
+    );
   }
 
   return (

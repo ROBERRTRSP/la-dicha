@@ -14,7 +14,7 @@ import { SlotReels } from "../SlotReels";
 import { CoinBurst } from "../CoinBurst";
 import { Classic7PaytableModal } from "./Classic7PaytableModal";
 import { getSlotGame } from "@/lib/slots/games";
-import { CLASSIC_7_BET_OPTIONS } from "@/lib/slots/settings";
+import { allowedBetOptionsForGame } from "@/lib/slots/settings";
 import { newSpinIdempotencyKey } from "@/lib/spin-client";
 import { preloadSlotSymbolImages } from "@/lib/slots/symbol-assets";
 import { CASINO_ART } from "@/lib/casino-art";
@@ -72,11 +72,12 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
   const [historyOpen, setHistoryOpen] = useState(false);
   const [history, setHistory] = useState<SpinHistoryEntry[]>([]);
   const [maxBetAmount, setMaxBetAmount] = useState(10);
+  const [minBetAmount, setMinBetAmount] = useState(1);
 
   const betOptions = useMemo(
     () =>
-      CLASSIC_7_BET_OPTIONS.filter((n) => n <= maxBetAmount) as number[],
-    [maxBetAmount]
+      allowedBetOptionsForGame("classic-7", minBetAmount, maxBetAmount) as number[],
+    [minBetAmount, maxBetAmount]
   );
 
   const pendingResult = useRef<SpinResponse | null>(null);
@@ -111,6 +112,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
       .then((d) => {
         if (typeof d.balance === "number") setBalance(d.balance);
         if (typeof d.maxBetAmount === "number") setMaxBetAmount(d.maxBetAmount);
+        if (typeof d.minBetAmount === "number") setMinBetAmount(d.minBetAmount);
       })
       .catch(() => {});
     loadHistory();
@@ -163,23 +165,28 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
     spinIdempotencyRef.current = null;
   }, [bet, loadHistory]);
 
-  const failSpin = useCallback((msg: string) => {
-    pendingResult.current = null;
-    reelsStoppedRef.current = false;
-    apiResolvedRef.current = false;
-    setResultReady(false);
-    setSpinning(false);
-    setAwaitingStop(false);
-    inFlightRef.current = false;
-    spinIdempotencyRef.current = null;
-    setError(msg);
-    fetch("/api/slots/spin")
-      .then((r) => r.json())
-      .then((d) => {
-        if (typeof d.balance === "number") setBalance(d.balance);
-      })
-      .catch(() => {});
-  }, []);
+  const failSpin = useCallback(
+    (msg: string, opts?: { retainIdempotency?: boolean }) => {
+      pendingResult.current = null;
+      reelsStoppedRef.current = false;
+      apiResolvedRef.current = false;
+      setResultReady(false);
+      setSpinning(false);
+      setAwaitingStop(false);
+      inFlightRef.current = false;
+      if (!opts?.retainIdempotency) {
+        spinIdempotencyRef.current = null;
+      }
+      setError(msg);
+      fetch("/api/slots/spin")
+        .then((r) => r.json())
+        .then((d) => {
+          if (typeof d.balance === "number") setBalance(d.balance);
+        })
+        .catch(() => {});
+    },
+    []
+  );
 
   const spin = async () => {
     if (spinning || inFlightRef.current) return;
@@ -231,8 +238,9 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
     } catch {
       failSpin(
         controller.signal.aborted
-          ? "Tiempo de espera agotado."
-          : "Error de conexión."
+          ? "Tiempo de espera agotado. Reintenta el mismo giro."
+          : "Error de conexión. Reintenta el mismo giro.",
+        { retainIdempotency: true }
       );
     } finally {
       window.clearTimeout(timeout);
@@ -244,7 +252,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
     tryFinalizeSpin();
   }, [tryFinalizeSpin]);
 
-  const betIndex = betOptions.indexOf(bet as (typeof CLASSIC_7_BET_OPTIONS)[number]);
+  const betIndex = betOptions.indexOf(bet);
   const decBet = () => {
     if (spinning || awaitingStop) return;
     const i = betIndex <= 0 ? 0 : betIndex - 1;

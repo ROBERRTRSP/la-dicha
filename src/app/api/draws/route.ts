@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { getOpenDrawsForPlayer } from "@/lib/draws";
+import { getCajeroSellDraws } from "@/lib/draws";
 
 export async function GET() {
-  const draws = await getOpenDrawsForPlayer();
-  return NextResponse.json({ draws });
+  const { draws, superPales } = await getCajeroSellDraws();
+  return NextResponse.json({ draws, superPales });
 }

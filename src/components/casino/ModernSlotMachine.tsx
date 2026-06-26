@@ -29,7 +29,7 @@ import {
 import { getSlotGame } from "@/lib/slots/games";
 import { preloadSlotSymbolImages } from "@/lib/slots/symbol-assets";
 import { CASINO_ART } from "@/lib/casino-art";
-import { SLOT_BET_OPTIONS } from "@/lib/slots/settings";
+import { allowedBetOptionsForGame } from "@/lib/slots/settings";
 import { newSpinIdempotencyKey } from "@/lib/spin-client";
 import type {
   BonusState,
@@ -94,6 +94,12 @@ export function ModernSlotMachine({
   const [settleFlash, setSettleFlash] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [rulesSection, setRulesSection] = useState<SlotRulesSection>("rules");
+  const [minBetAmount, setMinBetAmount] = useState(1);
+  const [maxBetAmount, setMaxBetAmount] = useState(10);
+  const betOptions = useMemo(
+    () => allowedBetOptionsForGame(gameId, minBetAmount, maxBetAmount),
+    [gameId, minBetAmount, maxBetAmount]
+  );
   const pendingResult = useRef<SpinResponse | null>(null);
   const reelsStoppedRef = useRef(false);
   const apiResolvedRef = useRef(false);
@@ -106,10 +112,19 @@ export function ModernSlotMachine({
       .then((r) => r.json())
       .then((d) => {
         if (typeof d.balance === "number") setBalance(d.balance);
+        if (typeof d.minBetAmount === "number") setMinBetAmount(d.minBetAmount);
+        if (typeof d.maxBetAmount === "number") setMaxBetAmount(d.maxBetAmount);
         if (d.bonusStates?.[gameId]) setBonus(d.bonusStates[gameId]);
       })
       .catch(() => {});
   }, [gameId]);
+
+  useEffect(() => {
+    if (betOptions.length === 0) return;
+    if (!betOptions.includes(bet)) {
+      setBet(betOptions[betOptions.length - 1]);
+    }
+  }, [bet, betOptions]);
 
   useEffect(() => {
     if (gameId !== "magic-lamp" && gameId !== "moon-wolf") return;
@@ -155,7 +170,7 @@ export function ModernSlotMachine({
 
   // Error / timeout: no aplica premio, libera el giro y re-hidrata el estado.
   const failSpin = useCallback(
-    (msg: string) => {
+    (msg: string, opts?: { retainIdempotency?: boolean }) => {
       pendingResult.current = null;
       reelsStoppedRef.current = false;
       apiResolvedRef.current = false;
@@ -163,7 +178,9 @@ export function ModernSlotMachine({
       setSpinning(false);
       setAwaitingStop(false);
       inFlightRef.current = false;
-      spinIdempotencyRef.current = null;
+      if (!opts?.retainIdempotency) {
+        spinIdempotencyRef.current = null;
+      }
       setError(msg);
       fetch("/api/slots/spin")
         .then((r) => r.json())
@@ -178,6 +195,10 @@ export function ModernSlotMachine({
 
   const spin = async () => {
     if (spinning || inFlightRef.current) return;
+    if (balance < bet) {
+      setError("Saldo insuficiente.");
+      return;
+    }
     inFlightRef.current = true;
     if (!spinIdempotencyRef.current) {
       spinIdempotencyRef.current = newSpinIdempotencyKey();
@@ -226,8 +247,9 @@ export function ModernSlotMachine({
     } catch {
       failSpin(
         controller.signal.aborted
-          ? "Tiempo de espera agotado. Intenta de nuevo."
-          : "Error de conexión."
+          ? "Tiempo de espera agotado. Reintenta el mismo giro."
+          : "Error de conexión. Reintenta el mismo giro.",
+        { retainIdempotency: true }
       );
     } finally {
       window.clearTimeout(timeout);
@@ -404,7 +426,7 @@ export function ModernSlotMachine({
               betControls={
                 <BetControls
                   bet={bet}
-                  options={SLOT_BET_OPTIONS}
+                  options={betOptions}
                   disabled={spinning || freeMode}
                   onSelect={setBet}
                   hideLabel

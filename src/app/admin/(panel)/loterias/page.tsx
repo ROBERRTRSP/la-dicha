@@ -24,13 +24,19 @@ export default function AdminLoteriasPage() {
   const [selectedDrawId, setSelectedDrawId] = useState<string | null>(null);
   const [report, setReport] = useState<AdminLotteryAccounting | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const loadReport = useCallback(async () => {
     setLoading(true);
+    setLoadError("");
     try {
       const params = new URLSearchParams({ date, payment });
       const res = await fetch(`/api/admin/lottery-sales?${params}`);
-      if (!res.ok) return;
+      if (!res.ok) {
+        setReport(null);
+        setLoadError("No se pudo cargar la contabilidad.");
+        return;
+      }
       const data = (await res.json()) as AdminLotteryAccounting;
       setReport(data);
       if (
@@ -92,8 +98,10 @@ export default function AdminLoteriasPage() {
         </button>
       </div>
 
-      {loading || !report ? (
+      {loading ? (
         <p className="admin-loading">Cargando contabilidad…</p>
+      ) : loadError || !report ? (
+        <p className="admin-error">{loadError || "Sin datos para esta fecha."}</p>
       ) : (
         <>
           <div className="admin-stats-grid admin-stats-grid--wide">
