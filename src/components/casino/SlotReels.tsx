@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 function ReelCell({
   symId,
   gameId,
+  columnIndex,
   isWin,
   isScatter,
   settling,
@@ -46,6 +47,7 @@ function ReelCell({
 }: {
   symId: string;
   gameId: SlotGameId;
+  columnIndex: number;
   isWin?: boolean;
   isScatter?: boolean;
   settling?: boolean;
@@ -70,11 +72,13 @@ function ReelCell({
     isMotion && !liteMotion
       ? drumCellOpacity(stripIndex, offset, cellH, isMotion)
       : undefined;
+  const stripe = (stripIndex + columnIndex) % 2 === 0 ? "a" : "b";
 
   return (
     <div
       className={cn(
         "slot-reel-cell",
+        `slot-reel-cell--stripe-${stripe}`,
         isWin && "slot-reel-cell--win",
         isScatter && "slot-reel-cell--scatter",
         settling && "slot-reel-cell--settle",
@@ -494,7 +498,9 @@ function SlotReelColumn({
         if (stripRef.current) {
           stripRef.current.style.transform = `translate3d(0, -${display}px, 0)`;
         }
-        if (now - visualSyncRef.current >= 48) {
+        const shouldSyncMotionState =
+          !isMobileRef.current && !Boolean(reducedLive);
+        if (shouldSyncMotionState && now - visualSyncRef.current >= 48) {
           visualSyncRef.current = now;
           setOffset(display);
         }
@@ -653,6 +659,7 @@ function SlotReelColumn({
                   key={`${stopGeneration}-${columnIndex}-${i}`}
                   symId={symId}
                   gameId={gameId}
+                  columnIndex={columnIndex}
                   isWin={showWin}
                   isScatter={showScatter}
                   stripIndex={i}

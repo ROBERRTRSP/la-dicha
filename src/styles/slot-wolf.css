@@ -157,14 +157,34 @@
   border-color: rgba(126, 180, 220, 0.08);
 }
 
-.slot-theme--wolf .slot-reel-cell:not(.slot-reel-cell--win):not(.slot-reel-cell--scatter),
-.slot-reels--moon-wolf .slot-reel-cell:not(.slot-reel-cell--win):not(.slot-reel-cell--scatter) {
-  background: radial-gradient(
-    circle at 38% 22%,
-    rgba(126, 180, 220, 0.08),
-    rgba(10, 14, 24, 0.96) 72%
+.slot-theme--wolf,
+.slot-reels--moon-wolf {
+  --casino-reel-cell-a: linear-gradient(
+    180deg,
+    #4878a8 0%,
+    #386090 45%,
+    #2a5078 100%
   );
-  border-bottom-color: rgba(126, 180, 220, 0.08);
+  --casino-reel-cell-b: linear-gradient(
+    180deg,
+    #141e34 0%,
+    #0c1428 45%,
+    #060c18 100%
+  );
+  --casino-reel-cell-a-motion: linear-gradient(
+    180deg,
+    #68a8d8 0%,
+    #4890c0 42%,
+    #3878a8 100%
+  );
+  --casino-reel-cell-b-motion: linear-gradient(
+    180deg,
+    #101828 0%,
+    #081020 42%,
+    #040810 100%
+  );
+  --casino-reel-stripe-a-line: rgba(186, 230, 253, 0.72);
+  --casino-reel-stripe-b-line: rgba(0, 0, 0, 0.9);
 }
 
 .slot-symbol-image--moon-wolf.slot-symbol-image--wild,

@@ -51,14 +51,34 @@
   border-color: rgba(120, 200, 140, 0.08);
 }
 
-.slot-theme--skunk .slot-reel-cell:not(.slot-reel-cell--win):not(.slot-reel-cell--scatter),
-.slot-reels--treasure-skunk .slot-reel-cell:not(.slot-reel-cell--win):not(.slot-reel-cell--scatter) {
-  background: radial-gradient(
-    circle at 38% 22%,
-    rgba(120, 200, 140, 0.08),
-    rgba(10, 18, 14, 0.96) 72%
+.slot-theme--skunk,
+.slot-reels--treasure-skunk {
+  --casino-reel-cell-a: linear-gradient(
+    180deg,
+    #5a8a62 0%,
+    #467052 45%,
+    #3a5c42 100%
   );
-  border-bottom-color: rgba(120, 200, 140, 0.08);
+  --casino-reel-cell-b: linear-gradient(
+    180deg,
+    #142018 0%,
+    #0c1610 45%,
+    #060a08 100%
+  );
+  --casino-reel-cell-a-motion: linear-gradient(
+    180deg,
+    #7cb86a 0%,
+    #5a9a52 42%,
+    #468040 100%
+  );
+  --casino-reel-cell-b-motion: linear-gradient(
+    180deg,
+    #101a14 0%,
+    #081210 42%,
+    #040806 100%
+  );
+  --casino-reel-stripe-a-line: rgba(163, 230, 53, 0.65);
+  --casino-reel-stripe-b-line: rgba(0, 0, 0, 0.9);
 }
 
 .slot-symbol-image--treasure-skunk.slot-symbol-image--wild,

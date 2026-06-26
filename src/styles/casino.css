@@ -351,6 +351,32 @@
     rgba(255, 255, 255, 0.07),
     rgba(10, 14, 22, 0.96) 72%
   );
+  --casino-reel-cell-a: linear-gradient(
+    180deg,
+    #525d72 0%,
+    #3d4658 45%,
+    #323a4a 100%
+  );
+  --casino-reel-cell-b: linear-gradient(
+    180deg,
+    #1a2030 0%,
+    #101520 45%,
+    #080a10 100%
+  );
+  --casino-reel-cell-a-motion: linear-gradient(
+    180deg,
+    #6a5c48 0%,
+    #4a4030 42%,
+    #3a3228 100%
+  );
+  --casino-reel-cell-b-motion: linear-gradient(
+    180deg,
+    #181c28 0%,
+    #0c1018 42%,
+    #040608 100%
+  );
+  --casino-reel-stripe-a-line: rgba(232, 192, 90, 0.55);
+  --casino-reel-stripe-b-line: rgba(0, 0, 0, 0.85);
   --casino-reel-glow: rgba(232, 192, 90, 0.12);
   --casino-symbol-filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.55))
     drop-shadow(0 0 10px rgba(232, 192, 90, 0.12)) saturate(1.04) brightness(1.03);
@@ -979,12 +1005,33 @@
   transform-style: preserve-3d;
 }
 
-.slot-reel-strip--motion .slot-reel-cell {
-  background: var(--casino-reel-cell);
+.slot-reel-strip--motion .slot-reel-cell--stripe-a:not(.slot-reel-cell--win):not(.slot-reel-cell--scatter) {
+  background: var(--casino-reel-cell-a-motion);
+  border-bottom: 2px solid var(--casino-reel-stripe-a-line, rgba(255, 255, 255, 0.22));
+}
+
+.slot-reel-strip--motion .slot-reel-cell--stripe-b:not(.slot-reel-cell--win):not(.slot-reel-cell--scatter) {
+  background: var(--casino-reel-cell-b-motion);
+  border-bottom: 2px solid var(--casino-reel-stripe-b-line, rgba(0, 0, 0, 0.75));
+}
+
+.slot-reel-strip--motion .slot-reel-cell--spinning::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.07) 0%,
+    transparent 38%,
+    transparent 62%,
+    rgba(0, 0, 0, 0.18) 100%
+  );
 }
 
 .slot-reel-strip--motion {
-  filter: blur(0.65px) brightness(0.92) saturate(0.95);
+  filter: blur(0.45px) brightness(0.94) saturate(0.98);
 }
 
 .slot-reel-strip--motion .slot-reel-cell--spinning .slot-symbol-wrapper {
@@ -1382,6 +1429,29 @@
     0 0 6px rgba(232, 192, 90, 0.04);
   overflow: hidden;
   transition: background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.slot-reel-cell--stripe-a:not(.slot-reel-cell--win):not(.slot-reel-cell--scatter) {
+  background: var(--casino-reel-cell-a);
+  border-bottom: 2px solid var(--casino-reel-stripe-a-line, rgba(255, 255, 255, 0.14));
+  box-shadow:
+    inset 0 3px 10px rgba(255, 255, 255, 0.12),
+    inset 0 -4px 12px rgba(0, 0, 0, 0.35),
+    inset 4px 0 10px rgba(255, 255, 255, 0.06);
+}
+
+.slot-reel-cell--stripe-b:not(.slot-reel-cell--win):not(.slot-reel-cell--scatter) {
+  background: var(--casino-reel-cell-b);
+  border-bottom: 2px solid var(--casino-reel-stripe-b-line, rgba(0, 0, 0, 0.7));
+  box-shadow:
+    inset 0 2px 6px rgba(255, 255, 255, 0.04),
+    inset 0 -6px 14px rgba(0, 0, 0, 0.55),
+    inset -4px 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.slot-reel-cell .slot-symbol-wrapper {
+  position: relative;
+  z-index: 1;
 }
 
 .slot-reel-cell--win {

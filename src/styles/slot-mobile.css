@@ -33,7 +33,29 @@
   .slot-reel-strip--motion .slot-reel-cell--spinning .slot-symbol-wrapper {
     filter: none !important;
     transform: scaleY(1.045);
-    opacity: 0.9;
+    opacity: 0.92;
+  }
+
+  .slot-reel-strip--motion .slot-reel-cell--stripe-a:not(.slot-reel-cell--win):not(.slot-reel-cell--scatter) {
+    border-bottom-width: 3px;
+  }
+
+  .slot-reel-strip--motion .slot-reel-cell--stripe-b:not(.slot-reel-cell--win):not(.slot-reel-cell--scatter) {
+    border-bottom-width: 3px;
+  }
+
+  .slot-reel-strip--motion {
+    filter: none;
+  }
+
+  .slot-reel-strip--motion .slot-reel-cell--spinning::before {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 35%,
+      transparent 65%,
+      rgba(0, 0, 0, 0.22) 100%
+    );
   }
 
   .slot-reel-window--motion::before,

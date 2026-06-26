@@ -124,13 +124,33 @@
   );
 }
 
-.slot-reels--magic-lamp .slot-reel-cell:not(.slot-reel-cell--win):not(.slot-reel-cell--scatter) {
-  background: radial-gradient(
-    circle at 38% 22%,
-    rgba(168, 120, 220, 0.1),
-    rgba(16, 10, 28, 0.96) 72%
+.slot-reels--magic-lamp {
+  --casino-reel-cell-a: linear-gradient(
+    180deg,
+    #7a62a8 0%,
+    #5c4890 45%,
+    #4a3878 100%
   );
-  border-bottom-color: rgba(168, 120, 220, 0.1);
+  --casino-reel-cell-b: linear-gradient(
+    180deg,
+    #201430 0%,
+    #140e24 45%,
+    #0a0614 100%
+  );
+  --casino-reel-cell-a-motion: linear-gradient(
+    180deg,
+    #9a7acc 0%,
+    #7860b0 42%,
+    #604898 100%
+  );
+  --casino-reel-cell-b-motion: linear-gradient(
+    180deg,
+    #180c28 0%,
+    #100820 42%,
+    #080414 100%
+  );
+  --casino-reel-stripe-a-line: rgba(216, 180, 254, 0.7);
+  --casino-reel-stripe-b-line: rgba(0, 0, 0, 0.92);
 }
 
 .slot-symbol-image--magic-lamp.slot-symbol-image--wild,
