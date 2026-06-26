@@ -1596,6 +1596,265 @@
   z-index: 4;
 }
 
+.slot-win-celebration {
+  --celebration-border: rgba(253, 224, 71, 0.75);
+  --celebration-top: rgba(120, 53, 15, 0.9);
+  --celebration-bottom: rgba(66, 32, 6, 0.9);
+  --celebration-glow: rgba(253, 224, 71, 0.4);
+  --celebration-title: #fde68a;
+  --celebration-amount: #fef3c7;
+  --celebration-shadow: rgba(251, 191, 36, 0.65);
+  --celebration-badge: rgba(255, 245, 180, 0.96);
+  --celebration-particle: rgba(255, 244, 181, 0.96);
+  position: absolute;
+  inset: 4% 4% auto;
+  z-index: 8;
+  pointer-events: none;
+  display: grid;
+  grid-template-rows: minmax(92px, 28vw) auto;
+  gap: 0;
+  width: min(92%, 360px);
+  margin: 0 auto;
+  left: 0;
+  right: 0;
+  padding: 0;
+  border-radius: 18px;
+  border: 1px solid var(--celebration-border);
+  background: linear-gradient(180deg, var(--celebration-top), var(--celebration-bottom));
+  box-shadow:
+    0 0 28px var(--celebration-glow),
+    inset 0 0 22px rgba(255, 255, 255, 0.08);
+  animation: slot-win-celebration-pop 0.48s cubic-bezier(0.16, 1.2, 0.3, 1) forwards;
+  overflow: hidden;
+}
+
+.slot-win-celebration__art {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 92px;
+  background-repeat: no-repeat;
+  background-size: 500% auto;
+  background-position: 50% 50%;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.slot-win-celebration__art-shine {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 38%;
+  z-index: 2;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.slot-win-celebration__copy {
+  position: relative;
+  z-index: 4;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 10px 12px 12px;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.42)),
+    linear-gradient(180deg, var(--celebration-top), var(--celebration-bottom));
+}
+
+.slot-win-celebration__bulbs {
+  position: absolute;
+  top: 4px;
+  left: 10px;
+  right: 10px;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(16, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.slot-win-celebration__bulb {
+  width: 100%;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--celebration-badge);
+  box-shadow: 0 0 10px var(--celebration-glow);
+  animation: slot-win-bulb-blink 0.9s ease-in-out infinite;
+  animation-delay: var(--bulb-delay);
+  opacity: 0.75;
+}
+
+.slot-win-celebration__confetti {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.slot-win-celebration__confetti-piece {
+  position: absolute;
+  top: -16px;
+  left: var(--confetti-left);
+  font-size: var(--confetti-size);
+  line-height: 1;
+  font-weight: 900;
+  color: var(--celebration-particle);
+  text-shadow: 0 0 10px var(--celebration-glow);
+  opacity: 0;
+  animation: slot-win-confetti-fall var(--confetti-duration) ease-out infinite;
+  animation-delay: var(--confetti-delay);
+}
+
+.slot-win-celebration--big {
+  border-color: rgba(255, 244, 120, 0.95);
+  box-shadow:
+    0 0 36px var(--celebration-glow),
+    inset 0 0 26px rgba(255, 255, 255, 0.12);
+}
+
+.slot-win-celebration--big .slot-win-celebration__art {
+  min-height: 108px;
+}
+
+.slot-win-celebration__rays {
+  position: absolute;
+  inset: -20% -10% auto;
+  height: 55%;
+  z-index: 3;
+  background: conic-gradient(
+    from 90deg,
+    rgba(253, 224, 71, 0) 0deg,
+    rgba(253, 224, 71, 0.55) 22deg,
+    rgba(253, 224, 71, 0) 44deg,
+    rgba(251, 191, 36, 0.58) 68deg,
+    rgba(253, 224, 71, 0) 92deg
+  );
+  mix-blend-mode: screen;
+  opacity: 0.4;
+  animation: slot-win-ray-spin 2.8s linear infinite;
+}
+
+.slot-win-celebration__badge {
+  position: relative;
+  z-index: 1;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  color: var(--celebration-badge);
+}
+
+.slot-win-celebration__title {
+  position: relative;
+  z-index: 1;
+  font-size: clamp(14px, 3.5vw, 20px);
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: var(--celebration-title);
+  text-shadow: 0 0 12px var(--celebration-shadow);
+}
+
+.slot-win-celebration__amount {
+  position: relative;
+  z-index: 1;
+  font-size: clamp(18px, 5.5vw, 30px);
+  line-height: 1;
+  font-weight: 900;
+  color: var(--celebration-amount);
+  text-shadow:
+    0 2px 0 rgba(66, 32, 6, 0.8),
+    0 0 18px var(--celebration-shadow);
+}
+
+.slot-win-celebration__signature {
+  position: relative;
+  z-index: 1;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.slot-win-celebration--treasure-skunk {
+  --celebration-border: rgba(132, 204, 22, 0.8);
+  --celebration-top: rgba(26, 80, 26, 0.9);
+  --celebration-bottom: rgba(18, 53, 31, 0.92);
+  --celebration-glow: rgba(132, 204, 22, 0.42);
+  --celebration-title: #d9f99d;
+  --celebration-amount: #ecfccb;
+  --celebration-shadow: rgba(132, 204, 22, 0.55);
+  --celebration-badge: rgba(227, 255, 179, 0.95);
+  --celebration-particle: rgba(217, 249, 157, 0.95);
+}
+
+.slot-win-celebration--magic-lamp {
+  --celebration-border: rgba(196, 181, 253, 0.84);
+  --celebration-top: rgba(88, 28, 135, 0.9);
+  --celebration-bottom: rgba(59, 7, 100, 0.94);
+  --celebration-glow: rgba(192, 132, 252, 0.5);
+  --celebration-title: #e9d5ff;
+  --celebration-amount: #f3e8ff;
+  --celebration-shadow: rgba(192, 132, 252, 0.6);
+  --celebration-badge: rgba(243, 232, 255, 0.95);
+  --celebration-particle: rgba(233, 213, 255, 0.95);
+}
+
+.slot-win-celebration--golden-ox {
+  --celebration-border: rgba(251, 191, 36, 0.9);
+  --celebration-top: rgba(146, 64, 14, 0.9);
+  --celebration-bottom: rgba(120, 53, 15, 0.95);
+  --celebration-glow: rgba(251, 191, 36, 0.5);
+  --celebration-title: #fef08a;
+  --celebration-amount: #fef9c3;
+  --celebration-shadow: rgba(251, 191, 36, 0.65);
+  --celebration-badge: rgba(255, 247, 204, 0.95);
+  --celebration-particle: rgba(255, 248, 183, 0.95);
+}
+
+.slot-win-celebration--moon-wolf {
+  --celebration-border: rgba(125, 211, 252, 0.82);
+  --celebration-top: rgba(30, 58, 138, 0.9);
+  --celebration-bottom: rgba(15, 23, 42, 0.95);
+  --celebration-glow: rgba(56, 189, 248, 0.5);
+  --celebration-title: #bae6fd;
+  --celebration-amount: #e0f2fe;
+  --celebration-shadow: rgba(56, 189, 248, 0.62);
+  --celebration-badge: rgba(224, 242, 254, 0.95);
+  --celebration-particle: rgba(186, 230, 253, 0.95);
+}
+
+.slot-win-celebration--classic-7 {
+  z-index: 14;
+  --celebration-border: rgba(232, 192, 90, 0.9);
+  --celebration-top: rgba(139, 16, 16, 0.92);
+  --celebration-bottom: rgba(58, 8, 8, 0.94);
+  --celebration-glow: rgba(232, 192, 90, 0.48);
+  --celebration-title: #ffe7a3;
+  --celebration-amount: #fff3c9;
+  --celebration-shadow: rgba(232, 192, 90, 0.62);
+  --celebration-badge: rgba(255, 240, 194, 0.95);
+  --celebration-particle: rgba(255, 232, 163, 0.95);
+}
+
+.slot-win-celebration--free-spin {
+  --celebration-glow: rgba(74, 222, 128, 0.45);
+}
+
+.slot-win-celebration--free-spin .slot-win-celebration__amount--free {
+  font-size: clamp(15px, 4.2vw, 24px);
+  letter-spacing: 0.04em;
+  color: #bbf7d0;
+  text-shadow:
+    0 2px 0 rgba(20, 83, 45, 0.85),
+    0 0 16px rgba(74, 222, 128, 0.55);
+}
+
+.slot-win-celebration--auto-bonus .slot-win-celebration__badge {
+  animation: slot-win-bulb-blink 0.65s ease-in-out infinite alternate;
+}
+
 @keyframes casino-win-flash {
   0% {
     opacity: 0;
@@ -1605,6 +1864,58 @@
   }
   100% {
     opacity: 0;
+  }
+}
+
+@keyframes slot-win-celebration-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.82);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(0) scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slot-win-ray-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slot-win-bulb-blink {
+  0%,
+  100% {
+    opacity: 0.38;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slot-win-confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -4px, 0) rotate(0deg) scale(0.86);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--confetti-drift), 92px, 0)
+      rotate(var(--confetti-rotate))
+      scale(1.08);
   }
 }
 

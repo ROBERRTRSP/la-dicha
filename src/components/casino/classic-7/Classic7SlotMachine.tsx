@@ -12,6 +12,7 @@ import { AiVisual } from "@/components/ui/AiVisual";
 import { SpinButton } from "../SlotCabinet";
 import { SlotReels } from "../SlotReels";
 import { CoinBurst } from "../CoinBurst";
+import { WinCelebration } from "../WinCelebration";
 import { Classic7PaytableModal } from "./Classic7PaytableModal";
 import { getSlotGame } from "@/lib/slots/games";
 import { allowedBetOptionsForGame } from "@/lib/slots/settings";
@@ -34,6 +35,9 @@ type SpinResponse = {
   payout: number;
   message: string | null;
   bonus: BonusState;
+  isFreeSpin?: boolean;
+  freeSpinsAwarded?: number;
+  autoFreeSpinsAwarded?: number;
 };
 
 type SpinHistoryEntry = {
@@ -64,9 +68,17 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
   const [lastWin, setLastWin] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [winFlash, setWinFlash] = useState(false);
+  const [freeSpinFlash, setFreeSpinFlash] = useState(false);
+  const [lastFreeSpinsAwarded, setLastFreeSpinsAwarded] = useState(0);
+  const [freeSpinAutoBonus, setFreeSpinAutoBonus] = useState(false);
   const [winCells, setWinCells] = useState<WinCell[]>([]);
   const [bigWin, setBigWin] = useState(false);
   const [error, setError] = useState("");
+  const [bonus, setBonus] = useState<BonusState>({
+    freeSpinsLeft: 0,
+    multiplier: 1,
+    progressiveMultiplier: 1,
+  });
   const [resultReady, setResultReady] = useState(false);
   const [paytableOpen, setPaytableOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -85,6 +97,8 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
   const apiResolvedRef = useRef(false);
   const inFlightRef = useRef(false);
   const spinIdempotencyRef = useRef<string | null>(null);
+  const autoFreeSpinTimerRef = useRef(0);
+  const freeSpinFlashTimerRef = useRef(0);
 
   const loadHistory = useCallback(() => {
     fetch("/api/slots/history?gameId=classic-7&limit=8")
@@ -113,6 +127,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
         if (typeof d.balance === "number") setBalance(d.balance);
         if (typeof d.maxBetAmount === "number") setMaxBetAmount(d.maxBetAmount);
         if (typeof d.minBetAmount === "number") setMinBetAmount(d.minBetAmount);
+        if (d.bonusStates?.["classic-7"]) setBonus(d.bonusStates["classic-7"]);
       })
       .catch(() => {});
     loadHistory();
@@ -132,6 +147,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
     pendingResult.current = null;
 
     setBalance(result.balance);
+    setBonus(result.bonus);
     setLastWin(result.payout);
     setWinCells(result.winningCells ?? []);
     if (result.message) setMessage(result.message);
@@ -146,6 +162,23 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
       }, payout >= bet * 50 ? 2400 : 1400);
     }
 
+    const scatterAward = result.freeSpinsAwarded ?? 0;
+    const autoAward = result.autoFreeSpinsAwarded ?? 0;
+    const totalFreeAward =
+      !result.isFreeSpin && (scatterAward > 0 || autoAward > 0)
+        ? scatterAward + autoAward
+        : 0;
+    if (totalFreeAward > 0) {
+      setLastFreeSpinsAwarded(totalFreeAward);
+      setFreeSpinAutoBonus(autoAward > 0);
+      setFreeSpinFlash(true);
+      window.clearTimeout(freeSpinFlashTimerRef.current);
+      freeSpinFlashTimerRef.current = window.setTimeout(
+        () => setFreeSpinFlash(false),
+        2400
+      );
+    }
+
     setHistory((h) =>
       [
         {
@@ -153,6 +186,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
           bet,
           win: payout,
           at: Date.now(),
+          isFreeSpin: result.isFreeSpin,
         },
         ...h.filter((row) => row.id !== result.spinId),
       ].slice(0, 8)
@@ -182,15 +216,17 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
         .then((r) => r.json())
         .then((d) => {
           if (typeof d.balance === "number") setBalance(d.balance);
+          if (d.bonusStates?.["classic-7"]) setBonus(d.bonusStates["classic-7"]);
         })
         .catch(() => {});
     },
     []
   );
 
-  const spin = async () => {
+  const spin = useCallback(async () => {
     if (spinning || inFlightRef.current) return;
-    if (balance < bet) {
+    const usingFreeSpin = bonus.freeSpinsLeft > 0;
+    if (!usingFreeSpin && balance < bet) {
       setError("Saldo insuficiente.");
       return;
     }
@@ -202,6 +238,9 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
     setLastWin(null);
     setMessage(null);
     setWinFlash(false);
+    setFreeSpinFlash(false);
+    setLastFreeSpinsAwarded(0);
+    setFreeSpinAutoBonus(false);
     setWinCells([]);
     pendingResult.current = null;
     reelsStoppedRef.current = false;
@@ -245,12 +284,51 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
     } finally {
       window.clearTimeout(timeout);
     }
-  };
+  }, [balance, bet, bonus.freeSpinsLeft, failSpin, spinning, tryFinalizeSpin]);
 
   const handleAllStopped = useCallback(() => {
     reelsStoppedRef.current = true;
     tryFinalizeSpin();
   }, [tryFinalizeSpin]);
+
+  useEffect(() => {
+    window.clearTimeout(autoFreeSpinTimerRef.current);
+    if (
+      bonus.freeSpinsLeft <= 0 ||
+      spinning ||
+      awaitingStop ||
+      inFlightRef.current ||
+      Boolean(error) ||
+      paytableOpen
+    ) {
+      return;
+    }
+
+    autoFreeSpinTimerRef.current = window.setTimeout(() => {
+      if (
+        bonus.freeSpinsLeft > 0 &&
+        !spinning &&
+        !awaitingStop &&
+        !inFlightRef.current &&
+        !error
+      ) {
+        void spin();
+      }
+    }, 700);
+
+    return () => {
+      window.clearTimeout(autoFreeSpinTimerRef.current);
+    };
+  }, [
+    awaitingStop,
+    bonus.freeSpinsLeft,
+    error,
+    paytableOpen,
+    spin,
+    spinning,
+  ]);
+
+  const freeMode = bonus.freeSpinsLeft > 0;
 
   const betIndex = betOptions.indexOf(bet);
   const decBet = () => {
@@ -286,8 +364,28 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
         <div className="classic7-bg-vignette" />
       </div>
       <div className="casino-machine-inner classic7-inner">
-        <CoinBurst active={winFlash} generation={stopGeneration} variant="coins" />
-        {winFlash && <div className="classic7-win-overlay" aria-hidden />}
+        <CoinBurst
+          active={winFlash || freeSpinFlash}
+          generation={stopGeneration}
+          variant="coins"
+        />
+        {(winFlash || freeSpinFlash) && (
+          <div className="classic7-win-overlay" aria-hidden />
+        )}
+        <WinCelebration
+          active={winFlash && (lastWin ?? 0) > 0}
+          amount={lastWin ?? 0}
+          gameId="classic-7"
+          mode="win"
+          big={(lastWin ?? 0) >= bet * 50}
+        />
+        <WinCelebration
+          active={freeSpinFlash}
+          gameId="classic-7"
+          mode="free-spin"
+          freeSpins={lastFreeSpinsAwarded}
+          autoBonus={freeSpinAutoBonus}
+        />
 
         <div className="classic7-cabinet slot-theme--classic7">
           <header className="classic7-header">
@@ -361,7 +459,15 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
               </div>
 
               {error && <p className="classic7-error">{error}</p>}
-              {message && !error && <p className="classic7-message">{message}</p>}
+              {freeMode && (
+                <p className="classic7-message classic7-message--free">
+                  GIRO GRATIS · {bonus.freeSpinsLeft} restante
+                  {bonus.freeSpinsLeft !== 1 ? "s" : ""}
+                </p>
+              )}
+              {message && !error && !freeSpinFlash && (
+                <p className="classic7-message">{message}</p>
+              )}
               {bigWin && (
                 <div className="classic7-big-win-banner" role="status">
                   <AiVisual
@@ -428,8 +534,8 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
                     −
                   </button>
                   <div className="classic7-bet-readout" aria-live="polite">
-                    <span>Monto</span>
-                    <strong>{formatMoney(bet)}</strong>
+                    <span>{freeMode ? "Gratis" : "Monto"}</span>
+                    <strong>{freeMode ? "GRATIS" : formatMoney(bet)}</strong>
                   </div>
                   <button
                     type="button"
@@ -452,10 +558,24 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
 
                 <div className="classic7-spin-row">
                   <SpinButton
-                    label={awaitingStop ? "GIRANDO..." : "GIRAR"}
+                    label={
+                      awaitingStop
+                        ? "GIRANDO..."
+                        : freeMode
+                          ? "GIRO GRATIS"
+                          : "GIRAR"
+                    }
                     spinning={awaitingStop}
-                    ready={!spinning && !awaitingStop && balance >= bet}
-                    disabled={spinning || awaitingStop || balance < bet}
+                    ready={
+                      !spinning &&
+                      !awaitingStop &&
+                      (freeMode || balance >= bet)
+                    }
+                    disabled={
+                      spinning ||
+                      awaitingStop ||
+                      (!freeMode && balance < bet)
+                    }
                     onClick={() => void spin()}
                     aria-busy={awaitingStop}
                   />

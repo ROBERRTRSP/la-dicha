@@ -1,3 +1,5 @@
+import type { SlotGameId } from "./slots/types";
+
 /** Assets del casino La Dicha */
 
 export const CASINO_ART = {
@@ -46,6 +48,9 @@ export const CASINO_ART = {
 
   roulette: "/art/ruleta-chip.png",
 
+  /** Collage IA: 5 paneles verticales (uno por slot). */
+  winCelebrationSplash: "/assets/casino/slots/ui/win-celebration-splash.png",
+
   goldenOx: {
 
     symbols: {
@@ -88,7 +93,18 @@ export const CASINO_ART = {
 
 } as const;
 
+const WIN_CELEBRATION_PANEL_X: Record<SlotGameId, number> = {
+  "treasure-skunk": 0,
+  "magic-lamp": 25,
+  "golden-ox": 50,
+  "moon-wolf": 75,
+  "classic-7": 100,
+};
 
+/** Posición horizontal del panel temático dentro del collage de celebración. */
+export function winCelebrationPanelPosition(gameId: SlotGameId): string {
+  return `${WIN_CELEBRATION_PANEL_X[gameId]}% 50%`;
+}
 
 /** @deprecated Usar CASINO_ART.classic7.logo */
 

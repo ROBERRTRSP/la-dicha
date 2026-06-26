@@ -15,6 +15,7 @@ import { AmbientLights } from "./AmbientLights";
 import { MoonWolfEffects } from "./MoonWolfEffects";
 import { CoinBurst } from "./CoinBurst";
 import { AnimatedBalance } from "./WinDisplay";
+import { WinCelebration } from "./WinCelebration";
 import {
   BetControls,
   SlotCabinet,
@@ -53,6 +54,9 @@ type SpinResponse = {
   isFreeSpin: boolean;
   jackpotTier: string | null;
   multiplierApplied: number;
+  bonusTriggered?: string | null;
+  freeSpinsAwarded?: number;
+  autoFreeSpinsAwarded?: number;
 };
 
 export function ModernSlotMachine({
@@ -80,6 +84,9 @@ export function ModernSlotMachine({
   const [lastWin, setLastWin] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [winFlash, setWinFlash] = useState(false);
+  const [freeSpinFlash, setFreeSpinFlash] = useState(false);
+  const [lastFreeSpinsAwarded, setLastFreeSpinsAwarded] = useState(0);
+  const [freeSpinAutoBonus, setFreeSpinAutoBonus] = useState(false);
   const [winCells, setWinCells] = useState<WinCell[]>([]);
   const [lineWins, setLineWins] = useState<LineWin[]>([]);
   const [scatterCells, setScatterCells] = useState<WinCell[]>([]);
@@ -105,6 +112,8 @@ export function ModernSlotMachine({
   const apiResolvedRef = useRef(false);
   const inFlightRef = useRef(false);
   const spinIdempotencyRef = useRef<string | null>(null);
+  const autoFreeSpinTimerRef = useRef(0);
+  const freeSpinFlashTimerRef = useRef(0);
 
   useEffect(() => {
     preloadSlotSymbolImages(gameId);
@@ -160,6 +169,23 @@ export function ModernSlotMachine({
       setWinFlash(true);
       window.setTimeout(() => setWinFlash(false), 1600);
     }
+
+    const scatterAward = result.freeSpinsAwarded ?? 0;
+    const autoAward = result.autoFreeSpinsAwarded ?? 0;
+    const totalFreeAward =
+      !result.isFreeSpin && (scatterAward > 0 || autoAward > 0)
+        ? scatterAward + autoAward
+        : 0;
+    if (totalFreeAward > 0) {
+      setLastFreeSpinsAwarded(totalFreeAward);
+      setFreeSpinAutoBonus(autoAward > 0);
+      setFreeSpinFlash(true);
+      window.clearTimeout(freeSpinFlashTimerRef.current);
+      freeSpinFlashTimerRef.current = window.setTimeout(
+        () => setFreeSpinFlash(false),
+        2400
+      );
+    }
     setSpinning(false);
     setAwaitingStop(false);
     inFlightRef.current = false;
@@ -193,9 +219,10 @@ export function ModernSlotMachine({
     [gameId]
   );
 
-  const spin = async () => {
+  const spin = useCallback(async () => {
     if (spinning || inFlightRef.current) return;
-    if (balance < bet) {
+    const usingFreeSpin = bonus.freeSpinsLeft > 0;
+    if (!usingFreeSpin && balance < bet) {
       setError("Saldo insuficiente.");
       return;
     }
@@ -208,6 +235,9 @@ export function ModernSlotMachine({
     setLastWin(null);
     setMessage(null);
     setWinFlash(false);
+    setFreeSpinFlash(false);
+    setLastFreeSpinsAwarded(0);
+    setFreeSpinAutoBonus(false);
     setWinCells([]);
     setLineWins([]);
     setScatterCells([]);
@@ -254,12 +284,49 @@ export function ModernSlotMachine({
     } finally {
       window.clearTimeout(timeout);
     }
-  };
+  }, [balance, bet, bonus.freeSpinsLeft, failSpin, gameId, spinning, tryFinalizeSpin]);
 
   const handleAllStopped = useCallback(() => {
     reelsStoppedRef.current = true;
     tryFinalizeSpin();
   }, [tryFinalizeSpin]);
+
+  useEffect(() => {
+    window.clearTimeout(autoFreeSpinTimerRef.current);
+    if (
+      bonus.freeSpinsLeft <= 0 ||
+      spinning ||
+      awaitingStop ||
+      inFlightRef.current ||
+      Boolean(error) ||
+      rulesOpen
+    ) {
+      return;
+    }
+
+    autoFreeSpinTimerRef.current = window.setTimeout(() => {
+      if (
+        bonus.freeSpinsLeft > 0 &&
+        !spinning &&
+        !awaitingStop &&
+        !inFlightRef.current &&
+        !error
+      ) {
+        void spin();
+      }
+    }, 700);
+
+    return () => {
+      window.clearTimeout(autoFreeSpinTimerRef.current);
+    };
+  }, [
+    awaitingStop,
+    bonus.freeSpinsLeft,
+    error,
+    rulesOpen,
+    spin,
+    spinning,
+  ]);
 
   const freeMode = bonus.freeSpinsLeft > 0;
   const activeLineIndices = useMemo(
@@ -345,11 +412,28 @@ export function ModernSlotMachine({
                 />
               </SlotPaylineFrame>
               <CoinBurst
-                active={winFlash}
+                active={winFlash || freeSpinFlash}
                 generation={stopGeneration}
                 variant={isWolf ? "stars" : "coins"}
               />
-              {winFlash && <div className="casino-win-overlay" aria-hidden />}
+              <WinCelebration
+                active={winFlash && (lastWin ?? 0) > 0}
+                amount={lastWin ?? 0}
+                gameId={gameId}
+                mode="win"
+                big={(lastWin ?? 0) >= bet * 20}
+              />
+              <WinCelebration
+                active={freeSpinFlash}
+                gameId={gameId}
+                mode="free-spin"
+                freeSpins={lastFreeSpinsAwarded}
+                autoBonus={freeSpinAutoBonus}
+                big={lastFreeSpinsAwarded >= 8}
+              />
+              {(winFlash || freeSpinFlash) && (
+                <div className="casino-win-overlay" aria-hidden />
+              )}
               {jackpotTier && (
                 <div
                   className={cn(
@@ -368,7 +452,7 @@ export function ModernSlotMachine({
                   Sin premio este giro
                 </p>
               )}
-              {message && (
+              {message && !freeSpinFlash && (
                 <p className="slot-result-strip slot-result-strip--bonus slot-result-strip--overlay">
                   {message}
                 </p>
