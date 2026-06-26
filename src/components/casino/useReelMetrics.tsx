@@ -35,6 +35,31 @@ export function useReelMetrics() {
   return useContext(ReelMetricsContext);
 }
 
+const VISIBLE_ROWS = 3;
+
+function readClassic7ReelCap(el: HTMLElement): number | null {
+  const machine = el.closest(".casino-machine--classic7") as HTMLElement | null;
+  if (!machine) return null;
+  const raw = getComputedStyle(machine).getPropertyValue("--classic7-reel-max-h").trim();
+  if (!raw) return null;
+  const parsed = Number.parseFloat(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function capMetricsForClassic7(el: HTMLElement, metrics: ReelMetrics): ReelMetrics {
+  const cap = readClassic7ReelCap(el);
+  if (!cap || metrics.windowHeight <= cap) return metrics;
+
+  const cellHeight = Math.max(52, Math.floor(cap / VISIBLE_ROWS));
+  const windowHeight = cellHeight * VISIBLE_ROWS;
+  return {
+    ...metrics,
+    cellHeight,
+    windowHeight,
+    symbolSize: Math.round(cellHeight * 0.64),
+  };
+}
+
 function computeMetrics(viewportWidth: number, stageHeight = 0) {
   return computeReelMetrics(viewportWidth, stageHeight);
 }
@@ -59,7 +84,7 @@ export function ReelMetricsProvider({
       el.closest(".classic7-screen")) as HTMLElement | null;
     const w = el.clientWidth || stage?.clientWidth || 320;
     const stageH = stage?.clientHeight ?? 0;
-    const m = computeMetrics(w, stageH);
+    const m = capMetricsForClassic7(el, computeMetrics(w, stageH));
 
     applyVars(el, m);
     if (stage) applyVars(stage, m);

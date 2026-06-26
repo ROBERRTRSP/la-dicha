@@ -315,11 +315,6 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
                   />
                 </div>
                 <div className="classic7-reel-window">
-                  <div className="classic7-payline" aria-hidden>
-                    <span className="classic7-payline-arrow classic7-payline-arrow--left" />
-                    <span className="classic7-payline-line" />
-                    <span className="classic7-payline-arrow classic7-payline-arrow--right" />
-                  </div>
                   <div
                     className={cn(
                       "classic7-screen",
@@ -327,6 +322,11 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
                       awaitingStop && "classic7-screen--spinning"
                     )}
                   >
+                    <div className="classic7-payline" aria-hidden>
+                      <span className="classic7-payline-arrow classic7-payline-arrow--left" />
+                      <span className="classic7-payline-line" />
+                      <span className="classic7-payline-arrow classic7-payline-arrow--right" />
+                    </div>
                     <div className="slot-screen-viewport">
                       <SlotReels
                         gameId="classic-7"
@@ -368,6 +368,25 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
                   </p>
                 </div>
               )}
+
+              <details
+                className="classic7-history"
+                open={historyOpen}
+                onToggle={(e) => setHistoryOpen((e.target as HTMLDetailsElement).open)}
+              >
+                <summary>Historial reciente</summary>
+                {history.length === 0 ? (
+                  <p className="classic7-history-empty">Aún no hay giros.</p>
+                ) : (
+                  <ul>
+                    {history.map((h) => (
+                      <li key={h.id}>
+                        {formatMoney(h.bet)} → {h.win > 0 ? `ganó ${formatMoney(h.win)}` : "sin premio"}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </details>
             </div>
 
             <div className="classic7-action-dock">
@@ -455,25 +474,6 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
                 </div>
               </div>
             </div>
-
-            <details
-              className="classic7-history"
-              open={historyOpen}
-              onToggle={(e) => setHistoryOpen((e.target as HTMLDetailsElement).open)}
-            >
-              <summary>Historial reciente</summary>
-              {history.length === 0 ? (
-                <p className="classic7-history-empty">Aún no hay giros.</p>
-              ) : (
-                <ul>
-                  {history.map((h) => (
-                    <li key={h.id}>
-                      {formatMoney(h.bet)} → {h.win > 0 ? `ganó ${formatMoney(h.win)}` : "sin premio"}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </details>
           </div>
         </div>
 
