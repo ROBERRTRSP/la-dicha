@@ -44,7 +44,7 @@ export const CASINO_ART = {
 
   },
 
-  roulette: "/casino/ruleta-chip.svg",
+  roulette: "/art/ruleta-chip.png",
 
   goldenOx: {
 
