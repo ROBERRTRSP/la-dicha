@@ -16,11 +16,23 @@ export default function AdminBilleterasPage() {
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [msg, setMsg] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   async function load() {
-    const res = await fetch("/api/admin/wallets");
-    const data = await res.json();
-    setWallets(data.wallets ?? []);
+    setLoading(true);
+    setLoadError("");
+    try {
+      const res = await fetch("/api/admin/wallets");
+      if (!res.ok) throw new Error("No se pudieron cargar las billeteras.");
+      const data = await res.json();
+      setWallets(data.wallets ?? []);
+    } catch (e) {
+      setWallets([]);
+      setLoadError(e instanceof Error ? e.message : "Error de conexión.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -70,6 +82,16 @@ export default function AdminBilleterasPage() {
       </form>
 
       <h2 className="admin-subtitle">Saldos</h2>
+      {loading ? (
+        <p className="admin-loading">Cargando billeteras…</p>
+      ) : loadError ? (
+        <>
+          <p className="admin-error">{loadError}</p>
+          <button type="button" className="admin-save-btn" onClick={load}>
+            Reintentar
+          </button>
+        </>
+      ) : null}
       <div className="admin-table-wrap">
         <table className="admin-table">
           <thead>

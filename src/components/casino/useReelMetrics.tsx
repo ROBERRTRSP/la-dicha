@@ -11,8 +11,6 @@ import {
 } from "react";
 import { computeReelMetrics } from "@/lib/slots/reel-motion";
 
-const MOBILE_MAX_WIDTH = 768;
-
 export type ReelMetrics = {
   cellHeight: number;
   symbolSize: number;

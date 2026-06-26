@@ -19,7 +19,6 @@ import {
 } from "@/lib/roulette-recovery";
 import {
   MAX_BETS_PER_SPIN,
-  ROULETTE_ALLOWED_AMOUNTS,
   ROULETTE_AMOUNT_ERROR,
   filterAllowedAmountsForBalance,
   isAllowedRouletteAmount,
@@ -145,8 +144,11 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
   } | null>(null);
 
   const amountOptions = useMemo(
-    () => filterAllowedAmountsForBalance(balance),
-    [balance]
+    () =>
+      filterAllowedAmountsForBalance(balance).filter(
+        (a) => a >= limits.minBet && a <= limits.maxBet
+      ),
+    [balance, limits.minBet, limits.maxBet]
   );
 
   useEffect(() => {
@@ -275,7 +277,12 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
     }
 
     const stake = selectedBets.reduce((sum, b) => sum + b.amount, 0);
-    const amountsOk = selectedBets.every((b) => isAllowedRouletteAmount(b.amount));
+    const amountsOk = selectedBets.every(
+      (b) =>
+        isAllowedRouletteAmount(b.amount) &&
+        b.amount >= limits.minBet &&
+        b.amount <= limits.maxBet
+    );
 
     if (!amountsOk) {
       setBetsValid(false);
@@ -292,7 +299,7 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
     setBetsValid(true);
     setError("");
     setErrorSticky(false);
-  }, [selectedBets, spinning, balance]);
+  }, [selectedBets, spinning, balance, limits.minBet, limits.maxBet, errorSticky]);
 
   useEffect(() => {
     return () => {

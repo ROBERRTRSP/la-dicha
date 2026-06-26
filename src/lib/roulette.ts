@@ -229,10 +229,11 @@ export async function placeRouletteBets(
   const payoutMultipliers = settings.payoutMultipliers;
 
   const idempotencyKey = extractIdempotencyKey(rawBody);
-  if (idempotencyKey) {
-    const { cached } = await beginSpinIdempotency(userId, idempotencyKey);
-    if (cached) return cached as RouletteSpinResult;
+  if (!idempotencyKey) {
+    throw new Error("Falta clave de idempotencia para el giro.");
   }
+  const { cached } = await beginSpinIdempotency(userId, idempotencyKey);
+  if (cached) return cached as RouletteSpinResult;
 
   try {
   const rawList = parseRouletteBetsPayload(rawBody);

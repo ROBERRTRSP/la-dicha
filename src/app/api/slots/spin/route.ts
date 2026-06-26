@@ -27,20 +27,23 @@ export async function POST(request: Request) {
     }
 
     idempotencyKey = extractSlotIdempotencyKey(body);
-    if (idempotencyKey) {
-      const { cached } = await beginSlotSpinIdempotency(user.id, idempotencyKey);
-      if (cached) return NextResponse.json(cached);
+    if (!idempotencyKey) {
+      return NextResponse.json(
+        { error: "Falta clave de idempotencia para el giro." },
+        { status: 400 }
+      );
     }
+
+    const { cached } = await beginSlotSpinIdempotency(user.id, idempotencyKey);
+    if (cached) return NextResponse.json(cached);
 
     const result = await placeSlotSpin(user.id, gameId, betAmount);
 
-    if (idempotencyKey) {
-      await saveSlotSpinResponse(
-        user.id,
-        idempotencyKey,
-        result as unknown as Record<string, unknown>
-      );
-    }
+    await saveSlotSpinResponse(
+      user.id,
+      idempotencyKey,
+      result as unknown as Record<string, unknown>
+    );
 
     return NextResponse.json(result);
   } catch (e) {

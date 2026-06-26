@@ -8,7 +8,6 @@ import { LotteryLogo } from "@/components/player/LotteryLogo";
 import {
   buildPlayStripItems,
   getOpenSuperPales,
-  isSuperPaleId,
   type OpenSuperPaleView,
 } from "@/lib/super-pale";
 
