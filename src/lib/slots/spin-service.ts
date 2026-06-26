@@ -59,7 +59,7 @@ export async function placeSlotSpin(userId: string, gameId: string, betAmount: n
     if (!wallet) throw new Error("Billetera no encontrada.");
 
     const balanceBefore = wallet.balance;
-    let bonusAfter = { ...baseBonusAfter };
+    const bonusAfter = { ...baseBonusAfter };
     let autoFreeSpinsAwarded = 0;
 
     if (!isFreeSpin) {
