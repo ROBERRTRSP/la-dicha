@@ -124,7 +124,22 @@ function validateClassic7(game: SlotGameConfig, result: SpinResult): void {
   assert(result.scatterCount === 0, "classic-7: no debe tener scatters");
   assert(result.scatterCells.length === 0, "classic-7: scatterCells debe estar vacío");
   assert(result.bonusTriggered === null, "classic-7: no debe disparar bono");
+  assert(result.freeSpinsAwarded === 0, "classic-7: freeSpinsAwarded debe ser 0");
   assert(result.multiplierApplied === 1, "classic-7: multiplicador debe ser 1");
+}
+
+function validateFreeSpinAward(game: SlotGameConfig, result: SpinResult): void {
+  if (result.bonusTriggered === "FREE_SPINS") {
+    assert(
+      result.freeSpinsAwarded > 0,
+      `${game.id}: FREE_SPINS debe otorgar giros gratis`
+    );
+    return;
+  }
+  assert(
+    result.freeSpinsAwarded === 0,
+    `${game.id}: sin bono no debe asignar freeSpinsAwarded`
+  );
 }
 
 function applyFrozenBet(
@@ -190,6 +205,7 @@ function runGame(game: SlotGameConfig): GameStats {
     validateLineWins(game, result, effectiveBet);
     validatePayout(game, result);
     validateClassic7(game, result);
+    validateFreeSpinAward(game, result);
 
     if (result.payout > 0) stats.wins++;
     if (result.bonusTriggered) stats.bonusTriggers++;

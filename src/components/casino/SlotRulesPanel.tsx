@@ -124,6 +124,10 @@ export function SlotRulesPanel({
                 Scatter). Tres o más <strong>Scatter</strong> activan giros gratis
                 según la tabla de pagos.
               </p>
+              <p>
+                Además, el sistema otorga automáticamente <strong>1 giro gratis
+                por cada 4 giros pagados</strong>.
+              </p>
             </div>
           ) : (
             <SlotPayTableContent gameId={gameId} bet={bet} />

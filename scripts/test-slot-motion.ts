@@ -121,6 +121,20 @@ console.log("\n=== 3. Métricas responsive (más espacio a rodillos) ===");
   );
 }
 
+console.log("\n=== 3b. Paridad de velocidad: desktop vs móvil ===");
+for (const gameId of GAME_IDS) {
+  const desktop = getSlotAnimationConfig(gameId, { mobile: false, cellHeight: 72 });
+  const mobile = getSlotAnimationConfig(gameId, { mobile: true, cellHeight: 72 });
+  assert(
+    Math.abs(desktop.maxVelocity - mobile.maxVelocity) < 0.001,
+    `${gameId}: maxVelocity igual en desktop/móvil`
+  );
+  assert(
+    Math.abs(desktop.accelMs - mobile.accelMs) < 0.001,
+    `${gameId}: accelMs igual en desktop/móvil`
+  );
+}
+
 console.log("\n=== 4. Parada escalonada por columna (5 rodillos) ===");
 for (const gameId of GAME_IDS) {
   const anim = getSlotAnimationConfig(gameId, { mobile: true, cellHeight: 72 });

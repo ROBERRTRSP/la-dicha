@@ -13,6 +13,9 @@ import {
   validateSlotBet,
 } from "./settings";
 
+const AUTO_FREE_SPIN_EVERY_PAID_SPINS = 4;
+const AUTO_FREE_SPIN_AWARD = 1;
+
 export async function placeSlotSpin(userId: string, gameId: string, betAmount: number) {
   if (!isSlotGameId(gameId)) {
     throw new Error("Juego de tragamonedas no válido.");
@@ -46,17 +49,7 @@ export async function placeSlotSpin(userId: string, gameId: string, betAmount: n
     (await import("./games")).getSlotGame(gameId)!
   );
   const result = evaluateSpin(gameId, grid, effectiveBet, bonusBefore, isFreeSpin);
-  const bonusAfter = nextBonusState(gameId, bonusBefore, result, isFreeSpin);
-
-  // Congelar / mantener / limpiar la apuesta de la ronda de giros gratis.
-  let freeSpinBetAmount = bonusBefore.freeSpinBetAmount ?? 0;
-  if (result.bonusTriggered === "FREE_SPINS" && !isFreeSpin) {
-    freeSpinBetAmount = betAmount;
-  }
-  if (bonusAfter.freeSpinsLeft <= 0) {
-    freeSpinBetAmount = 0;
-  }
-  bonusAfter.freeSpinBetAmount = freeSpinBetAmount;
+  const baseBonusAfter = nextBonusState(gameId, bonusBefore, result, isFreeSpin);
 
   const stake = isFreeSpin ? 0 : betAmount;
   const profit = Math.round((result.payout - stake) * 100) / 100;
@@ -66,6 +59,32 @@ export async function placeSlotSpin(userId: string, gameId: string, betAmount: n
     if (!wallet) throw new Error("Billetera no encontrada.");
 
     const balanceBefore = wallet.balance;
+    let bonusAfter = { ...baseBonusAfter };
+    let autoFreeSpinsAwarded = 0;
+
+    if (!isFreeSpin) {
+      const paidSpinsBefore = await tx.slotSpin.count({
+        where: { userId, gameId, isFreeSpin: false },
+      });
+      const paidSpinsAfterCurrent = paidSpinsBefore + 1;
+      if (paidSpinsAfterCurrent % AUTO_FREE_SPIN_EVERY_PAID_SPINS === 0) {
+        autoFreeSpinsAwarded = AUTO_FREE_SPIN_AWARD;
+        bonusAfter.freeSpinsLeft += autoFreeSpinsAwarded;
+      }
+    }
+
+    // Congelar / mantener / limpiar la apuesta de la ronda de giros gratis.
+    let freeSpinBetAmount = bonusBefore.freeSpinBetAmount ?? 0;
+    if (
+      !isFreeSpin &&
+      (result.bonusTriggered === "FREE_SPINS" || autoFreeSpinsAwarded > 0)
+    ) {
+      freeSpinBetAmount = betAmount;
+    }
+    if (bonusAfter.freeSpinsLeft <= 0) {
+      freeSpinBetAmount = 0;
+    }
+    bonusAfter.freeSpinBetAmount = freeSpinBetAmount;
 
     // Débito atómico: evita doble gasto si llegan dos POST concurrentes.
     if (!isFreeSpin) {
@@ -115,6 +134,18 @@ export async function placeSlotSpin(userId: string, gameId: string, betAmount: n
       });
     }
 
+    const autoFreeMessage =
+      autoFreeSpinsAwarded > 0
+        ? `¡Bono automático! +${autoFreeSpinsAwarded} giro gratis por completar ${AUTO_FREE_SPIN_EVERY_PAID_SPINS} giros pagados.`
+        : null;
+    const finalMessage =
+      result.message && autoFreeMessage
+        ? `${result.message} · ${autoFreeMessage}`
+        : result.message ?? autoFreeMessage;
+    const bonusTriggered =
+      result.bonusTriggered ??
+      (autoFreeSpinsAwarded > 0 ? "FREE_SPINS_AUTO" : null);
+
     const spin = await tx.slotSpin.create({
       data: {
         userId,
@@ -123,7 +154,7 @@ export async function placeSlotSpin(userId: string, gameId: string, betAmount: n
         grid: JSON.stringify(result.grid),
         payout: result.payout,
         profit,
-        bonusTriggered: result.bonusTriggered,
+        bonusTriggered,
         isFreeSpin,
         multiplierUsed: result.multiplierApplied,
         jackpotTier: result.jackpotTier,
@@ -158,11 +189,13 @@ export async function placeSlotSpin(userId: string, gameId: string, betAmount: n
       payout: result.payout,
       profit,
       scatterCount: result.scatterCount,
-      bonusTriggered: result.bonusTriggered,
+      bonusTriggered,
+      freeSpinsAwarded: result.freeSpinsAwarded,
+      autoFreeSpinsAwarded,
       jackpotTier: result.jackpotTier,
       jackpotAmount: result.jackpotAmount,
       multiplierApplied: result.multiplierApplied,
-      message: result.message,
+      message: finalMessage,
       bonus: bonusAfter,
       isFreeSpin,
     };

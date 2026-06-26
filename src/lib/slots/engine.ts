@@ -103,6 +103,26 @@ function lampBonusMultiplier(): number {
   return options[randomInt(0, options.length)];
 }
 
+function randomFreeSpinsAward(
+  gameId: string,
+  fallback: number
+): number {
+  let options: number[] = [];
+  if (gameId === "treasure-skunk") {
+    options = [8, 9, 10, 11, 12];
+  } else if (gameId === "magic-lamp") {
+    options = [6, 7, 8, 9, 10, 12];
+  } else if (gameId === "moon-wolf") {
+    options = [10, 11, 12, 13, 14, 16];
+  }
+
+  if (options.length === 0) {
+    return Math.max(0, fallback);
+  }
+
+  return options[randomInt(0, options.length)] ?? Math.max(0, fallback);
+}
+
 export function evaluateSpin(
   gameId: string,
   grid: Grid,
@@ -148,6 +168,7 @@ export function evaluateSpin(
 
   let multiplierApplied = 1;
   let bonusTriggered: string | null = null;
+  let freeSpinsAwarded = 0;
   let jackpotTier: "MINOR" | "MAJOR" | "GRAND" | null = null;
   let jackpotAmount = 0;
   let message: string | null = null;
@@ -160,7 +181,8 @@ export function evaluateSpin(
         : 1;
     if (scatterCount >= game.bonus.scatterCount && !isFreeSpin) {
       bonusTriggered = "FREE_SPINS";
-      message = `¡8 giros gratis! Multiplicador ×${multiplierApplied}`;
+      freeSpinsAwarded = randomFreeSpinsAward(game.id, game.bonus.freeSpinsAwarded);
+      message = `¡${freeSpinsAwarded} giros gratis! Multiplicador ×${multiplierApplied}`;
     } else if (isFreeSpin && scatterCount >= 1) {
       multiplierApplied = Math.max(multiplierApplied, lampBonusMultiplier());
       message = `Lámpara mágica · multiplicador ×${multiplierApplied}`;
@@ -169,14 +191,16 @@ export function evaluateSpin(
 
   if (game.bonus.type === "chest_free" && scatterCount >= game.bonus.scatterCount && !isFreeSpin) {
     bonusTriggered = "FREE_SPINS";
-    message = "¡3 cofres! Ronda de giros gratis";
+    freeSpinsAwarded = randomFreeSpinsAward(game.id, game.bonus.freeSpinsAwarded);
+    message = `¡3 cofres! Ronda de ${freeSpinsAwarded} giros gratis`;
   }
 
   if (game.bonus.type === "moon_progressive") {
     multiplierApplied = isFreeSpin ? bonus.progressiveMultiplier : 1;
     if (scatterCount >= game.bonus.scatterCount && !isFreeSpin) {
       bonusTriggered = "FREE_SPINS";
-      message = "¡Giros nocturnos! Multiplicador progresivo";
+      freeSpinsAwarded = randomFreeSpinsAward(game.id, game.bonus.freeSpinsAwarded);
+      message = `¡Giros nocturnos! +${freeSpinsAwarded} giros con multiplicador progresivo`;
     }
   }
 
@@ -203,6 +227,7 @@ export function evaluateSpin(
     scatterCount,
     payout,
     bonusTriggered,
+    freeSpinsAwarded,
     jackpotTier,
     jackpotAmount,
     multiplierApplied,
@@ -226,7 +251,8 @@ export function nextBonusState(
   } = { ...current };
 
   if (result.bonusTriggered === "FREE_SPINS") {
-    freeSpinsLeft += game.bonus.freeSpinsAwarded;
+    const awarded = Math.max(0, result.freeSpinsAwarded || game.bonus.freeSpinsAwarded);
+    freeSpinsLeft += awarded;
     if (game.bonus.type === "lamp_multiplier") {
       multiplier = result.multiplierApplied;
     }

@@ -63,6 +63,7 @@ export type SpinResult = {
   scatterCount: number;
   payout: number;
   bonusTriggered: string | null;
+  freeSpinsAwarded: number;
   jackpotTier: "MINOR" | "MAJOR" | "GRAND" | null;
   jackpotAmount: number;
   multiplierApplied: number;

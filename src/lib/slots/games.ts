@@ -78,7 +78,7 @@ const TREASURE_SKUNK: SlotGameConfig = {
     type: "chest_free",
     scatterCount: 3,
     freeSpinsAwarded: 10,
-    description: "3 cofres activan ronda gratis",
+    description: "3 cofres activan una ronda aleatoria de 8–12 giros gratis",
   },
 };
 
@@ -137,7 +137,7 @@ const MAGIC_LAMP: SlotGameConfig = {
     type: "lamp_multiplier",
     scatterCount: 3,
     freeSpinsAwarded: 8,
-    description: "3 lámparas → 8 giros gratis con multiplicador",
+    description: "3 lámparas → 6–12 giros gratis aleatorios con multiplicador",
   },
 };
 
@@ -262,7 +262,7 @@ const MOON_WOLF: SlotGameConfig = {
     type: "moon_progressive",
     scatterCount: 3,
     freeSpinsAwarded: 12,
-    description: "3 lunas activan giros nocturnos · multiplicador progresivo",
+    description: "3 lunas activan 10–16 giros nocturnos aleatorios · multiplicador progresivo",
   },
 };
 

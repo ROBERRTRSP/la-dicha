@@ -216,31 +216,13 @@ function scaleAnimForDevice(
 
 
 
-  let config: SlotAnimConfig = {
+  const config: SlotAnimConfig = {
 
     ...base,
 
     maxVelocity: base.maxVelocity * cellRatio,
 
   };
-
-
-
-  if (opts?.mobile) {
-
-    config = {
-
-      ...config,
-
-      accelMs: Math.round(config.accelMs * 1.12),
-
-      maxVelocity: config.maxVelocity * 0.72,
-
-    };
-
-  }
-
-
 
   return config;
 
