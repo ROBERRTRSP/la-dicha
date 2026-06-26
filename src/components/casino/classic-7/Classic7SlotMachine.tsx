@@ -303,147 +303,156 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
           </header>
 
           <div className="classic7-body">
-            <div className="classic7-reel-wrap">
-              <div className="classic7-reel-frame-deco" aria-hidden>
-                <AiVisual
-                  src={C7.cabinetFrame}
-                  alt=""
-                  fill
-                  sizes="(max-width: 420px) 96vw, 420px"
-                  className="classic7-reel-frame-art"
-                />
-              </div>
-              <div className="classic7-reel-window">
-                <div className="classic7-payline" aria-hidden>
-                  <span className="classic7-payline-arrow classic7-payline-arrow--left" />
-                  <span className="classic7-payline-line" />
-                  <span className="classic7-payline-arrow classic7-payline-arrow--right" />
+            <div className="classic7-main">
+              <div className="classic7-reel-wrap">
+                <div className="classic7-reel-frame-deco" aria-hidden>
+                  <AiVisual
+                    src={C7.cabinetFrame}
+                    alt=""
+                    fill
+                    sizes="(max-width: 420px) 96vw, 420px"
+                    className="classic7-reel-frame-art"
+                  />
                 </div>
-                <div
+                <div className="classic7-reel-window">
+                  <div className="classic7-payline" aria-hidden>
+                    <span className="classic7-payline-arrow classic7-payline-arrow--left" />
+                    <span className="classic7-payline-line" />
+                    <span className="classic7-payline-arrow classic7-payline-arrow--right" />
+                  </div>
+                  <div
+                    className={cn(
+                      "classic7-screen",
+                      winFlash && "classic7-screen--win",
+                      awaitingStop && "classic7-screen--spinning"
+                    )}
+                  >
+                    <div className="slot-screen-viewport">
+                      <SlotReels
+                        gameId="classic-7"
+                        grid={grid}
+                        spinning={awaitingStop}
+                        stopGeneration={stopGeneration}
+                        resultReady={resultReady}
+                        winningCells={winCells}
+                        scatterCells={[]}
+                        highlight={winFlash || winCells.length > 0}
+                        onAllStopped={handleAllStopped}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <p
                   className={cn(
-                    "classic7-screen",
-                    winFlash && "classic7-screen--win",
-                    awaitingStop && "classic7-screen--spinning"
+                    "classic7-reel-caption",
+                    winFlash && "classic7-reel-caption--win"
                   )}
                 >
-                  <div className="slot-screen-viewport">
-                    <SlotReels
-                      gameId="classic-7"
-                      grid={grid}
-                      spinning={awaitingStop}
-                      stopGeneration={stopGeneration}
-                      resultReady={resultReady}
-                      winningCells={winCells}
-                      scatterCells={[]}
-                      highlight={winFlash || winCells.length > 0}
-                      onAllStopped={handleAllStopped}
-                    />
+                  Línea de pago central
+                </p>
+              </div>
+
+              {error && <p className="classic7-error">{error}</p>}
+              {message && !error && <p className="classic7-message">{message}</p>}
+              {bigWin && (
+                <div className="classic7-big-win-banner" role="status">
+                  <AiVisual
+                    src={C7.ui.bigWin}
+                    alt=""
+                    fill
+                    sizes="320px"
+                    className="classic7-big-win-art"
+                  />
+                  <p className="classic7-big-win">
+                    BIG WIN · {formatMoney(lastWin ?? 0)}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="classic7-action-dock">
+              <div className="classic7-hud">
+                <div className="classic7-hud-bg" aria-hidden>
+                  <AiVisual
+                    src={C7.ui.hudPanel}
+                    alt=""
+                    fill
+                    sizes="420px"
+                    className="classic7-hud-art"
+                  />
+                </div>
+                <div className="classic7-hud-grid">
+                  <div className="classic7-hud-cell">
+                    <span>Balance</span>
+                    <strong>{formatMoney(balance)}</strong>
+                  </div>
+                  <div className="classic7-hud-cell classic7-hud-cell--bet">
+                    <span>Apuesta</span>
+                    <strong>{formatMoney(bet)}</strong>
+                  </div>
+                  <div
+                    className={cn(
+                      "classic7-hud-cell",
+                      lastWin && lastWin > 0 && "classic7-hud-cell--win"
+                    )}
+                  >
+                    <span>Premio</span>
+                    <strong>{formatMoney(awaitingStop ? 0 : lastWin ?? 0)}</strong>
                   </div>
                 </div>
               </div>
-              <p
-                className={cn(
-                  "classic7-reel-caption",
-                  winFlash && "classic7-reel-caption--win"
-                )}
-              >
-                Línea de pago central
-              </p>
-            </div>
 
-            {error && <p className="classic7-error">{error}</p>}
-            {message && !error && <p className="classic7-message">{message}</p>}
-            {bigWin && (
-              <div className="classic7-big-win-banner" role="status">
-                <AiVisual
-                  src={C7.ui.bigWin}
-                  alt=""
-                  fill
-                  sizes="320px"
-                  className="classic7-big-win-art"
-                />
-                <p className="classic7-big-win">
-                  BIG WIN · {formatMoney(lastWin ?? 0)}
-                </p>
-              </div>
-            )}
+              <div className="classic7-controls">
+                <div className="classic7-bet-panel">
+                  <button
+                    type="button"
+                    className="classic7-side-btn"
+                    onClick={() => setPaytableOpen(true)}
+                  >
+                    Pagos
+                  </button>
+                  <button
+                    type="button"
+                    className="classic7-bet-btn"
+                    disabled={spinning}
+                    onClick={decBet}
+                    aria-label="Bajar apuesta"
+                  >
+                    −
+                  </button>
+                  <div className="classic7-bet-readout" aria-live="polite">
+                    <span>Monto</span>
+                    <strong>{formatMoney(bet)}</strong>
+                  </div>
+                  <button
+                    type="button"
+                    className="classic7-bet-btn"
+                    disabled={spinning}
+                    onClick={incBet}
+                    aria-label="Subir apuesta"
+                  >
+                    +
+                  </button>
+                  <button
+                    type="button"
+                    className="classic7-side-btn"
+                    disabled={spinning}
+                    onClick={maxBet}
+                  >
+                    Máx
+                  </button>
+                </div>
 
-            <div className="classic7-hud">
-              <div className="classic7-hud-bg" aria-hidden>
-                <AiVisual
-                  src={C7.ui.hudPanel}
-                  alt=""
-                  fill
-                  sizes="420px"
-                  className="classic7-hud-art"
-                />
-              </div>
-              <div className="classic7-hud-grid">
-              <div className="classic7-hud-cell">
-                <span>Balance</span>
-                <strong>{formatMoney(balance)}</strong>
-              </div>
-              <div className="classic7-hud-cell classic7-hud-cell--bet">
-                <span>Apuesta</span>
-                <strong>{formatMoney(bet)}</strong>
-              </div>
-              <div className={cn("classic7-hud-cell", lastWin && lastWin > 0 && "classic7-hud-cell--win")}>
-                <span>Premio</span>
-                <strong>{formatMoney(awaitingStop ? 0 : lastWin ?? 0)}</strong>
-              </div>
-              </div>
-            </div>
-
-            <div className="classic7-controls">
-              <div className="classic7-bet-panel">
-              <button
-                type="button"
-                className="classic7-side-btn"
-                onClick={() => setPaytableOpen(true)}
-              >
-                Pagos
-              </button>
-              <button
-                type="button"
-                className="classic7-bet-btn"
-                disabled={spinning}
-                onClick={decBet}
-                aria-label="Bajar apuesta"
-              >
-                −
-              </button>
-              <div className="classic7-bet-readout" aria-live="polite">
-                <span>Monto</span>
-                <strong>{formatMoney(bet)}</strong>
-              </div>
-              <button
-                type="button"
-                className="classic7-bet-btn"
-                disabled={spinning}
-                onClick={incBet}
-                aria-label="Subir apuesta"
-              >
-                +
-              </button>
-              <button
-                type="button"
-                className="classic7-side-btn"
-                disabled={spinning}
-                onClick={maxBet}
-              >
-                Máx
-              </button>
-              </div>
-
-              <div className="classic7-spin-row">
-                <SpinButton
-                  label={awaitingStop ? "GIRANDO" : "GIRAR"}
-                  spinning={awaitingStop}
-                  ready={!spinning && !awaitingStop && balance >= bet}
-                  disabled={spinning || awaitingStop || balance < bet}
-                  onClick={() => void spin()}
-                  aria-busy={awaitingStop}
-                />
+                <div className="classic7-spin-row">
+                  <SpinButton
+                    label={awaitingStop ? "GIRANDO..." : "GIRAR"}
+                    spinning={awaitingStop}
+                    ready={!spinning && !awaitingStop && balance >= bet}
+                    disabled={spinning || awaitingStop || balance < bet}
+                    onClick={() => void spin()}
+                    aria-busy={awaitingStop}
+                  />
+                </div>
               </div>
             </div>
 

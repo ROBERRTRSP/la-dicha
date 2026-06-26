@@ -1,6 +1,7 @@
 /* ===== Classic 7 · arte IA premium rojo/dorado ===== */
 
 .casino-machine--classic7 {
+  --classic7-nav-clearance: calc(90px + env(safe-area-inset-bottom, 0px));
   --classic7-red: #8b1010;
   --classic7-red-deep: #3a0808;
   --classic7-gold: #e8c05a;
@@ -36,9 +37,15 @@
   pointer-events: none;
 }
 
-.classic7-inner {
-  padding: 6px 8px var(--casino-nav-h);
+.casino-machine--classic7 .casino-machine-inner.classic7-inner {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 8px var(--classic7-nav-clearance);
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .classic7-win-overlay {
@@ -55,8 +62,12 @@
 }
 
 .classic7-cabinet {
-  width: min(480px, 96vw);
+  width: min(480px, 100%);
+  flex: 1;
+  min-height: 0;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
   border-radius: 20px;
   overflow: hidden;
   border: 2px solid rgba(232, 192, 90, 0.55);
@@ -70,6 +81,7 @@
 
 /* Header marquesina */
 .classic7-header {
+  flex-shrink: 0;
   padding: 8px 10px 10px;
   background: linear-gradient(180deg, #5c1010 0%, #3a0808 100%);
   border-bottom: 2px solid var(--classic7-gold);
@@ -163,10 +175,40 @@
 }
 
 .classic7-body {
-  padding: 8px 10px 12px;
+  flex: 1;
+  min-height: 0;
+  padding: 8px 10px 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.classic7-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.classic7-action-dock {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 2px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(26, 4, 4, 0.55) 12%,
+    rgba(26, 4, 4, 0.92) 100%
+  );
+  border-top: 1px solid rgba(232, 192, 90, 0.1);
 }
 
 .classic7-reel-wrap {
@@ -397,6 +439,60 @@
 .classic7-spin-row .slot-spin-button {
   width: clamp(112px, 30vw, 130px);
   height: clamp(112px, 30vw, 130px);
+}
+
+.classic7-spin-row .slot-spin-button-outer {
+  background: radial-gradient(
+    circle at 38% 28%,
+    #ff5555 0%,
+    #dc2626 36%,
+    #991b1b 68%,
+    #450a0a 100%
+  );
+  box-shadow:
+    0 0 0 4px rgba(26, 4, 4, 0.95),
+    0 0 0 7px var(--classic7-gold),
+    0 10px 0 #3d0a0a,
+    0 0 28px rgba(239, 68, 68, 0.45),
+    inset 0 3px 0 rgba(255, 255, 255, 0.18);
+}
+
+.classic7-spin-row .slot-spin-button-label {
+  font-size: clamp(16px, 4.2vw, 20px);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: #fff;
+  text-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.85),
+    0 0 14px rgba(255, 213, 79, 0.4);
+}
+
+.classic7-spin-row .slot-spin-button--spinning .slot-spin-button-label {
+  font-size: clamp(11px, 3vw, 14px);
+  letter-spacing: 0.08em;
+}
+
+.classic7-spin-row .slot-spin-button--ready:not(:disabled) .slot-spin-button-outer {
+  animation: classic7-spin-ready-glow 2s ease-in-out infinite;
+}
+
+@keyframes classic7-spin-ready-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 4px rgba(26, 4, 4, 0.95),
+      0 0 0 7px var(--classic7-gold),
+      0 10px 0 #3d0a0a,
+      0 0 22px rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px rgba(26, 4, 4, 0.95),
+      0 0 0 8px var(--classic7-gold-bright),
+      0 10px 0 #3d0a0a,
+      0 0 36px rgba(255, 213, 79, 0.45),
+      0 0 28px rgba(239, 68, 68, 0.55);
+  }
 }
 
 .classic7-side-btn,
@@ -716,22 +812,236 @@
   color: #fff;
 }
 
-@media (max-width: 360px) {
-  .classic7-bet-panel {
-    grid-template-columns: 52px 38px minmax(70px, 1fr) 38px 46px;
-    gap: 5px;
-    padding: 5px;
+/* ——— Mobile compact · GIRAR siempre visible ——— */
+@media (max-width: 768px) {
+  .casino-machine--classic7 .casino-machine-inner.classic7-inner {
+    padding: 4px 6px var(--classic7-nav-clearance);
   }
 
-  .classic7-spin-row .slot-spin-button {
-    width: 108px;
-    height: 108px;
+  .classic7-header {
+    flex-shrink: 0;
+    padding: 5px 8px 6px;
+  }
+
+  .classic7-header-toolbar {
+    margin-bottom: 4px;
+  }
+
+  .classic7-back {
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 10px;
+  }
+
+  .classic7-header-badge {
+    min-height: 26px;
+    padding: 0 8px;
+    font-size: 9px;
+  }
+
+  .classic7-marquee {
+    min-height: 36px;
+    max-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .classic7-marquee-logo {
+    width: auto;
+    max-width: 100%;
+    max-height: 40px;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .classic7-body {
+    padding: 4px 8px 6px;
+    gap: 4px;
+  }
+
+  .classic7-main {
+    gap: 3px;
+  }
+
+  .classic7-action-dock {
+    gap: 4px;
+    padding-top: 4px;
+  }
+
+  .classic7-reel-wrap {
+    min-height: unset;
+    padding: 2px 0;
+    flex-shrink: 0;
+  }
+
+  .classic7-reel-window {
+    padding: 3px 4px;
+  }
+
+  .classic7-screen {
+    max-height: 168px;
+    min-height: unset;
+  }
+
+  .classic7-screen .slot-screen-viewport {
+    min-height: unset;
+    max-height: 168px;
+  }
+
+  .classic7-reel-caption {
+    margin: 2px 0 0;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
+  .classic7-hud {
+    min-height: 46px;
+  }
+
+  .classic7-hud-grid {
+    padding: 4px 6px;
+    gap: 4px;
+  }
+
+  .classic7-hud-cell {
+    padding: 4px 2px;
+  }
+
+  .classic7-hud-cell strong {
+    font-size: clamp(11px, 3vw, 14px);
+  }
+
+  .classic7-controls {
+    gap: 5px;
+  }
+
+  .classic7-bet-panel {
+    padding: 5px;
+    gap: 5px;
   }
 
   .classic7-side-btn,
   .classic7-bet-btn,
   .classic7-bet-readout {
     min-height: 40px;
+  }
+
+  .classic7-spin-row {
+    padding: 2px 0 0;
+  }
+
+  .classic7-spin-row .slot-spin-button {
+    width: clamp(92px, 26vw, 108px);
+    height: clamp(92px, 26vw, 108px);
+  }
+
+  .classic7-big-win-banner {
+    min-height: 40px;
+  }
+
+  .classic7-big-win {
+    padding: 6px 12px;
+    font-size: clamp(14px, 4vw, 18px);
+  }
+
+  .classic7-error,
+  .classic7-message {
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  .classic7-history {
+    flex-shrink: 0;
+    max-height: 24px;
+    overflow: hidden;
+  }
+
+  .classic7-history[open] {
+    max-height: 68px;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 390px) {
+  .classic7-spin-row .slot-spin-button {
+    width: 96px;
+    height: 96px;
+  }
+}
+
+@media (max-width: 360px) {
+  .classic7-bet-panel {
+    grid-template-columns: 52px 38px minmax(70px, 1fr) 38px 46px;
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .classic7-spin-row .slot-spin-button {
+    width: 88px;
+    height: 88px;
+  }
+
+  .classic7-marquee {
+    min-height: 32px;
+    max-height: 38px;
+  }
+
+  .classic7-marquee-logo {
+    max-height: 34px;
+  }
+
+  .classic7-screen,
+  .classic7-screen .slot-screen-viewport {
+    max-height: 156px;
+  }
+}
+
+@media (max-height: 670px) {
+  .classic7-header {
+    padding: 4px 8px 5px;
+  }
+
+  .classic7-marquee {
+    min-height: 30px;
+    max-height: 36px;
+  }
+
+  .classic7-marquee-logo {
+    max-height: 32px;
+  }
+
+  .classic7-screen,
+  .classic7-screen .slot-screen-viewport {
+    max-height: 150px;
+  }
+
+  .classic7-hud {
+    min-height: 42px;
+  }
+
+  .classic7-spin-row .slot-spin-button {
+    width: 88px;
+    height: 88px;
+  }
+}
+
+@media (min-width: 769px) {
+  .classic7-screen {
+    min-height: var(--reel-window-h, 204px);
+  }
+
+  .classic7-screen .slot-screen-viewport {
+    min-height: var(--reel-window-h, 204px);
+  }
+
+  .classic7-reel-wrap {
+    min-height: var(--reel-window-h, 204px);
+  }
+
+  .classic7-spin-row .slot-spin-button {
+    width: clamp(120px, 14vw, 140px);
+    height: clamp(120px, 14vw, 140px);
   }
 }
 
