@@ -301,7 +301,7 @@ function SlotReelColumn({
       stripRef.current.style.transform = "translate3d(0, 0, 0)";
     }
 
-    const stopAt = columnStopAtMs(animNow, columnIndex, !!reduced);
+    const stopAt = columnStopAtMs(animNow, columnIndex, !!reduced, isMobileRef.current);
 
     const runSettleBounce = (
       el: HTMLElement,

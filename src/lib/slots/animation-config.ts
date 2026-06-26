@@ -1,4 +1,8 @@
 import type { SlotGameId } from "./types";
+import {
+  DESKTOP_REEL_PACE,
+  MOBILE_REEL_PACE,
+} from "./mobile-pace";
 
 
 
@@ -44,44 +48,26 @@ const LAST_COL_INDEX = REEL_COUNT - 1;
 
 
 
-/** Ciclo total objetivo: último carrete asentado (~5 s). */
-
-const SPIN_CYCLE_TARGET_MS = 5000;
-
-
+/** Ciclo total objetivo: último carrete asentado (~5 s desktop, ~6.2 s móvil). */
+const SPIN_CYCLE_TARGET_MS = DESKTOP_REEL_PACE.cycleTargetMs;
 
 function spinTiming(
-
   columnStopDelayMs: number,
-
   decelMs: number,
-
-  settleMs = 200
-
+  settleMs = 200,
+  cycleTargetMs: number = SPIN_CYCLE_TARGET_MS
 ): Pick<
-
   SlotAnimConfig,
-
   "baseSpinMs" | "columnStopDelayMs" | "decelMs" | "settleMs"
-
 > {
-
   const baseSpinMs = Math.max(
-
     1200,
-
-    SPIN_CYCLE_TARGET_MS -
-
+    cycleTargetMs -
       LAST_COL_INDEX * columnStopDelayMs -
-
       decelMs -
-
       REEL_SETTLE_BOUNCE_MS
-
   );
-
   return { baseSpinMs, columnStopDelayMs, decelMs, settleMs };
-
 }
 
 
@@ -201,31 +187,35 @@ export type SlotAnimOptions = {
 
 
 function scaleAnimForDevice(
-
   base: SlotAnimConfig,
-
   opts?: SlotAnimOptions
-
 ): SlotAnimConfig {
-
   const refCell = base.cellHeight;
-
   const cellH = opts?.cellHeight && opts.cellHeight > 0 ? opts.cellHeight : refCell;
-
   const cellRatio = cellH / refCell;
 
-
-
-  const config: SlotAnimConfig = {
-
+  let config: SlotAnimConfig = {
     ...base,
-
     maxVelocity: base.maxVelocity * cellRatio,
-
   };
 
-  return config;
+  if (opts?.mobile) {
+    const pace = MOBILE_REEL_PACE;
+    const mobileTiming = spinTiming(
+      Math.round(base.columnStopDelayMs * pace.columnDelayFactor),
+      Math.round(base.decelMs * pace.decelFactor),
+      base.settleMs,
+      pace.cycleTargetMs
+    );
+    config = {
+      ...config,
+      ...mobileTiming,
+      maxVelocity: config.maxVelocity * pace.velocityFactor,
+      accelMs: Math.round(config.accelMs * pace.accelFactor),
+    };
+  }
 
+  return config;
 }
 
 

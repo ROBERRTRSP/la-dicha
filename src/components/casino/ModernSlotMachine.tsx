@@ -15,7 +15,9 @@ import { AmbientLights } from "./AmbientLights";
 import { MoonWolfEffects } from "./MoonWolfEffects";
 import { CoinBurst } from "./CoinBurst";
 import { AnimatedBalance } from "./WinDisplay";
+import { getSlotUiPace } from "@/lib/slots/mobile-pace";
 import { WinCelebration } from "./WinCelebration";
+import { useSlotMobile } from "./useSlotMobile";
 import {
   BetControls,
   SlotCabinet,
@@ -148,6 +150,8 @@ export function ModernSlotMachine({
 
   const isLamp = gameId === "magic-lamp";
   const isWolf = gameId === "moon-wolf";
+  const isMobile = useSlotMobile();
+  const uiPace = useMemo(() => getSlotUiPace(isMobile), [isMobile]);
 
   // El premio se aplica una sola vez y solo cuando AMBOS terminaron:
   // los carretes pararon y el servidor respondió.
@@ -167,7 +171,7 @@ export function ModernSlotMachine({
     if (result.message) setMessage(result.message);
     if (result.payout > 0) {
       setWinFlash(true);
-      window.setTimeout(() => setWinFlash(false), 1600);
+      window.setTimeout(() => setWinFlash(false), uiPace.winFlashMs);
     }
 
     const scatterAward = result.freeSpinsAwarded ?? 0;
@@ -183,7 +187,7 @@ export function ModernSlotMachine({
       window.clearTimeout(freeSpinFlashTimerRef.current);
       freeSpinFlashTimerRef.current = window.setTimeout(
         () => setFreeSpinFlash(false),
-        2400
+        uiPace.freeSpinCelebrationMs
       );
     }
     setSpinning(false);
@@ -191,8 +195,8 @@ export function ModernSlotMachine({
     inFlightRef.current = false;
     spinIdempotencyRef.current = null;
     setSettleFlash(true);
-    window.setTimeout(() => setSettleFlash(false), 380);
-  }, []);
+    window.setTimeout(() => setSettleFlash(false), isMobile ? 520 : 380);
+  }, [isMobile, uiPace]);
 
   // Error / timeout: no aplica premio, libera el giro y re-hidrata el estado.
   const failSpin = useCallback(
@@ -314,7 +318,7 @@ export function ModernSlotMachine({
       ) {
         void spin();
       }
-    }, 700);
+    }, uiPace.autoFreeSpinDelayMs);
 
     return () => {
       window.clearTimeout(autoFreeSpinTimerRef.current);
@@ -326,6 +330,7 @@ export function ModernSlotMachine({
     rulesOpen,
     spin,
     spinning,
+    uiPace.autoFreeSpinDelayMs,
   ]);
 
   const freeMode = bonus.freeSpinsLeft > 0;
@@ -415,6 +420,7 @@ export function ModernSlotMachine({
                 active={winFlash || freeSpinFlash}
                 generation={stopGeneration}
                 variant={isWolf ? "stars" : "coins"}
+                durationMs={uiPace.coinBurstMs}
               />
               <WinCelebration
                 active={winFlash && (lastWin ?? 0) > 0}

@@ -121,17 +121,21 @@ console.log("\n=== 3. Métricas responsive (más espacio a rodillos) ===");
   );
 }
 
-console.log("\n=== 3b. Paridad de velocidad: desktop vs móvil ===");
+console.log("\n=== 3b. Ritmo móvil: más lento y legible que desktop ===");
 for (const gameId of GAME_IDS) {
   const desktop = getSlotAnimationConfig(gameId, { mobile: false, cellHeight: 72 });
   const mobile = getSlotAnimationConfig(gameId, { mobile: true, cellHeight: 72 });
   assert(
-    Math.abs(desktop.maxVelocity - mobile.maxVelocity) < 0.001,
-    `${gameId}: maxVelocity igual en desktop/móvil`
+    mobile.maxVelocity < desktop.maxVelocity,
+    `${gameId}: móvil más lento (velocity ${mobile.maxVelocity.toFixed(2)} < ${desktop.maxVelocity.toFixed(2)})`
   );
   assert(
-    Math.abs(desktop.accelMs - mobile.accelMs) < 0.001,
-    `${gameId}: accelMs igual en desktop/móvil`
+    mobile.baseSpinMs >= desktop.baseSpinMs,
+    `${gameId}: móvil baseSpinMs ≥ desktop (${mobile.baseSpinMs} ≥ ${desktop.baseSpinMs})`
+  );
+  assert(
+    estimateMaxSpinDurationMs(mobile) > estimateMaxSpinDurationMs(desktop),
+    `${gameId}: ciclo móvil más largo (${estimateMaxSpinDurationMs(mobile)}ms > ${estimateMaxSpinDurationMs(desktop)}ms)`
   );
 }
 
@@ -139,7 +143,7 @@ console.log("\n=== 4. Parada escalonada por columna (5 rodillos) ===");
 for (const gameId of GAME_IDS) {
   const anim = getSlotAnimationConfig(gameId, { mobile: true, cellHeight: 72 });
   const stops = Array.from({ length: REEL_COLUMN_COUNT }, (_, i) =>
-    columnStopAtMs(anim, i, false)
+    columnStopAtMs(anim, i, false, true)
   );
   const strictlyIncreasing = stops.every(
     (ms, i) => i === 0 || ms > stops[i - 1]
@@ -212,8 +216,8 @@ for (const gameId of GAME_IDS) {
     `${gameId}: snapshot de 5 columnas`
   );
   assert(
-    result.maxDurationMs < 12000,
-    `${gameId}: ciclo completo < 12s (${result.maxDurationMs}ms)`
+    result.maxDurationMs < 14000,
+    `${gameId}: ciclo completo < 14s (${result.maxDurationMs}ms)`
   );
 
   const animMobile = getSlotAnimationConfig(gameId, {
@@ -222,12 +226,12 @@ for (const gameId of GAME_IDS) {
   });
   const targetMs = estimateMaxSpinDurationMs(animMobile);
   assert(
-    targetMs >= 4800 && targetMs <= 5200,
-    `${gameId}: duración objetivo 5s (${targetMs}ms)`
+    targetMs >= 5800 && targetMs <= 6800,
+    `${gameId}: duración objetivo móvil ~6.2s (${targetMs}ms)`
   );
   assert(
-    result.maxDurationMs >= 4200 && result.maxDurationMs <= 6200,
-    `${gameId}: simulación ~5s (${result.maxDurationMs}ms)`
+    result.maxDurationMs >= 5200 && result.maxDurationMs <= 7600,
+    `${gameId}: simulación móvil ~6.2s (${result.maxDurationMs}ms)`
   );
 
   for (let c = 0; c < 5; c++) {

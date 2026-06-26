@@ -110,6 +110,32 @@
     opacity: 0.18;
     filter: blur(14px);
   }
+
+  /* Ritmo más legible en pantalla pequeña: giros, premios y celebraciones */
+  .slot-win-celebration {
+    animation-duration: 0.72s;
+  }
+
+  .slot-win-celebration__confetti-piece {
+    animation-duration: calc(var(--confetti-duration) * 1.4) !important;
+  }
+
+  .slot-win-celebration__rays {
+    animation-duration: 4.2s;
+  }
+
+  .slot-coin-burst-piece {
+    animation-duration: 1.55s !important;
+  }
+
+  .slot-coin-burst-flash {
+    animation-duration: 0.95s !important;
+  }
+
+  .casino-win-overlay,
+  .classic7-win-overlay {
+    animation-duration: 1.1s;
+  }
 }
 
 @media (max-width: 480px) {

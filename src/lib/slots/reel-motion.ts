@@ -1,4 +1,5 @@
 import { getSlotAnimationConfig, type SlotAnimConfig } from "./animation-config";
+import { minReelTotalSpinMs } from "./mobile-pace";
 import type { SlotGameId } from "./types";
 
 export const VISIBLE_ROWS = 3;
@@ -174,16 +175,18 @@ export function computeReelMetrics(viewportWidth: number, stageHeight = 0) {
 export function columnStopAtMs(
   anim: SlotAnimConfig,
   columnIndex: number,
-  reducedMotion: boolean
+  reducedMotion: boolean,
+  mobile = false
 ): number {
   const baseStopAt = anim.baseSpinMs + columnIndex * anim.columnStopDelayMs;
   const decelForTiming = reducedMotion
     ? Math.max(320, Math.round(anim.decelMs * REDUCED_MOTION_DECEL_FACTOR))
     : anim.decelMs;
-  const minStopAt = Math.max(
-    0,
-    MIN_REEL_TOTAL_SPIN_MS - decelForTiming - SETTLE_BOUNCE_MS
-  );
+  const minSpinMs = minReelTotalSpinMs(mobile);
+  const minBase = Math.max(0, minSpinMs - decelForTiming - SETTLE_BOUNCE_MS);
+  const minStopAt =
+    minBase +
+    columnIndex * Math.max(72, Math.round(anim.columnStopDelayMs * 0.32));
   if (reducedMotion) {
     const softenedStopAt = Math.round(baseStopAt * 0.88);
     return Math.max(softenedStopAt, minStopAt);
@@ -253,6 +256,7 @@ export class ReelMotionSimulator {
   readonly anim: SlotAnimConfig;
   readonly cellH: number;
   readonly reducedMotion: boolean;
+  readonly mobile: boolean;
   readonly allSymbolIds: string[];
   readonly rng: () => number;
 
@@ -279,6 +283,7 @@ export class ReelMotionSimulator {
     this.columnIndex = opts.columnIndex;
     this.cellH = opts.cellHeight;
     this.reducedMotion = opts.reducedMotion ?? false;
+    this.mobile = opts.mobile ?? false;
     this.allSymbolIds = opts.allSymbolIds;
     this.rng = opts.rng ?? Math.random;
     this.finals = [...opts.finalSymbols];
@@ -295,7 +300,12 @@ export class ReelMotionSimulator {
     this.offset = finalOffset(this.strip.length, this.cellH);
     this.totalOffset = this.offset;
     this.targetOffset = this.offset;
-    this.stopAt = columnStopAtMs(this.anim, this.columnIndex, this.reducedMotion);
+    this.stopAt = columnStopAtMs(
+      this.anim,
+      this.columnIndex,
+      this.reducedMotion,
+      this.mobile
+    );
   }
 
   startSpin(): void {
@@ -318,7 +328,12 @@ export class ReelMotionSimulator {
     this.accelStart = 0;
     this.spinStart = 0;
     this.lastFrame = 0;
-    this.stopAt = columnStopAtMs(this.anim, this.columnIndex, this.reducedMotion);
+    this.stopAt = columnStopAtMs(
+      this.anim,
+      this.columnIndex,
+      this.reducedMotion,
+      this.mobile
+    );
   }
 
   setFinalSymbols(symbols: string[]): void {

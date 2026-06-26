@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { UI_ANIM } from "@/lib/slots/animation-config";
+import { getSlotUiPace } from "@/lib/slots/mobile-pace";
+import { useSlotMobile } from "@/components/casino/useSlotMobile";
 import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +21,8 @@ export function WinDisplay({
 }) {
   const [display, setDisplay] = useState(0);
   const rafRef = useRef<number>(0);
+  const isMobile = useSlotMobile();
+  const winCountMs = getSlotUiPace(isMobile).winCountMs;
 
   useEffect(() => {
     if (amount <= 0) {
@@ -30,7 +33,7 @@ export function WinDisplay({
     const start = performance.now();
     const from = 0;
     const to = amount;
-    const duration = UI_ANIM.winCountMs;
+    const duration = winCountMs;
 
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / duration);
@@ -40,7 +43,7 @@ export function WinDisplay({
 
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [amount, generation]);
+  }, [amount, generation, winCountMs]);
 
   if (amount <= 0) return null;
 

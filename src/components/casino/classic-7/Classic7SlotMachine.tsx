@@ -13,8 +13,10 @@ import { SpinButton } from "../SlotCabinet";
 import { SlotReels } from "../SlotReels";
 import { CoinBurst } from "../CoinBurst";
 import { WinCelebration } from "../WinCelebration";
+import { useSlotMobile } from "../useSlotMobile";
 import { Classic7PaytableModal } from "./Classic7PaytableModal";
 import { getSlotGame } from "@/lib/slots/games";
+import { getSlotUiPace } from "@/lib/slots/mobile-pace";
 import { allowedBetOptionsForGame } from "@/lib/slots/settings";
 import { newSpinIdempotencyKey } from "@/lib/spin-client";
 import { preloadSlotSymbolImages } from "@/lib/slots/symbol-assets";
@@ -99,6 +101,8 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
   const spinIdempotencyRef = useRef<string | null>(null);
   const autoFreeSpinTimerRef = useRef(0);
   const freeSpinFlashTimerRef = useRef(0);
+  const isMobile = useSlotMobile();
+  const uiPace = useMemo(() => getSlotUiPace(isMobile), [isMobile]);
 
   const loadHistory = useCallback(() => {
     fetch("/api/slots/history?gameId=classic-7&limit=8")
@@ -155,11 +159,15 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
     const payout = result.payout;
     if (payout > 0) {
       setWinFlash(true);
+      const flashMs =
+        payout >= bet * 50
+          ? uiPace.classicBigWinFlashMs
+          : uiPace.classicWinFlashMs;
       setBigWin(payout >= bet * 50);
       window.setTimeout(() => {
         setWinFlash(false);
         setBigWin(false);
-      }, payout >= bet * 50 ? 2400 : 1400);
+      }, flashMs);
     }
 
     const scatterAward = result.freeSpinsAwarded ?? 0;
@@ -175,7 +183,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
       window.clearTimeout(freeSpinFlashTimerRef.current);
       freeSpinFlashTimerRef.current = window.setTimeout(
         () => setFreeSpinFlash(false),
-        2400
+        uiPace.freeSpinCelebrationMs
       );
     }
 
@@ -197,7 +205,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
     setAwaitingStop(false);
     inFlightRef.current = false;
     spinIdempotencyRef.current = null;
-  }, [bet, loadHistory]);
+  }, [bet, loadHistory, uiPace]);
 
   const failSpin = useCallback(
     (msg: string, opts?: { retainIdempotency?: boolean }) => {
@@ -314,7 +322,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
       ) {
         void spin();
       }
-    }, 700);
+    }, uiPace.autoFreeSpinDelayMs);
 
     return () => {
       window.clearTimeout(autoFreeSpinTimerRef.current);
@@ -326,6 +334,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
     paytableOpen,
     spin,
     spinning,
+    uiPace.autoFreeSpinDelayMs,
   ]);
 
   const freeMode = bonus.freeSpinsLeft > 0;
@@ -368,6 +377,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
           active={winFlash || freeSpinFlash}
           generation={stopGeneration}
           variant="coins"
+          durationMs={uiPace.coinBurstMs}
         />
         {(winFlash || freeSpinFlash) && (
           <div className="classic7-win-overlay" aria-hidden />

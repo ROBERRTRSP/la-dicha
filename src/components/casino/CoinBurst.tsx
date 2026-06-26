@@ -25,10 +25,12 @@ export function CoinBurst({
   active,
   generation,
   variant = "coins",
+  durationMs = 1200,
 }: {
   active: boolean;
   generation: number;
   variant?: "coins" | "stars";
+  durationMs?: number;
 }) {
   const [show, setShow] = useState(false);
 
@@ -38,9 +40,9 @@ export function CoinBurst({
       return;
     }
     setShow(true);
-    const t = window.setTimeout(() => setShow(false), 1200);
+    const t = window.setTimeout(() => setShow(false), durationMs);
     return () => window.clearTimeout(t);
-  }, [active, generation]);
+  }, [active, durationMs, generation]);
 
   if (!show) return null;
 
