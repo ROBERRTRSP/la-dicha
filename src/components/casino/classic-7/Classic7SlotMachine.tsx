@@ -303,7 +303,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
           </header>
 
           <div className="classic7-body">
-            <div className="classic7-main">
+            <div className="classic7-console">
               <div className="classic7-reel-wrap">
                 <div className="classic7-reel-frame-deco" aria-hidden>
                   <AiVisual
@@ -369,27 +369,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
                 </div>
               )}
 
-              <details
-                className="classic7-history"
-                open={historyOpen}
-                onToggle={(e) => setHistoryOpen((e.target as HTMLDetailsElement).open)}
-              >
-                <summary>Historial reciente</summary>
-                {history.length === 0 ? (
-                  <p className="classic7-history-empty">Aún no hay giros.</p>
-                ) : (
-                  <ul>
-                    {history.map((h) => (
-                      <li key={h.id}>
-                        {formatMoney(h.bet)} → {h.win > 0 ? `ganó ${formatMoney(h.win)}` : "sin premio"}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </details>
-            </div>
-
-            <div className="classic7-action-dock">
+              <div className="classic7-action-dock">
               <div className="classic7-hud">
                 <div className="classic7-hud-bg" aria-hidden>
                   <AiVisual
@@ -474,6 +454,26 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
                 </div>
               </div>
             </div>
+            </div>
+
+            <details
+              className="classic7-history"
+              open={historyOpen}
+              onToggle={(e) => setHistoryOpen((e.target as HTMLDetailsElement).open)}
+            >
+              <summary>Historial reciente</summary>
+              {history.length === 0 ? (
+                <p className="classic7-history-empty">Aún no hay giros.</p>
+              ) : (
+                <ul>
+                  {history.map((h) => (
+                    <li key={h.id}>
+                      {formatMoney(h.bet)} → {h.win > 0 ? `ganó ${formatMoney(h.win)}` : "sin premio"}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </details>
           </div>
         </div>
 
