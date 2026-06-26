@@ -16,6 +16,9 @@ import { getSlotAnimationConfig } from "@/lib/slots/animation-config";
 import {
   VISIBLE_ROWS,
   buildStrip,
+  columnStopAtMs,
+  computeSpinVelocity,
+  decelDurationMs,
   computeDecelOffsets,
   drumCellOpacity,
   drumCellTransform,
@@ -146,6 +149,7 @@ function SlotReelColumn({
   const decelRafRef = useRef(0);
   const lastFrameRef = useRef(0);
   const accelStartRef = useRef(0);
+  const spinStartRef = useRef(0);
   const stoppedRef = useRef(false);
   const decelStartedRef = useRef(false);
   const targetOffsetRef = useRef(0);
@@ -290,15 +294,14 @@ function SlotReelColumn({
     velocityRef.current = 0;
     accelStartRef.current = performance.now();
     lastFrameRef.current = accelStartRef.current;
+    spinStartRef.current = accelStartRef.current;
 
     if (stripRef.current) {
       stripRef.current.style.transition = "none";
       stripRef.current.style.transform = "translate3d(0, 0, 0)";
     }
 
-    const stopAt = reduced
-      ? 80 + columnIndex * 40
-      : animNow.baseSpinMs + columnIndex * animNow.columnStopDelayMs;
+    const stopAt = columnStopAtMs(animNow, columnIndex, !!reduced);
 
     const runSettleBounce = (
       el: HTMLElement,
@@ -398,7 +401,7 @@ function SlotReelColumn({
         h
       );
       const animLive = animRef.current;
-      const decelMs = reducedMotionRef.current ? 0 : animLive.decelMs;
+      const decelMs = decelDurationMs(animLive, !!reducedMotionRef.current);
       const useRafDecel = isMobileRef.current || reducedMotionRef.current;
       totalOffsetRef.current = finalSnap;
 
@@ -463,44 +466,48 @@ function SlotReelColumn({
       const reducedLive = reducedMotionRef.current;
       const loopH = loopHeightPx(cellHRef.current);
 
-      if (!reducedLive) {
-        if (phaseRef.current === "accel") {
-          const elapsed = now - accelStartRef.current;
-          const t = Math.min(1, elapsed / animLive.accelMs);
-          velocityRef.current = animLive.maxVelocity * t * t;
-        } else if (phaseRef.current === "spin") {
-          velocityRef.current = animLive.maxVelocity;
-        }
-      } else {
-        velocityRef.current = 0;
-        if (phaseRef.current === "accel") {
-          phaseRef.current = "spin";
-          setPhase("spin");
-        }
+      if (phaseRef.current === "accel") {
+        const elapsed = now - accelStartRef.current;
+        const accelMs = reducedLive
+          ? Math.max(160, Math.round(animLive.accelMs * 0.75))
+          : animLive.accelMs;
+        const accelVelocity = reducedLive
+          ? animLive.maxVelocity * 0.58
+          : animLive.maxVelocity;
+        const t = Math.min(1, elapsed / accelMs);
+        velocityRef.current = accelVelocity * t * t;
+      } else if (phaseRef.current === "spin") {
+        velocityRef.current = computeSpinVelocity(
+          animLive.maxVelocity,
+          now - spinStartRef.current,
+          columnIndex,
+          !!reducedLive
+        );
       }
 
       if (phaseRef.current === "accel" || phaseRef.current === "spin") {
-        if (!reducedLive) {
-          totalOffsetRef.current += velocityRef.current * dt;
-          const display =
-            loopH > 0 ? totalOffsetRef.current % loopH : totalOffsetRef.current;
-          offsetRef.current = display;
+        totalOffsetRef.current += velocityRef.current * dt;
+        const display =
+          loopH > 0 ? totalOffsetRef.current % loopH : totalOffsetRef.current;
+        offsetRef.current = display;
 
-          if (stripRef.current) {
-            stripRef.current.style.transform = `translate3d(0, -${display}px, 0)`;
-          }
-          if (now - visualSyncRef.current >= 48) {
-            visualSyncRef.current = now;
-            setOffset(display);
-          }
+        if (stripRef.current) {
+          stripRef.current.style.transform = `translate3d(0, -${display}px, 0)`;
+        }
+        if (now - visualSyncRef.current >= 48) {
+          visualSyncRef.current = now;
+          setOffset(display);
         }
 
         if (
-          !reducedLive &&
           phaseRef.current === "accel" &&
-          now - accelStartRef.current >= animLive.accelMs
+          now - accelStartRef.current >=
+            (reducedLive
+              ? Math.max(160, Math.round(animLive.accelMs * 0.75))
+              : animLive.accelMs)
         ) {
           phaseRef.current = "spin";
+          spinStartRef.current = now;
           setPhase("spin");
         }
 
@@ -528,7 +535,7 @@ function SlotReelColumn({
     const fallbackTimer = window.setTimeout(() => {
       if (phaseRef.current !== "decel") return;
       finishStopRef.current();
-    }, stopAt + (reduced ? 80 : animNow.decelMs + 200));
+    }, stopAt + decelDurationMs(animNow, !!reduced) + 200);
 
     const onVisibility = () => {
       if (document.visibilityState !== "visible") return;

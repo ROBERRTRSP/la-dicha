@@ -333,6 +333,10 @@ console.log("\n=== 11. Reduced motion: carretes no se congelan ===");
 
   assert(result.finalized, "reduced motion: ciclo completo finaliza");
   assert(result.allStopped, "reduced motion: todos los carretes paran");
+  assert(
+    result.maxDurationMs >= 4000,
+    `reduced motion: duración mínima 4s (${result.maxDurationMs}ms)`
+  );
 }
 
 console.log("\n=== 12. Decel offsets: siempre avanza hacia la rejilla ===");

@@ -149,6 +149,9 @@ export function settleBounceOffset(
 }
 
 export const SETTLE_BOUNCE_MS = 260;
+export const MIN_REEL_TOTAL_SPIN_MS = 4000;
+export const REDUCED_MOTION_SPIN_FACTOR = 0.58;
+export const REDUCED_MOTION_DECEL_FACTOR = 0.72;
 
 export function computeReelMetrics(viewportWidth: number, stageHeight = 0) {
   const fromWidth = Math.floor(viewportWidth * 0.26);
@@ -173,9 +176,47 @@ export function columnStopAtMs(
   columnIndex: number,
   reducedMotion: boolean
 ): number {
-  return reducedMotion
-    ? 80 + columnIndex * 40
-    : anim.baseSpinMs + columnIndex * anim.columnStopDelayMs;
+  const baseStopAt = anim.baseSpinMs + columnIndex * anim.columnStopDelayMs;
+  const decelForTiming = reducedMotion
+    ? Math.max(320, Math.round(anim.decelMs * REDUCED_MOTION_DECEL_FACTOR))
+    : anim.decelMs;
+  const minStopAt = Math.max(
+    0,
+    MIN_REEL_TOTAL_SPIN_MS - decelForTiming - SETTLE_BOUNCE_MS
+  );
+  if (reducedMotion) {
+    const softenedStopAt = Math.round(baseStopAt * 0.88);
+    return Math.max(softenedStopAt, minStopAt);
+  }
+  return Math.max(baseStopAt, minStopAt);
+}
+
+/**
+ * Modulación sutil para evitar giro totalmente lineal/robótico.
+ * Mantiene velocidad estable con pequeñas variaciones de inercia.
+ */
+export function computeSpinVelocity(
+  maxVelocity: number,
+  elapsedMs: number,
+  columnIndex: number,
+  reducedMotion = false
+): number {
+  if (reducedMotion) {
+    return maxVelocity * REDUCED_MOTION_SPIN_FACTOR;
+  }
+  const primaryWave = Math.sin(elapsedMs * 0.012 + columnIndex * 0.73);
+  const secondaryWave = Math.sin(elapsedMs * 0.027 + columnIndex * 1.17);
+  const modulation = 0.9 + primaryWave * 0.09 + secondaryWave * 0.04;
+  const clamped = Math.max(0.78, Math.min(1.1, modulation));
+  return maxVelocity * clamped;
+}
+
+export function decelDurationMs(
+  anim: SlotAnimConfig,
+  reducedMotion: boolean
+): number {
+  if (!reducedMotion) return anim.decelMs;
+  return Math.max(320, Math.round(anim.decelMs * REDUCED_MOTION_DECEL_FACTOR));
 }
 
 /** Sincronización padre: premio solo cuando carretes + API listos. */
@@ -228,6 +269,7 @@ export class ReelMotionSimulator {
   decelStarted = false;
 
   private accelStart = 0;
+  private spinStart = 0;
   private decelStart = 0;
   private lastFrame = 0;
   private stopAt = 0;
@@ -274,6 +316,7 @@ export class ReelMotionSimulator {
     this.velocity = 0;
     this.phase = this.reducedMotion ? "spin" : "accel";
     this.accelStart = 0;
+    this.spinStart = 0;
     this.lastFrame = 0;
     this.stopAt = columnStopAtMs(this.anim, this.columnIndex, this.reducedMotion);
   }
@@ -291,7 +334,7 @@ export class ReelMotionSimulator {
     if (this.phase === "idle") return false;
 
     if (this.phase === "decel") {
-      const decelMs = this.reducedMotion ? 0 : this.anim.decelMs;
+      const decelMs = decelDurationMs(this.anim, this.reducedMotion);
       if (decelMs === 0 || now - this.decelStart >= decelMs) {
         this.offset = this.targetOffset;
         this.finishStop();
@@ -313,9 +356,15 @@ export class ReelMotionSimulator {
       this.velocity = this.anim.maxVelocity * t * t;
       if (elapsed >= this.anim.accelMs) {
         this.phase = "spin";
+        this.spinStart = now;
       }
     } else if (this.phase === "spin") {
-      this.velocity = this.reducedMotion ? 0 : this.anim.maxVelocity;
+      this.velocity = computeSpinVelocity(
+        this.anim.maxVelocity,
+        now - this.spinStart,
+        this.columnIndex,
+        this.reducedMotion
+      );
     }
 
     if (this.phase === "accel" || this.phase === "spin") {
@@ -372,7 +421,7 @@ export class ReelMotionSimulator {
     this.offset = startOffset;
     this.decelStart = this.lastFrame || 0;
 
-    const decelMs = this.reducedMotion ? 0 : this.anim.decelMs;
+    const decelMs = decelDurationMs(this.anim, this.reducedMotion);
     if (decelMs === 0 || Math.abs(startOffset - this.targetOffset) < 1) {
       this.offset = this.targetOffset;
       this.finishStop();
