@@ -169,4 +169,31 @@ export async function placeSlotSpin(userId: string, gameId: string, betAmount: n
   });
 }
 
+export async function getSlotSpinHistory(
+  userId: string,
+  gameId: string,
+  limit = 8
+) {
+  const rows = await prisma.slotSpin.findMany({
+    where: { userId, gameId },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    select: {
+      id: true,
+      betAmount: true,
+      payout: true,
+      createdAt: true,
+      isFreeSpin: true,
+    },
+  });
+
+  return rows.map((row) => ({
+    id: row.id,
+    bet: row.betAmount,
+    win: row.payout,
+    at: row.createdAt.getTime(),
+    isFreeSpin: row.isFreeSpin,
+  }));
+}
+
 export { isSlotsActive, getSlotSettings, getBonusState, saveBonusState };

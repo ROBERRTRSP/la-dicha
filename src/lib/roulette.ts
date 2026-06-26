@@ -266,7 +266,7 @@ export async function placeRouletteBets(
     const spinId = newRouletteSpinId();
     const color = numberColor(winningNumber);
 
-    const outcomes = bets.map((bet) => {
+    let outcomes = bets.map((bet) => {
       const won = isBetWinner(bet.betType, bet.betChoice, winningNumber);
       const payout = calcPayout(bet.betType, bet.amount, won, payoutMultipliers);
       return {
@@ -278,7 +278,22 @@ export async function placeRouletteBets(
       };
     });
 
-    const totalPayout = outcomes.reduce((sum, o) => sum + o.payout, 0);
+    let totalPayout = outcomes.reduce((sum, o) => sum + o.payout, 0);
+    let dailyCapMessage: string | null = null;
+
+    const { applyDailyPayoutCapInTx } = await import("./roulette-daily-payout");
+    const capped = await applyDailyPayoutCapInTx(
+      tx,
+      userId,
+      settings.maxDailyPayoutPerPlayer,
+      outcomes
+    );
+    if (capped) {
+      outcomes = capped.outcomes;
+      totalPayout = capped.totalPayout;
+      dailyCapMessage = capped.message;
+    }
+
     const balanceBefore = wallet.balance;
     const balanceAfter = balanceBefore - stakeToCharge + totalPayout;
     const netChange = balanceAfter - balanceBefore;
@@ -303,7 +318,7 @@ export async function placeRouletteBets(
         amount: netChange,
         balanceBefore,
         balanceAfter,
-        note: `Ruleta ${bets.length} apuesta(s) → ${winningNumber}${useFreeSpin ? " (giro gratis)" : ""}`,
+        note: `Ruleta ${bets.length} apuesta(s) → ${winningNumber}${useFreeSpin ? " (giro gratis)" : ""}${dailyCapMessage ? " · tope diario" : ""}`,
       },
     });
 
@@ -359,6 +374,7 @@ export async function placeRouletteBets(
       totalStake,
       useFreeSpin,
       stakeToCharge,
+      dailyCapMessage,
     };
   });
 
@@ -383,7 +399,9 @@ export async function placeRouletteBets(
     }
   }
 
-  const promoMessage = positiveOutcomeMessage(anyWon, settings, cashbackAmount);
+  const promoMessage =
+    txResult.dailyCapMessage ??
+    positiveOutcomeMessage(anyWon, settings, cashbackAmount);
 
   const response = {
     bets: txResult.outcomes.map((outcome, i) => ({

@@ -27,25 +27,32 @@ export function betOptionsForGame(gameId: string) {
   return gameId === "classic-7" ? CLASSIC_7_BET_OPTIONS : SLOT_BET_OPTIONS;
 }
 
+export function allowedBetOptionsForGame(
+  gameId: string,
+  min: number,
+  max: number
+): readonly number[] {
+  return betOptionsForGame(gameId).filter((n) => n >= min && n <= max);
+}
+
 export function validateSlotBet(
   amount: number,
   min: number,
   max: number,
   gameId?: string
 ) {
-  const options = betOptionsForGame(gameId ?? "");
-  const effectiveMax =
-    gameId === "classic-7" ? Math.max(max, 100) : max;
-  const valid = (options as readonly number[]).includes(amount);
+  const options = allowedBetOptionsForGame(gameId ?? "", min, max);
+  const valid = options.includes(amount);
   if (!valid) {
+    const hint = options.length
+      ? options.map((n) => n.toFixed(0)).join(", ")
+      : "ninguna dentro del límite";
     throw new Error(
-      gameId === "classic-7"
-        ? "Apuesta no válida. Usa 1, 2, 5, 10, 25, 50 o 100."
-        : "Apuesta no válida. Usa 1, 2, 5 o 10."
+      `Apuesta no válida. Montos permitidos: ${hint} (máx. ${max.toFixed(2)}).`
     );
   }
-  if (amount < min || amount > effectiveMax) {
-    throw new Error(`Apuesta entre ${min.toFixed(2)} y ${effectiveMax.toFixed(2)}.`);
+  if (amount < min || amount > max) {
+    throw new Error(`Apuesta entre ${min.toFixed(2)} y ${max.toFixed(2)}.`);
   }
 }
 

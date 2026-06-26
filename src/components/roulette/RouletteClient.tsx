@@ -18,6 +18,7 @@ import {
   saveSpinRecovery,
 } from "@/lib/roulette-recovery";
 import {
+  MAX_BETS_PER_SPIN,
   ROULETTE_ALLOWED_AMOUNTS,
   ROULETTE_AMOUNT_ERROR,
   filterAllowedAmountsForBalance,
@@ -309,6 +310,10 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
       const existing = prev.find((b) => b.key === key);
       if (existing) {
         return prev.filter((b) => b.key !== key);
+      }
+      if (prev.length >= MAX_BETS_PER_SPIN) {
+        showError(`Máximo ${MAX_BETS_PER_SPIN} apuestas por giro.`);
+        return prev;
       }
       return [
         ...prev,

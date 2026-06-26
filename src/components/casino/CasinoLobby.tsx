@@ -9,7 +9,6 @@ import {
   slotGameHref,
   slotLobbyBadge,
 } from "@/lib/casino-routes";
-import { ART } from "@/lib/visual-assets";
 import { SLOT_GAME_LIST } from "@/lib/slots/games";
 import { formatMoney } from "@/lib/utils";
 
@@ -37,27 +36,34 @@ export function CasinoLobby({
         </p>
 
         {rouletteActive && (
-          <Link href={ROULETTE_HREF} className="casino-game-card casino-game-card--roulette">
-            <div className="casino-game-card-art">
-              <Image
-                src={ART.ruletaChip}
-                alt=""
-                width={120}
-                height={120}
-                className="casino-game-card-img"
-              />
-            </div>
-            <div className="casino-game-card-body">
-              <h2>Ruleta La Dicha</h2>
-              <p>Ruleta europea en vivo · Apuestas desde {formatMoney(1)}</p>
-              <span className="casino-game-card-cta">Entrar →</span>
-            </div>
-          </Link>
+          <section className="casino-lobby-section-block" aria-labelledby="casino-roulette-heading">
+            <h3 id="casino-roulette-heading" className="casino-lobby-section">
+              Ruleta
+            </h3>
+            <Link href={ROULETTE_HREF} className="casino-game-card casino-game-card--roulette">
+              <div className="casino-game-card-art">
+                <Image
+                  src={CASINO_ART.roulette}
+                  alt=""
+                  width={120}
+                  height={120}
+                  className="casino-game-card-img"
+                />
+              </div>
+              <div className="casino-game-card-body">
+                <h2>Ruleta La Dicha</h2>
+                <p>Ruleta europea · Apuestas desde {formatMoney(1)}</p>
+                <span className="casino-game-card-cta">Entrar</span>
+              </div>
+            </Link>
+          </section>
         )}
 
         {slotsActive && (
-          <>
-            <h3 className="casino-lobby-section">Tragamonedas</h3>
+          <section className="casino-lobby-section-block" aria-labelledby="casino-slots-heading">
+            <h3 id="casino-slots-heading" className="casino-lobby-section">
+              Tragamonedas
+            </h3>
             <div className="casino-slot-grid">
               {SLOT_GAME_LIST.map((game) => (
                 <Link
@@ -83,12 +89,12 @@ export function CasinoLobby({
                     <h2>{game.name}</h2>
                     <p>{game.tagline}</p>
                     <span className="casino-slot-tile-bonus">{game.bonus.description}</span>
-                    <span className="casino-slot-tile-cta">Jugar →</span>
+                    <span className="casino-slot-tile-cta">Jugar</span>
                   </div>
                 </Link>
               ))}
             </div>
-          </>
+          </section>
         )}
       </div>
     </div>

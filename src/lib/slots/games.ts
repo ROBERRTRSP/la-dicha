@@ -204,7 +204,7 @@ const GOLDEN_OX: SlotGameConfig = {
     type: "ox_jackpot",
     scatterCount: 3,
     freeSpinsAwarded: 0,
-    description: "Premio menor, mayor y gran premio · multiplicadores ×2, ×5, ×10",
+    description: "Jackpots minor/major/grand · mult. ×2, ×5, ×10",
   },
 };
 

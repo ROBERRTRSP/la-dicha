@@ -44,9 +44,9 @@ const LAST_COL_INDEX = REEL_COUNT - 1;
 
 
 
-/** Ciclo total objetivo: último carrete asentado (~4–5 s). */
+/** Ciclo total objetivo: último carrete asentado (~5 s). */
 
-const SPIN_CYCLE_TARGET_MS = 4500;
+const SPIN_CYCLE_TARGET_MS = 5000;
 
 
 

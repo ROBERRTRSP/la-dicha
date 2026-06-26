@@ -208,12 +208,12 @@ for (const gameId of GAME_IDS) {
   });
   const targetMs = estimateMaxSpinDurationMs(animMobile);
   assert(
-    targetMs >= 4000 && targetMs <= 5200,
-    `${gameId}: duración objetivo 4–5s (${targetMs}ms)`
+    targetMs >= 4800 && targetMs <= 5200,
+    `${gameId}: duración objetivo 5s (${targetMs}ms)`
   );
   assert(
-    result.maxDurationMs >= 3500 && result.maxDurationMs <= 6000,
-    `${gameId}: simulación ~4–5s (${result.maxDurationMs}ms)`
+    result.maxDurationMs >= 4200 && result.maxDurationMs <= 6200,
+    `${gameId}: simulación ~5s (${result.maxDurationMs}ms)`
   );
 
   for (let c = 0; c < 5; c++) {

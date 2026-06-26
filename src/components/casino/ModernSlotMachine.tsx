@@ -30,6 +30,7 @@ import { getSlotGame } from "@/lib/slots/games";
 import { preloadSlotSymbolImages } from "@/lib/slots/symbol-assets";
 import { CASINO_ART } from "@/lib/casino-art";
 import { SLOT_BET_OPTIONS } from "@/lib/slots/settings";
+import { newSpinIdempotencyKey } from "@/lib/spin-client";
 import type {
   BonusState,
   Grid,
@@ -97,6 +98,7 @@ export function ModernSlotMachine({
   const reelsStoppedRef = useRef(false);
   const apiResolvedRef = useRef(false);
   const inFlightRef = useRef(false);
+  const spinIdempotencyRef = useRef<string | null>(null);
 
   useEffect(() => {
     preloadSlotSymbolImages(gameId);
@@ -146,6 +148,7 @@ export function ModernSlotMachine({
     setSpinning(false);
     setAwaitingStop(false);
     inFlightRef.current = false;
+    spinIdempotencyRef.current = null;
     setSettleFlash(true);
     window.setTimeout(() => setSettleFlash(false), 380);
   }, []);
@@ -160,6 +163,7 @@ export function ModernSlotMachine({
       setSpinning(false);
       setAwaitingStop(false);
       inFlightRef.current = false;
+      spinIdempotencyRef.current = null;
       setError(msg);
       fetch("/api/slots/spin")
         .then((r) => r.json())
@@ -175,6 +179,9 @@ export function ModernSlotMachine({
   const spin = async () => {
     if (spinning || inFlightRef.current) return;
     inFlightRef.current = true;
+    if (!spinIdempotencyRef.current) {
+      spinIdempotencyRef.current = newSpinIdempotencyKey();
+    }
 
     setError("");
     setLastWin(null);
@@ -199,7 +206,11 @@ export function ModernSlotMachine({
       const res = await fetch("/api/slots/spin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId, betAmount: bet }),
+        body: JSON.stringify({
+          gameId,
+          betAmount: bet,
+          idempotencyKey: spinIdempotencyRef.current,
+        }),
         signal: controller.signal,
       });
       const data = await res.json();

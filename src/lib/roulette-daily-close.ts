@@ -283,7 +283,7 @@ export async function executeDailyClose(
   const realProfitPct =
     totalBet > 0 ? roundMoney((houseProfit / totalBet) * 100) : 0;
 
-  let closeStatus = resolveCloseStatus(realProfitPct, minPct, maxPct);
+  const closeStatus = resolveCloseStatus(realProfitPct, minPct, maxPct);
   let excessReturned = 0;
   let adjustedAt: Date | null = null;
   const strictNextDay = closeStatus === "UNDER_TARGET";

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 180">
+  <rect width="640" height="180" rx="20" fill="#0f172a"/>
+  <circle cx="520" cy="90" r="64" fill="#dc2626" stroke="#e8c05a" stroke-width="4"/>
+  <text x="520" y="98" text-anchor="middle" font-family="system-ui,sans-serif" font-size="22" font-weight="800" fill="#fff">36</text>
+  <text x="32" y="72" font-family="system-ui,sans-serif" font-size="32" font-weight="800" fill="#e8c05a">Ruleta La Dicha</text>
+  <text x="32" y="112" font-family="system-ui,sans-serif" font-size="15" fill="#94a3b8">Europea · 0–36</text>
+</svg>

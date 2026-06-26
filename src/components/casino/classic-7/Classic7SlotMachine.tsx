@@ -15,6 +15,7 @@ import { CoinBurst } from "../CoinBurst";
 import { Classic7PaytableModal } from "./Classic7PaytableModal";
 import { getSlotGame } from "@/lib/slots/games";
 import { CLASSIC_7_BET_OPTIONS } from "@/lib/slots/settings";
+import { newSpinIdempotencyKey } from "@/lib/spin-client";
 import { preloadSlotSymbolImages } from "@/lib/slots/symbol-assets";
 import { CASINO_ART } from "@/lib/casino-art";
 import { CASINO_LOBBY_HREF } from "@/lib/casino-routes";
@@ -25,6 +26,7 @@ import { cn } from "@/lib/utils";
 const C7 = CASINO_ART.classic7;
 
 type SpinResponse = {
+  spinId?: string;
   balance: number;
   grid: Grid;
   lineWins: LineWin[];
@@ -35,9 +37,11 @@ type SpinResponse = {
 };
 
 type SpinHistoryEntry = {
+  id: string;
   bet: number;
   win: number;
   at: number;
+  isFreeSpin?: boolean;
 };
 
 export function Classic7SlotMachine({ initialBalance }: { initialBalance: number }) {
@@ -67,11 +71,38 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
   const [paytableOpen, setPaytableOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [history, setHistory] = useState<SpinHistoryEntry[]>([]);
+  const [maxBetAmount, setMaxBetAmount] = useState(10);
+
+  const betOptions = useMemo(
+    () =>
+      CLASSIC_7_BET_OPTIONS.filter((n) => n <= maxBetAmount) as number[],
+    [maxBetAmount]
+  );
 
   const pendingResult = useRef<SpinResponse | null>(null);
   const reelsStoppedRef = useRef(false);
   const apiResolvedRef = useRef(false);
   const inFlightRef = useRef(false);
+  const spinIdempotencyRef = useRef<string | null>(null);
+
+  const loadHistory = useCallback(() => {
+    fetch("/api/slots/history?gameId=classic-7&limit=8")
+      .then((r) => r.json())
+      .then((d) => {
+        if (Array.isArray(d.spins)) {
+          setHistory(
+            d.spins.map((s: SpinHistoryEntry) => ({
+              id: s.id,
+              bet: s.bet,
+              win: s.win,
+              at: s.at,
+              isFreeSpin: s.isFreeSpin,
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     preloadSlotSymbolImages("classic-7");
@@ -79,9 +110,18 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
       .then((r) => r.json())
       .then((d) => {
         if (typeof d.balance === "number") setBalance(d.balance);
+        if (typeof d.maxBetAmount === "number") setMaxBetAmount(d.maxBetAmount);
       })
       .catch(() => {});
-  }, []);
+    loadHistory();
+  }, [loadHistory]);
+
+  useEffect(() => {
+    if (betOptions.length === 0) return;
+    if (!betOptions.includes(bet)) {
+      setBet(betOptions[betOptions.length - 1]);
+    }
+  }, [bet, betOptions]);
 
   const tryFinalizeSpin = useCallback(() => {
     if (!reelsStoppedRef.current || !apiResolvedRef.current) return;
@@ -105,13 +145,23 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
     }
 
     setHistory((h) =>
-      [{ bet, win: payout, at: Date.now() }, ...h].slice(0, 8)
+      [
+        {
+          id: result.spinId ?? String(Date.now()),
+          bet,
+          win: payout,
+          at: Date.now(),
+        },
+        ...h.filter((row) => row.id !== result.spinId),
+      ].slice(0, 8)
     );
+    void loadHistory();
 
     setSpinning(false);
     setAwaitingStop(false);
     inFlightRef.current = false;
-  }, [bet]);
+    spinIdempotencyRef.current = null;
+  }, [bet, loadHistory]);
 
   const failSpin = useCallback((msg: string) => {
     pendingResult.current = null;
@@ -121,6 +171,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
     setSpinning(false);
     setAwaitingStop(false);
     inFlightRef.current = false;
+    spinIdempotencyRef.current = null;
     setError(msg);
     fetch("/api/slots/spin")
       .then((r) => r.json())
@@ -137,6 +188,9 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
       return;
     }
     inFlightRef.current = true;
+    if (!spinIdempotencyRef.current) {
+      spinIdempotencyRef.current = newSpinIdempotencyKey();
+    }
     setError("");
     setLastWin(null);
     setMessage(null);
@@ -157,7 +211,11 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
       const res = await fetch("/api/slots/spin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId: "classic-7", betAmount: bet }),
+        body: JSON.stringify({
+          gameId: "classic-7",
+          betAmount: bet,
+          idempotencyKey: spinIdempotencyRef.current,
+        }),
         signal: controller.signal,
       });
       const data = await res.json();
@@ -186,24 +244,24 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
     tryFinalizeSpin();
   }, [tryFinalizeSpin]);
 
-  const betIndex = CLASSIC_7_BET_OPTIONS.indexOf(bet as (typeof CLASSIC_7_BET_OPTIONS)[number]);
+  const betIndex = betOptions.indexOf(bet as (typeof CLASSIC_7_BET_OPTIONS)[number]);
   const decBet = () => {
-    if (spinning) return;
+    if (spinning || awaitingStop) return;
     const i = betIndex <= 0 ? 0 : betIndex - 1;
-    setBet(CLASSIC_7_BET_OPTIONS[i]);
+    setBet(betOptions[i] ?? betOptions[0]);
   };
   const incBet = () => {
-    if (spinning) return;
+    if (spinning || awaitingStop) return;
     const i =
-      betIndex < 0 || betIndex >= CLASSIC_7_BET_OPTIONS.length - 1
-        ? CLASSIC_7_BET_OPTIONS.length - 1
+      betIndex < 0 || betIndex >= betOptions.length - 1
+        ? betOptions.length - 1
         : betIndex + 1;
-    setBet(CLASSIC_7_BET_OPTIONS[i]);
+    setBet(betOptions[i] ?? betOptions[0]);
   };
   const maxBet = () => {
-    if (spinning) return;
-    const affordable = [...CLASSIC_7_BET_OPTIONS].reverse().find((b) => b <= balance);
-    setBet(affordable ?? CLASSIC_7_BET_OPTIONS[0]);
+    if (spinning || awaitingStop || betOptions.length === 0) return;
+    const affordable = [...betOptions].reverse().find((b) => b <= balance);
+    setBet(affordable ?? betOptions[0]);
   };
 
   return (
@@ -272,7 +330,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
                     <SlotReels
                       gameId="classic-7"
                       grid={grid}
-                      spinning={spinning}
+                      spinning={awaitingStop}
                       stopGeneration={stopGeneration}
                       resultReady={resultReady}
                       winningCells={winCells}
@@ -382,7 +440,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
                   label={awaitingStop ? "GIRANDO" : "GIRAR"}
                   spinning={awaitingStop}
                   ready={!spinning && !awaitingStop && balance >= bet}
-                  disabled={spinning || balance < bet}
+                  disabled={spinning || awaitingStop || balance < bet}
                   onClick={() => void spin()}
                   aria-busy={awaitingStop}
                 />
@@ -400,7 +458,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
               ) : (
                 <ul>
                   {history.map((h) => (
-                    <li key={h.at}>
+                    <li key={h.id}>
                       {formatMoney(h.bet)} → {h.win > 0 ? `ganó ${formatMoney(h.win)}` : "sin premio"}
                     </li>
                   ))}

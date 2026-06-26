@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +13,7 @@ export function AiVisual({
   priority,
   fill,
   sizes,
+  fallbackClassName,
 }: {
   src: string;
   alt?: string;
@@ -19,7 +23,28 @@ export function AiVisual({
   priority?: boolean;
   fill?: boolean;
   sizes?: string;
+  fallbackClassName?: string;
 }) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <span
+        className={cn(
+          "inline-flex items-center justify-center bg-slate-800/80 text-[10px] font-bold uppercase tracking-wide text-amber-200",
+          fill ? "absolute inset-0" : "rounded-lg",
+          fallbackClassName,
+          className
+        )}
+        aria-hidden={!alt}
+        role={alt ? "img" : undefined}
+        aria-label={alt || undefined}
+      >
+        LD
+      </span>
+    );
+  }
+
   if (fill) {
     return (
       <Image
@@ -29,6 +54,7 @@ export function AiVisual({
         className={cn("object-cover", className)}
         sizes={sizes ?? "100vw"}
         priority={priority}
+        onError={() => setFailed(true)}
       />
     );
   }
@@ -41,6 +67,7 @@ export function AiVisual({
       height={height ?? 48}
       className={className}
       priority={priority}
+      onError={() => setFailed(true)}
     />
   );
 }

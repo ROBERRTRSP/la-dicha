@@ -399,6 +399,19 @@ model RouletteRewardLedger {
   @@index([rewardType])
 }
 
+/** Evita doble cobro/premio por reintentos de red en tragamonedas. */
+model SlotSpinIdempotency {
+  id             String   @id @default(cuid())
+  userId         String
+  idempotencyKey String
+  responseJson   String
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime
+
+  @@unique([userId, idempotencyKey])
+  @@index([expiresAt])
+}
+
 /** Evita doble cobro/premio por reintentos de red en ruleta. */
 model RouletteSpinIdempotency {
   id             String   @id @default(cuid())

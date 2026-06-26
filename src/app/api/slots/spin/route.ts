@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { requirePlayer } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import {
+  beginSlotSpinIdempotency,
+  extractSlotIdempotencyKey,
+  releaseSlotSpinIdempotency,
+  saveSlotSpinResponse,
+} from "@/lib/slot-idempotency";
 import { SLOT_GAME_LIST } from "@/lib/slots/games";
 import { getBonusState, getSlotSettings, isSlotsActive, placeSlotSpin } from "@/lib/slots/spin-service";
 
@@ -10,6 +16,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
 
+  let idempotencyKey: string | null = null;
+
   try {
     const body = await request.json();
     const gameId = String(body.gameId ?? "");
@@ -17,9 +25,28 @@ export async function POST(request: Request) {
     if (!gameId || !Number.isFinite(betAmount)) {
       return NextResponse.json({ error: "Datos inválidos." }, { status: 400 });
     }
+
+    idempotencyKey = extractSlotIdempotencyKey(body);
+    if (idempotencyKey) {
+      const { cached } = await beginSlotSpinIdempotency(user.id, idempotencyKey);
+      if (cached) return NextResponse.json(cached);
+    }
+
     const result = await placeSlotSpin(user.id, gameId, betAmount);
+
+    if (idempotencyKey) {
+      await saveSlotSpinResponse(
+        user.id,
+        idempotencyKey,
+        result as unknown as Record<string, unknown>
+      );
+    }
+
     return NextResponse.json(result);
   } catch (e) {
+    if (idempotencyKey) {
+      await releaseSlotSpinIdempotency(user.id, idempotencyKey).catch(() => {});
+    }
     const msg = e instanceof Error ? e.message : "Error al girar.";
     return NextResponse.json({ error: msg }, { status: 400 });
   }

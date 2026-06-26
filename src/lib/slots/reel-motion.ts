@@ -446,7 +446,7 @@ export function simulateMachineSpin(opts: {
   });
 
   let apiReady = false;
-  let apiReadyAt = apiDelayMs;
+  const apiReadyAt = apiDelayMs;
   let t = 0;
   const dt = 16;
 

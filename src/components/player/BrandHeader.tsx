@@ -52,7 +52,13 @@ export function BrandHeader({
           <div className="flex-1 min-w-0" aria-hidden />
         )}
         {balance !== undefined && (
-          <div className="text-right shrink-0">
+          <div
+            className={
+              isCasino
+                ? "play-header-casino-balance-pill text-right shrink-0"
+                : "text-right shrink-0"
+            }
+          >
             <p
               className={
                 isCasino

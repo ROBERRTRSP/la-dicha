@@ -6,9 +6,11 @@
     "dev": "next dev -H 0.0.0.0",
     "postinstall": "prisma generate",
     "build": "prisma generate && next build",
-    "vercel-build": "prisma generate && prisma db push --skip-generate --accept-data-loss && tsx prisma/seed.ts && node scripts/fetch-logos.mjs && next build",
+    "vercel-build": "prisma validate && prisma generate && prisma db push --skip-generate --accept-data-loss && tsx prisma/seed.ts && node scripts/install-la-dicha-art.mjs && node scripts/fetch-logos.mjs && next build",
     "start": "next start",
     "lint": "next lint",
+    "prisma:validate": "prisma validate",
+    "art:install": "node scripts/install-la-dicha-art.mjs",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:setup": "prisma db push && tsx prisma/seed.ts",
@@ -17,7 +19,8 @@
     "test:slot-motion": "tsx scripts/test-slot-motion.ts",
     "test:slot-audit": "node scripts/verify-slot-audit.mjs",
     "test:slot-production": "node scripts/test-slot-production.mjs",
-    "test:slot-1000": "tsx scripts/test-slot-1000-spins.ts"
+    "test:slot-1000": "tsx scripts/test-slot-1000-spins.ts",
+    "test:roulette-daily-cap": "tsx scripts/test-roulette-daily-cap.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
