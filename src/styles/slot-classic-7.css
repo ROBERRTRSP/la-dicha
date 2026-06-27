@@ -80,7 +80,8 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
+  justify-content: center;
 }
 
 .classic7-win-overlay {
@@ -98,8 +99,7 @@
 
 .classic7-cabinet {
   width: min(480px, 100%);
-  flex: 1;
-  min-height: 0;
+  flex: 0 0 auto;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -163,7 +163,7 @@
   position: relative;
   border-radius: 14px;
   overflow: hidden;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: 2px solid rgba(232, 192, 90, 0.45);
   box-shadow:
     inset 0 0 28px rgba(0, 0, 0, 0.5),
@@ -176,13 +176,41 @@
   justify-content: center;
 }
 
+.classic7-logo-plate {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 0;
+}
+
+.classic7-logo-glow {
+  position: absolute;
+  inset: 8% 12%;
+  border-radius: 999px;
+  background: radial-gradient(
+    ellipse 70% 80% at 50% 50%,
+    rgba(255, 213, 79, 0.22),
+    transparent 72%
+  );
+  pointer-events: none;
+  filter: blur(6px);
+}
+
 .classic7-marquee-logo {
   position: relative;
   z-index: 2;
-  width: clamp(55%, 62vw, 70%);
+  width: clamp(62%, 68vw, 78%);
   height: auto;
+  max-height: clamp(44px, 11vw, 58px);
   display: block;
   object-fit: contain;
+  filter:
+    drop-shadow(0 4px 14px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 0 18px rgba(255, 213, 79, 0.28));
+  mix-blend-mode: screen;
 }
 
 .classic7-marquee-shimmer {
@@ -216,13 +244,12 @@
 }
 
 .classic7-body {
-  flex: 1;
-  min-height: 0;
-  padding: 8px 10px 10px;
+  flex: 0 0 auto;
+  padding: 6px 10px 8px;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .classic7-console {
@@ -313,39 +340,86 @@
   display: flex;
   align-items: center;
   pointer-events: none;
-  padding: 0 2px;
+  padding: 0 1px;
+  gap: 0;
+}
+
+.classic7-payline-rail {
+  flex: 0 0 6px;
+  height: 22px;
+  border-radius: 3px;
+  background: linear-gradient(
+    180deg,
+    rgba(232, 192, 90, 0.55),
+    rgba(139, 16, 16, 0.85)
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 8px rgba(232, 192, 90, 0.25);
 }
 
 .classic7-payline-line {
+  position: relative;
   flex: 1;
-  height: 3px;
+  height: 4px;
+  margin: 0 2px;
   background: linear-gradient(
     90deg,
     transparent,
-    #ef4444 8%,
+    #ef4444 6%,
     #ffd54f 50%,
-    #ef4444 92%,
+    #ef4444 94%,
     transparent
   );
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.65);
-  border-radius: 2px;
+  border-radius: 3px;
+  box-shadow:
+    0 0 12px rgba(239, 68, 68, 0.75),
+    0 0 6px rgba(255, 213, 79, 0.45);
+  animation: classic7-payline-pulse 2.4s ease-in-out infinite;
+}
+
+.classic7-payline-glow {
+  position: absolute;
+  inset: -3px 8%;
+  border-radius: 999px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 213, 79, 0.35),
+    transparent 70%
+  );
+  filter: blur(2px);
+  animation: classic7-payline-pulse 2.4s ease-in-out infinite reverse;
+}
+
+@keyframes classic7-payline-pulse {
+  0%,
+  100% {
+    opacity: 0.82;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 1;
+    filter: brightness(1.15);
+  }
 }
 
 .classic7-payline-arrow {
+  flex-shrink: 0;
   width: 0;
   height: 0;
-  border-top: 7px solid transparent;
-  border-bottom: 7px solid transparent;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.65));
 }
 
 .classic7-payline-arrow--left {
-  border-right: 10px solid #ef4444;
-  margin-right: 2px;
+  border-right: 11px solid #ffd54f;
+  margin: 0 1px 0 2px;
 }
 
 .classic7-payline-arrow--right {
-  border-left: 10px solid #ef4444;
-  margin-left: 2px;
+  border-left: 11px solid #ffd54f;
+  margin: 0 2px 0 1px;
 }
 
 .classic7-reel-caption {
@@ -396,13 +470,62 @@
 }
 
 .slot-theme--classic7 .slot-reels {
-  background: rgba(6, 2, 2, 0.85);
+  background: linear-gradient(180deg, rgba(12, 4, 4, 0.92) 0%, rgba(6, 2, 2, 0.96) 100%);
+  gap: 3px;
+  padding: 3px;
 }
 
-.slot-symbol-image--classic-7 {
-  object-fit: contain;
+.slot-theme--classic7 .slot-reel-cell {
+  background: radial-gradient(
+    ellipse 90% 75% at 50% 32%,
+    rgba(255, 255, 255, 0.07),
+    rgba(24, 6, 6, 0.88) 68%
+  );
+  border: 1px solid rgba(232, 192, 90, 0.12);
+  border-radius: 9px;
+  box-shadow:
+    inset 0 2px 8px rgba(255, 255, 255, 0.06),
+    inset 0 -10px 18px rgba(0, 0, 0, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.slot-theme--classic7 .slot-reel-cell--stripe-a:not(.slot-reel-cell--win):not(.slot-reel-cell--scatter) {
+  background: radial-gradient(
+    ellipse 90% 75% at 50% 28%,
+    rgba(255, 180, 140, 0.14),
+    rgba(120, 28, 28, 0.9) 70%
+  );
+  border-bottom-color: rgba(255, 200, 140, 0.22);
+}
+
+.slot-theme--classic7 .slot-reel-cell--stripe-b:not(.slot-reel-cell--win):not(.slot-reel-cell--scatter) {
+  background: radial-gradient(
+    ellipse 90% 75% at 50% 28%,
+    rgba(255, 255, 255, 0.04),
+    rgba(14, 4, 4, 0.92) 70%
+  );
+  border-bottom-color: rgba(0, 0, 0, 0.55);
+}
+
+.slot-theme--classic7 .slot-symbol-wrapper {
   padding: 4%;
-  filter: var(--casino-symbol-filter);
+}
+
+.slot-theme--classic7 .slot-symbol-svg--cell,
+.slot-theme--classic7 .slot-symbol-image--cell {
+  width: 90%;
+  height: 90%;
+  max-width: 92%;
+  max-height: 92%;
+}
+
+.slot-symbol-image--classic-7,
+.slot-symbol-svg--classic-7.slot-symbol-svg--cell {
+  filter:
+    drop-shadow(0 5px 10px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 0 14px rgba(232, 192, 90, 0.28))
+    saturate(1.1)
+    contrast(1.05);
 }
 
 /* HUD */
@@ -439,10 +562,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2px;
   padding: 6px 4px;
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.28);
+  text-align: center;
 }
 
 .classic7-hud-cell span {
@@ -450,7 +575,8 @@
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(232, 192, 90, 0.75);
+  color: rgba(232, 192, 90, 0.82);
+  line-height: 1.1;
 }
 
 .classic7-hud-cell strong {
@@ -458,6 +584,9 @@
   font-weight: 900;
   color: #f8fafc;
   font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  width: 100%;
+  text-align: center;
 }
 
 .classic7-hud-cell--win strong {
@@ -487,12 +616,24 @@
 .classic7-spin-row {
   display: flex;
   justify-content: center;
-  padding: 4px 0 2px;
+  padding: 2px 0 4px;
 }
 
 .classic7-spin-row .slot-spin-button {
-  width: clamp(112px, 30vw, 130px);
-  height: clamp(112px, 30vw, 130px);
+  width: clamp(100px, 27vw, 118px);
+  height: clamp(100px, 27vw, 118px);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.classic7-spin-row .slot-spin-button:active:not(:disabled) .slot-spin-button-outer {
+  transform: translateY(3px) scale(0.97);
+  box-shadow:
+    0 0 0 4px rgba(26, 4, 4, 0.95),
+    0 0 0 7px var(--classic7-gold),
+    0 4px 0 #3d0a0a,
+    0 0 18px rgba(239, 68, 68, 0.35),
+    inset 0 3px 0 rgba(255, 255, 255, 0.12);
 }
 
 .classic7-spin-row .slot-spin-button-outer {
@@ -509,6 +650,7 @@
     0 10px 0 #3d0a0a,
     0 0 28px rgba(239, 68, 68, 0.45),
     inset 0 3px 0 rgba(255, 255, 255, 0.18);
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
 }
 
 .classic7-spin-row .slot-spin-button-label {
@@ -560,6 +702,28 @@
   font-size: 16px;
   font-weight: 800;
   letter-spacing: 0.04em;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 3px 0 rgba(0, 0, 0, 0.35);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
+}
+
+.classic7-side-btn:active:not(:disabled),
+.classic7-bet-btn:active:not(:disabled) {
+  transform: scale(0.96) translateY(1px);
+  filter: brightness(1.08);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.35),
+    0 1px 0 rgba(0, 0, 0, 0.25);
+}
+
+.classic7-side-btn:disabled,
+.classic7-bet-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .classic7-bet-btn {
@@ -806,6 +970,8 @@
   width: auto;
   height: 32px;
   object-fit: contain;
+  mix-blend-mode: screen;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.45));
 }
 
 .classic7-paytable-title {
@@ -871,7 +1037,8 @@
 /* ——— Mobile compact · máquina balanceada ——— */
 @media (max-width: 768px) {
   .casino-machine--classic7 {
-    --classic7-reel-max-h: 182px;
+    --classic7-reel-max-h: 190px;
+    --classic7-nav-clearance: calc(86px + env(safe-area-inset-bottom, 0px));
   }
 
   .casino-machine--classic7 .casino-machine-inner.classic7-inner {
@@ -880,10 +1047,11 @@
       calc(6px + var(--casino-safe-right))
       var(--classic7-nav-clearance)
       calc(6px + var(--casino-safe-left));
+    justify-content: center;
   }
 
   .classic7-cabinet {
-    justify-content: flex-start;
+    flex: 0 0 auto;
   }
 
   .classic7-header {
@@ -899,6 +1067,8 @@
     min-height: 44px;
     padding: 0 12px;
     font-size: 16px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   .classic7-header-badge {
@@ -908,16 +1078,16 @@
   }
 
   .classic7-marquee {
-    padding: 6px 10px;
+    padding: 5px 8px;
   }
 
   .classic7-marquee-logo {
-    width: clamp(58%, 64vw, 70%);
-    max-height: 52px;
+    width: clamp(66%, 72vw, 80%);
+    max-height: 54px;
   }
 
   .classic7-body {
-    padding: 2px 8px 4px;
+    padding: 4px 8px 6px;
     gap: 2px;
   }
 
@@ -929,7 +1099,7 @@
       rgba(26, 4, 4, 0.55) 100%
     );
     border-radius: 14px;
-    padding: 2px 2px 4px;
+    padding: 2px 2px 3px;
     border: 1px solid rgba(232, 192, 90, 0.12);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
@@ -937,11 +1107,11 @@
   .classic7-action-dock {
     gap: 3px;
     margin-top: 0;
-    padding: 0 2px 2px;
+    padding: 0 2px 0;
   }
 
   .classic7-reel-wrap {
-    padding: 4px 2px 8px;
+    padding: 4px 2px 6px;
   }
 
   .classic7-reel-frame-deco {
@@ -970,7 +1140,7 @@
 
   .classic7-hud {
     min-height: 48px;
-    margin-top: -1px;
+    margin-top: 0;
     border-radius: 10px;
   }
 
@@ -988,7 +1158,7 @@
   }
 
   .classic7-controls {
-    gap: 4px;
+    gap: 3px;
   }
 
   .classic7-bet-panel {
@@ -1003,12 +1173,12 @@
   }
 
   .classic7-spin-row {
-    padding: 0;
+    padding: 0 0 2px;
   }
 
   .classic7-spin-row .slot-spin-button {
-    width: clamp(92px, 26vw, 108px);
-    height: clamp(92px, 26vw, 108px);
+    width: clamp(92px, 25vw, 104px);
+    height: clamp(92px, 25vw, 104px);
   }
 
   .classic7-big-win-banner {
@@ -1031,21 +1201,26 @@
   }
 
   .classic7-history[open] {
-    max-height: 72px;
+    max-height: 68px;
     overflow-y: auto;
   }
 }
 
 @media (max-width: 390px) {
+  .casino-machine--classic7 {
+    --classic7-reel-max-h: 178px;
+  }
+
   .classic7-spin-row .slot-spin-button {
-    width: 96px;
-    height: 96px;
+    width: 92px;
+    height: 92px;
   }
 }
 
 @media (max-width: 360px) {
   .casino-machine--classic7 {
     --classic7-reel-max-h: 168px;
+    --classic7-nav-clearance: calc(82px + env(safe-area-inset-bottom, 0px));
   }
 
   .classic7-bet-panel {
@@ -1055,12 +1230,12 @@
   }
 
   .classic7-spin-row .slot-spin-button {
-    width: 88px;
-    height: 88px;
+    width: 86px;
+    height: 86px;
   }
 
   .classic7-marquee-logo {
-    width: clamp(60%, 66vw, 72%);
+    width: clamp(68%, 74vw, 82%);
     max-height: 46px;
   }
 }
@@ -1075,7 +1250,7 @@
   }
 
   .classic7-marquee {
-    padding: 5px 8px;
+    padding: 4px 8px;
   }
 
   .classic7-marquee-logo {
@@ -1087,8 +1262,8 @@
   }
 
   .classic7-spin-row .slot-spin-button {
-    width: 88px;
-    height: 88px;
+    width: 84px;
+    height: 84px;
   }
 }
 
@@ -1113,7 +1288,14 @@
 
 .player-shell:has(.casino-machine--classic7) .bottom-nav {
   background: rgba(20, 6, 6, 0.96);
-  border-top-color: rgba(232, 192, 90, 0.15);
+  border-top-color: rgba(232, 192, 90, 0.18);
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 4px);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.player-shell:has(.casino-machine--classic7) .nav-item {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .player-shell:has(.casino-machine--classic7) .nav-item.active {

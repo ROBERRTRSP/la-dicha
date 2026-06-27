@@ -20,10 +20,21 @@ export function useSlotMobile(): boolean {
   const [isMobile, setIsMobile] = useState(true);
 
   useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${SLOT_MOBILE_MAX_WIDTH}px)`);
-    const update = () => setIsMobile(mq.matches);
+    const widthMq = window.matchMedia(`(max-width: ${SLOT_MOBILE_MAX_WIDTH}px)`);
+    const touchMq = window.matchMedia("(hover: none) and (pointer: coarse)");
+    const iosLandscapeMq = window.matchMedia("(max-width: 1024px)");
+    const update = () => {
+      setIsMobile(widthMq.matches || (touchMq.matches && iosLandscapeMq.matches));
+    };
     update();
-    return listenMediaChange(mq, update);
+    const stopWidth = listenMediaChange(widthMq, update);
+    const stopTouch = listenMediaChange(touchMq, update);
+    const stopIosLandscape = listenMediaChange(iosLandscapeMq, update);
+    return () => {
+      stopWidth();
+      stopTouch();
+      stopIosLandscape();
+    };
   }, []);
 
   return isMobile;

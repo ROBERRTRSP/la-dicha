@@ -8,6 +8,7 @@ import "../styles/slot-skunk.css";
 import "../styles/slot-wolf.css";
 import "../styles/slot-classic-7.css";
 import "../styles/slot-layout.css";
+import "../styles/slot-landscape.css";
 
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL ?? "https://consorciobelendejudea.com";

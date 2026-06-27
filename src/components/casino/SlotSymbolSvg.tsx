@@ -53,12 +53,14 @@ export function SlotSymbolSvg({
   const imgSrc = getSlotSymbolImage(gameId, symbolId);
   const [imgFailed, setImgFailed] = useState(false);
 
-  // Render preferente: imagen premium del símbolo. Si falta el asset o falla
-  // la carga, hacemos fallback al arte vectorial SVG (más abajo).
-  if (imgSrc && !imgFailed) {
+  // Classic 7: arte vectorial transparente (evita PNG con fondo negro pegado).
+  const useRasterSymbol = gameId !== "classic-7" && Boolean(imgSrc) && !imgFailed;
+
+  if (useRasterSymbol) {
+    const src = imgSrc as string;
     return (
       <img
-        src={imgSrc}
+        src={src}
         alt={sym?.label ?? symbolId}
         draggable={false}
         loading={isCell ? "eager" : "lazy"}

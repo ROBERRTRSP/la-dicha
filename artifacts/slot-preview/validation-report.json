@@ -1,44 +1,11 @@
 {
-  "baseUrl": "http://127.0.0.1:3000",
+  "baseUrl": "http://127.0.0.1:3010",
   "previewPath": "/dev/slot-preview",
-  "createdAt": "2026-06-27T17:34:48.104Z",
+  "createdAt": "2026-06-27T17:47:40.785Z",
   "viewportResults": [
     {
       "id": "iphone-se-vertical",
       "screenshotPath": "C:\\Users\\minim\\WEB PARA VENTA DE LOTERIA DOMINICANA\\artifacts\\slot-preview\\iphone-se-vertical.png",
-      "maxLayoutShiftPx": 0,
-      "checks": {
-        "noTopCut": true,
-        "noBottomCut": true,
-        "noSideCut": true,
-        "notchOrIslandNotBlocking": true,
-        "footerNotBlockingContent": true,
-        "spinVisibleComfortable": true,
-        "betButtonsVisible": true,
-        "rulesAccessible": true,
-        "pagosAccessible": true,
-        "bannerNotCut": true,
-        "reelsCentered": true,
-        "winningLinesAligned": false,
-        "messagesNotOverlapping": true,
-        "noWeirdScroll": true,
-        "noZoomAccidental": true,
-        "landscapeWarningShown": true,
-        "noLayoutShiftDuringSpin": true
-      },
-      "toastState": {
-        "toastWinVisible": false,
-        "toastLoseVisible": true,
-        "toastErrorVisible": false
-      },
-      "viewport": {
-        "width": 375,
-        "height": 667
-      }
-    },
-    {
-      "id": "iphone-14-15-vertical",
-      "screenshotPath": "C:\\Users\\minim\\WEB PARA VENTA DE LOTERIA DOMINICANA\\artifacts\\slot-preview\\iphone-14-15-vertical.png",
       "maxLayoutShiftPx": 0,
       "checks": {
         "noTopCut": true,
@@ -60,8 +27,41 @@
         "noLayoutShiftDuringSpin": true
       },
       "toastState": {
-        "toastWinVisible": true,
-        "toastLoseVisible": false,
+        "toastWinVisible": false,
+        "toastLoseVisible": true,
+        "toastErrorVisible": false
+      },
+      "viewport": {
+        "width": 375,
+        "height": 667
+      }
+    },
+    {
+      "id": "iphone-14-15-vertical",
+      "screenshotPath": "C:\\Users\\minim\\WEB PARA VENTA DE LOTERIA DOMINICANA\\artifacts\\slot-preview\\iphone-14-15-vertical.png",
+      "maxLayoutShiftPx": 108,
+      "checks": {
+        "noTopCut": true,
+        "noBottomCut": true,
+        "noSideCut": true,
+        "notchOrIslandNotBlocking": true,
+        "footerNotBlockingContent": true,
+        "spinVisibleComfortable": true,
+        "betButtonsVisible": true,
+        "rulesAccessible": true,
+        "pagosAccessible": true,
+        "bannerNotCut": true,
+        "reelsCentered": true,
+        "winningLinesAligned": true,
+        "messagesNotOverlapping": true,
+        "noWeirdScroll": true,
+        "noZoomAccidental": true,
+        "landscapeWarningShown": true,
+        "noLayoutShiftDuringSpin": false
+      },
+      "toastState": {
+        "toastWinVisible": false,
+        "toastLoseVisible": true,
         "toastErrorVisible": false
       },
       "viewport": {
@@ -118,7 +118,7 @@
         "pagosAccessible": true,
         "bannerNotCut": true,
         "reelsCentered": true,
-        "winningLinesAligned": false,
+        "winningLinesAligned": true,
         "messagesNotOverlapping": true,
         "noWeirdScroll": true,
         "noZoomAccidental": true,
@@ -151,7 +151,7 @@
         "pagosAccessible": true,
         "bannerNotCut": true,
         "reelsCentered": true,
-        "winningLinesAligned": false,
+        "winningLinesAligned": true,
         "messagesNotOverlapping": true,
         "noWeirdScroll": true,
         "noZoomAccidental": true,

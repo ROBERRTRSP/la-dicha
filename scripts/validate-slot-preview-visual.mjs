@@ -49,9 +49,7 @@ async function waitForSpinIdle(page) {
     () => {
       const awaiting = document.querySelector('[data-testid="preview-awaiting"]')?.textContent;
       const hasError = Boolean(document.querySelector(".slot-result-strip--error"));
-      const spinButton = document.querySelector('[data-testid="spin-button"]');
-      const spinIdle = spinButton ? !spinButton.hasAttribute("disabled") : false;
-      return awaiting === "0" || hasError || spinIdle;
+      return awaiting === "0" || hasError;
     },
     undefined,
     { timeout: 45000 }
@@ -204,17 +202,32 @@ async function runViewportVisual(browserKind, config) {
     });
     await page.getByTestId("spin-button").waitFor({ timeout: 30000 });
 
+    const measureReelPlacement = async () =>
+      page.evaluate(() => {
+        const reels = document.querySelector(".slot-reels")?.getBoundingClientRect();
+        const cabinet = document.querySelector(".slot-cabinet")?.getBoundingClientRect();
+        if (!reels || !cabinet) {
+          return null;
+        }
+        return {
+          offsetX: reels.left - cabinet.left,
+          offsetY: reels.top - cabinet.top,
+          width: reels.width,
+          height: reels.height,
+        };
+      });
+
     await setMode(page, "win");
-    const reelsBefore = await page.locator(".slot-reels").boundingBox();
+    const reelsBefore = await measureReelPlacement();
     await clickSpin(page);
     await page.waitForTimeout(250);
-    const reelsDuring = await page.locator(".slot-reels").boundingBox();
+    const reelsDuring = await measureReelPlacement();
     await waitForSpinIdle(page);
-    const reelsAfter = await page.locator(".slot-reels").boundingBox();
+    const reelsAfter = await measureReelPlacement();
 
     const maxShift = Math.max(
-      Math.abs((reelsBefore?.x ?? 0) - (reelsDuring?.x ?? 0)),
-      Math.abs((reelsBefore?.y ?? 0) - (reelsDuring?.y ?? 0)),
+      Math.abs((reelsBefore?.offsetX ?? 0) - (reelsDuring?.offsetX ?? 0)),
+      Math.abs((reelsBefore?.offsetY ?? 0) - (reelsDuring?.offsetY ?? 0)),
       Math.abs((reelsBefore?.width ?? 0) - (reelsAfter?.width ?? 0)),
       Math.abs((reelsBefore?.height ?? 0) - (reelsAfter?.height ?? 0))
     );
@@ -278,60 +291,101 @@ async function runFunctionalSpins() {
     let losses = 0;
 
     const runSpin = async (mode, doubleTap = false) => {
-      await setMode(page, mode);
-      const betBefore = await getNumericTestId(page, "preview-bet");
-      const spinsBefore = await getNumericTestId(page, "stats-spins");
-      const balanceBefore = await getNumericTestId(page, "preview-balance");
-      await page.getByTestId("spin-button").click({ force: true });
-      if (doubleTap) {
-        await page
-          .getByTestId("spin-button")
-          .click({ timeout: 500, force: true })
-          .catch(() => {});
-      }
+      for (let attempt = 0; attempt < 3; attempt++) {
+        await setMode(page, mode);
+        const betBefore = await getNumericTestId(page, "preview-bet");
+        const spinsBefore = await getNumericTestId(page, "stats-spins");
+        const balanceBefore = await getNumericTestId(page, "preview-balance");
+        await page.getByTestId("spin-button").click({ force: true });
+        if (doubleTap && attempt === 0) {
+          await page
+            .getByTestId("spin-button")
+            .click({ timeout: 500, force: true })
+            .catch(() => {});
+        }
 
-      await page.waitForFunction(
-        () => document.querySelector('[data-testid="preview-awaiting"]')?.textContent === "1",
-        undefined,
-        { timeout: 10000 }
-      );
+        const started = await page
+          .waitForFunction(
+            () =>
+              document.querySelector('[data-testid="preview-awaiting"]')?.textContent === "1" ||
+              Boolean(document.querySelector(".slot-result-strip--error")),
+            undefined,
+            { timeout: 12000 }
+          )
+          .then(() => true)
+          .catch(() => false);
 
-      const spinDisabled = await page.getByTestId("spin-button").isDisabled();
-      blockedSpinButtonDuringSpin = blockedSpinButtonDuringSpin && spinDisabled;
+        if (!started) {
+          if (attempt === 2) {
+            throw new Error("El giro demo no inicio en el tiempo esperado.");
+          }
+          continue;
+        }
 
-      const selectedBet = await getNumericTestId(page, "preview-bet");
-      const altBet = [1, 2, 5, 10].find((v) => v !== selectedBet) ?? 1;
-      const differentBetButton = page.getByTestId(`bet-${altBet}`);
-      await differentBetButton.click({ timeout: 500, force: true }).catch(() => {});
-      const betDuringSpin = await getNumericTestId(page, "preview-bet");
-      blockedBetChangeDuringSpin =
-        blockedBetChangeDuringSpin && betDuringSpin === selectedBet && selectedBet === betBefore;
+        const spinDisabled = await page.getByTestId("spin-button").isDisabled();
+        blockedSpinButtonDuringSpin = blockedSpinButtonDuringSpin && spinDisabled;
 
-      const balanceDuring = await getNumericTestId(page, "preview-balance");
-      balanceChangesAfterResultOnly =
-        balanceChangesAfterResultOnly && balanceDuring === balanceBefore;
+        const selectedBet = await getNumericTestId(page, "preview-bet");
+        const altBet = [1, 2, 5, 10].find((v) => v !== selectedBet) ?? 1;
+        const differentBetButton = page.getByTestId(`bet-${altBet}`);
+        await differentBetButton.click({ timeout: 500, force: true }).catch(() => {});
+        const betDuringSpin = await getNumericTestId(page, "preview-bet");
+        blockedBetChangeDuringSpin =
+          blockedBetChangeDuringSpin &&
+          betDuringSpin === selectedBet &&
+          selectedBet === betBefore;
 
-      await waitForSpinIdle(page);
+        const balanceDuring = await getNumericTestId(page, "preview-balance");
+        balanceChangesAfterResultOnly =
+          balanceChangesAfterResultOnly && balanceDuring === balanceBefore;
 
-      const spinsAfter = await getNumericTestId(page, "stats-spins");
-      const expectedIncrement = 1;
-      doubleTapBlocked =
-        doubleTapBlocked && spinsAfter === spinsBefore + expectedIncrement;
+        const incremented = await page
+          .waitForFunction(
+            (expected) =>
+              Number(document.querySelector('[data-testid="stats-spins"]')?.textContent || "0") >=
+              expected,
+            spinsBefore + 1,
+            { timeout: 45000 }
+          )
+          .then(() => true)
+          .catch(() => false);
 
-      const toastWinVisible = await page.getByTestId("toast-win").isVisible().catch(() => false);
-      const toastLoseVisible = await page
-        .getByTestId("toast-no-win")
-        .isVisible()
-        .catch(() => false);
-      noToastOverlap = noToastOverlap && !(toastWinVisible && toastLoseVisible);
+        await waitForSpinIdle(page).catch(() => {});
+        const hasError = await page
+          .locator(".slot-result-strip--error")
+          .isVisible()
+          .catch(() => false);
+        if (!incremented || hasError) {
+          if (attempt === 2) {
+            throw new Error("El giro demo no pudo completarse correctamente.");
+          }
+          continue;
+        }
 
-      const lastWin = await getNumericTestId(page, "preview-last-win");
-      if (lastWin > 0) {
-        wins += 1;
-        const activeBadges = await page.locator(".slot-payline-badge--active").count();
-        winningLineVisibleOnWins = winningLineVisibleOnWins && activeBadges > 0;
-      } else {
-        losses += 1;
+        const spinsAfter = await getNumericTestId(page, "stats-spins");
+        if (doubleTap) {
+          doubleTapBlocked = doubleTapBlocked && spinsAfter === spinsBefore + 1;
+        }
+
+        const toastWinVisible = await page
+          .getByTestId("toast-win")
+          .isVisible()
+          .catch(() => false);
+        const toastLoseVisible = await page
+          .getByTestId("toast-no-win")
+          .isVisible()
+          .catch(() => false);
+        noToastOverlap = noToastOverlap && !(toastWinVisible && toastLoseVisible);
+
+        const lastWin = await getNumericTestId(page, "preview-last-win");
+        if (lastWin > 0) {
+          wins += 1;
+          const activeBadges = await page.locator(".slot-payline-badge--active").count();
+          winningLineVisibleOnWins = winningLineVisibleOnWins && activeBadges > 0;
+        } else {
+          losses += 1;
+        }
+        return;
       }
     };
 

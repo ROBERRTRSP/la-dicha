@@ -21,6 +21,8 @@
     "test:slot-production": "node scripts/test-slot-production.mjs",
     "test:slot-1000": "tsx scripts/test-slot-1000-spins.ts",
     "test:slot-visual-preview": "node scripts/validate-slot-preview-visual.mjs",
+    "test:slot-landscape-ios": "node scripts/validate-slot-landscape-ios.mjs",
+    "assets:classic7-transparency": "node scripts/strip-classic-7-black-bg.mjs",
     "test:roulette-daily-cap": "tsx scripts/test-roulette-daily-cap.ts"
   },
   "dependencies": {

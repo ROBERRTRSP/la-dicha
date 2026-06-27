@@ -301,7 +301,9 @@
 
   .classic7-marquee-shimmer,
   .classic7-spin-btn--ready,
-  .classic7-spin-btn--spinning .classic7-spin-btn-art {
+  .classic7-spin-btn--spinning .classic7-spin-btn-art,
+  .classic7-payline-line,
+  .classic7-payline-glow {
     animation: none !important;
   }
 

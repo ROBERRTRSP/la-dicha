@@ -7,7 +7,9 @@ import {
   useRef,
   useState,
 } from "react";
-import { SlotRulesButton, SlotRulesPanel, type SlotRulesSection } from "./SlotRulesPanel";
+import Link from "next/link";
+import { AiVisual } from "@/components/ui/AiVisual";
+import { SlotRulesPanel, type SlotRulesSection } from "./SlotRulesPanel";
 import { SlotReels } from "./SlotReels";
 import { SlotFinanceHud } from "./SlotFinanceHud";
 import { SlotPaylineFrame } from "./SlotPaylineFrame";
@@ -17,22 +19,12 @@ import { CoinBurst } from "./CoinBurst";
 import { AnimatedBalance } from "./WinDisplay";
 import { getSlotUiPace } from "@/lib/slots/mobile-pace";
 import { WinCelebration } from "./WinCelebration";
-import { SlotOrientationNotice } from "./SlotOrientationNotice";
-import { useSlotLandscapeWarning, useSlotMobile } from "./useSlotMobile";
-import {
-  BetControls,
-  SlotCabinet,
-  SlotCabinetBody,
-  SlotCabinetDeck,
-  SlotControlDeck,
-  SlotHeader,
-  SlotRuleBar,
-  SlotScreen,
-  SpinButton,
-} from "./SlotCabinet";
+import { useSlotMobile } from "./useSlotMobile";
+import { BetControls, SpinButton } from "./SlotCabinet";
 import { getSlotGame } from "@/lib/slots/games";
 import { preloadSlotSymbolImages } from "@/lib/slots/symbol-assets";
 import { CASINO_ART } from "@/lib/casino-art";
+import { CASINO_LOBBY_HREF } from "@/lib/casino-routes";
 import { allowedBetOptionsForGame } from "@/lib/slots/settings";
 import { newSpinIdempotencyKey } from "@/lib/spin-client";
 import type {
@@ -152,7 +144,6 @@ export function ModernSlotMachine({
   const isLamp = gameId === "magic-lamp";
   const isWolf = gameId === "moon-wolf";
   const isMobile = useSlotMobile();
-  const showLandscapeWarning = useSlotLandscapeWarning();
   const uiPace = useMemo(() => getSlotUiPace(isMobile), [isMobile]);
 
   // El premio se aplica una sola vez y solo cuando AMBOS terminaron:
@@ -350,234 +341,207 @@ export function ModernSlotMachine({
     () => lineWins.map((w) => w.lineIndex),
     [lineWins]
   );
+  const maxBet = useCallback(() => {
+    if (spinning || awaitingStop || betOptions.length === 0 || freeMode) return;
+    const affordable = [...betOptions].reverse().find((value) => value <= balance);
+    setBet(affordable ?? betOptions[0]!);
+  }, [awaitingStop, balance, betOptions, freeMode, spinning]);
 
   return (
     <div
       className={cn(
-        "casino-machine",
+        "slot-landscape-root",
         game.themeClass,
-        isLamp && "casino-machine--magic-lamp",
-        isWolf && "casino-machine--moon-wolf",
-        isWolf && freeMode && "casino-machine--moon-night",
-        awaitingStop && "casino-machine--reels-active",
-        showLandscapeWarning && "casino-machine--orientation-warning",
-        winFlash && "casino-machine--win"
+        isLamp && "slot-landscape-root--lamp",
+        isWolf && "slot-landscape-root--wolf",
+        awaitingStop && "slot-landscape-root--spinning",
+        winFlash && "slot-landscape-root--win"
       )}
     >
-      <div className="casino-machine-bg" aria-hidden />
-      {isLamp && <div className="casino-machine-theme-bg" aria-hidden />}
-      {isWolf && <div className="casino-machine-theme-bg" aria-hidden />}
-      <div className="casino-machine-floor-glow" aria-hidden />
-      <SlotOrientationNotice active={showLandscapeWarning} />
-
-      <div className="casino-machine-inner">
-        <SlotCabinet themeClass={game.themeClass} winFlash={winFlash}>
-          {isLamp && <AmbientLights className="slot-ambient-lights--cabinet" />}
-          {isWolf && (
-            <MoonWolfEffects
-              className="slot-wolf-effects--cabinet"
-              intense={freeMode || winFlash}
-            />
-          )}
-          <SlotHeader
-            name={game.name}
-            tagline={game.tagline}
-            logoSrc={CASINO_ART.thumbs[gameId]}
-            className="slot-header--compact"
-            showBalancePill
-            balanceNode={
-              <AnimatedBalance value={balance} className="slot-balance-value" />
-            }
-          />
-
-          <SlotCabinetBody>
-            <SlotRuleBar className="slot-rule-bar--compact slot-rule-bar--minimal">
-              {freeMode ? (
-                <span className="slot-rule-text slot-rule-text--free">
-                  GIROS GRATIS {bonus.freeSpinsLeft}
-                  {bonus.multiplier > 1 ? ` · ×${bonus.multiplier}` : ""}
-                  {bonus.progressiveMultiplier > 1
-                    ? ` · PROGRESIVO ×${bonus.progressiveMultiplier}`
-                    : ""}
-                </span>
-              ) : (
-                <span className="slot-rule-text slot-rule-text--lines">
-                  {game.paylineCount} líneas · {game.cols}×{game.rows}
-                </span>
-              )}
-            </SlotRuleBar>
-
-            <SlotScreen
-              winFlash={winFlash}
-              className={cn(
-                "slot-screen--expanded",
-                settleFlash && "slot-screen--settled"
-              )}
-            >
-              <SlotPaylineFrame
-                activeLineIndices={!awaitingStop ? activeLineIndices : []}
-                paylineCount={game.paylineCount}
-              >
-                <SlotReels
-                  gameId={gameId}
-                  grid={grid}
-                  spinning={awaitingStop}
-                  stopGeneration={stopGeneration}
-                  resultReady={resultReady}
-                  winningCells={winCells}
-                  scatterCells={scatterCells}
-                  highlight={!awaitingStop}
-                  onAllStopped={handleAllStopped}
-                />
-              </SlotPaylineFrame>
-              <CoinBurst
-                active={winFlash || freeSpinFlash}
-                generation={stopGeneration}
-                variant={isWolf ? "stars" : "coins"}
-                durationMs={uiPace.coinBurstMs}
-              />
-              <WinCelebration
-                active={winFlash && (lastWin ?? 0) > 0}
-                amount={lastWin ?? 0}
-                gameId={gameId}
-                mode="win"
-                big={(lastWin ?? 0) >= bet * 20}
-              />
-              <WinCelebration
-                active={freeSpinFlash}
-                gameId={gameId}
-                mode="free-spin"
-                freeSpins={lastFreeSpinsAwarded}
-                autoBonus={freeSpinAutoBonus}
-                big={lastFreeSpinsAwarded >= 8}
-              />
-              {(winFlash || freeSpinFlash) && (
-                <div className="casino-win-overlay" aria-hidden />
-              )}
-              {jackpotTier && (
-                <div
-                  className={cn(
-                    "casino-jackpot-banner",
-                    `casino-jackpot-banner--${jackpotTier.toLowerCase()}`
-                  )}
-                >
-                  {formatJackpotBanner(jackpotTier)}
-                </div>
-              )}
-              {showWinResult && (
-                <p
-                  className="slot-result-strip slot-result-strip--win slot-result-strip--overlay"
-                  aria-live="polite"
-                >
-                  Ganaste {formatMoney(lastWin ?? 0)}
-                </p>
-              )}
-              {showNoPrizeResult && (
-                <p
-                  className="slot-result-strip slot-result-strip--neutral slot-result-strip--overlay"
-                  aria-live="polite"
-                >
-                  Sin premio este giro
-                </p>
-              )}
-              {showBonusMessage && (
-                <p className="slot-result-strip slot-result-strip--bonus slot-result-strip--overlay">
-                  {message}
-                </p>
-              )}
-              {error && (
-                <p className="slot-result-strip slot-result-strip--error slot-result-strip--overlay">
-                  {error}
-                </p>
-              )}
-            </SlotScreen>
-          </SlotCabinetBody>
-
-          <SlotCabinetDeck>
-            <SlotControlDeck
-              financeHud={
-                <SlotFinanceHud
-                  balance={balance}
-                  hideBalance
-                  balanceNode={
-                    <AnimatedBalance
-                      value={balance}
-                      className="slot-balance-value"
-                    />
-                  }
-                  bet={bet}
-                  win={lastWin}
-                  winPending={awaitingStop}
-                  freeMode={freeMode}
-                  lineCount={game.paylineCount}
-                />
-              }
-              navButtons={
-                <>
-                  <SlotRulesButton
-                    onClick={() => {
-                      setRulesSection("rules");
-                      setRulesOpen(true);
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="slot-rules-btn slot-rules-btn--secondary"
-                    onClick={() => {
-                      setRulesSection("paytable");
-                      setRulesOpen(true);
-                    }}
-                  >
-                    <span className="slot-rules-btn-icon" aria-hidden>
-                      $
-                    </span>
-                    <span className="slot-rules-btn-label">Pagos</span>
-                  </button>
-                </>
-              }
-              betControls={
-                <BetControls
-                  bet={bet}
-                  options={betOptions}
-                  disabled={spinning || freeMode}
-                  onSelect={setBet}
-                  hideLabel
-                />
-              }
-              spinButton={
-                <SpinButton
-                  label={
-                    awaitingStop
-                      ? "GIRANDO"
-                      : freeMode
-                        ? "GRATIS"
-                        : "GIRAR"
-                  }
-                  spinning={awaitingStop}
-                  ready={
-                    !spinning && !awaitingStop && (freeMode || balance >= bet)
-                  }
-                  disabled={
-                    spinning ||
-                    awaitingStop ||
-                    (!freeMode && balance < bet)
-                  }
-                  onClick={() => void spin()}
-                  aria-busy={awaitingStop}
-                />
-              }
-            />
-          </SlotCabinetDeck>
-        </SlotCabinet>
-
-        <SlotRulesPanel
-          open={rulesOpen}
-          onClose={() => setRulesOpen(false)}
-          gameId={gameId}
-          bet={bet}
-          initialSection={rulesSection}
+      <div className="slot-landscape-bg" aria-hidden />
+      {isLamp && <AmbientLights className="slot-landscape-ambient" />}
+      {isWolf && (
+        <MoonWolfEffects
+          className="slot-landscape-ambient"
+          intense={freeMode || winFlash}
         />
+      )}
+
+      <div className="slot-landscape-shell">
+        <aside className="slot-landscape-panel slot-landscape-panel--left">
+          <Link href={CASINO_LOBBY_HREF} className="slot-landscape-back">
+            ← Volver al casino
+          </Link>
+          <div className="slot-landscape-logo-card">
+            <AiVisual
+              src={CASINO_ART.thumbs[gameId]}
+              alt={game.name}
+              width={360}
+              height={130}
+              className="slot-landscape-logo"
+            />
+            <p className="slot-landscape-tagline">{game.tagline}</p>
+          </div>
+          <div className="slot-landscape-balance-card">
+            <span>Saldo</span>
+            <AnimatedBalance value={balance} className="slot-balance-value" />
+          </div>
+          <div className="slot-landscape-status-card">
+            {freeMode ? (
+              <p>
+                Giros gratis: <strong>{bonus.freeSpinsLeft}</strong>
+              </p>
+            ) : (
+              <p>
+                Líneas: <strong>{game.paylineCount}</strong>
+              </p>
+            )}
+            {(bonus.multiplier > 1 || bonus.progressiveMultiplier > 1) && (
+              <p>
+                Multiplicador:
+                <strong>
+                  {" "}
+                  ×{Math.max(bonus.multiplier, bonus.progressiveMultiplier)}
+                </strong>
+              </p>
+            )}
+          </div>
+        </aside>
+
+        <section className="slot-landscape-center">
+          <header className="slot-landscape-center-head">
+            <h1>{game.name}</h1>
+            <p>
+              {game.cols}x{game.rows} · perfil iPhone landscape
+            </p>
+          </header>
+          <div className={cn("slot-landscape-machine", settleFlash && "slot-landscape-machine--settle")}>
+            <SlotPaylineFrame
+              activeLineIndices={!awaitingStop ? activeLineIndices : []}
+              paylineCount={game.paylineCount}
+            >
+              <SlotReels
+                gameId={gameId}
+                grid={grid}
+                spinning={awaitingStop}
+                stopGeneration={stopGeneration}
+                resultReady={resultReady}
+                winningCells={winCells}
+                scatterCells={scatterCells}
+                highlight={!awaitingStop}
+                onAllStopped={handleAllStopped}
+              />
+            </SlotPaylineFrame>
+
+            <CoinBurst
+              active={winFlash || freeSpinFlash}
+              generation={stopGeneration}
+              variant={isWolf ? "stars" : "coins"}
+              durationMs={uiPace.coinBurstMs}
+            />
+            <WinCelebration
+              active={winFlash && (lastWin ?? 0) > 0}
+              amount={lastWin ?? 0}
+              gameId={gameId}
+              mode="win"
+              big={(lastWin ?? 0) >= bet * 20}
+            />
+            <WinCelebration
+              active={freeSpinFlash}
+              gameId={gameId}
+              mode="free-spin"
+              freeSpins={lastFreeSpinsAwarded}
+              autoBonus={freeSpinAutoBonus}
+              big={lastFreeSpinsAwarded >= 8}
+            />
+            {jackpotTier && (
+              <div
+                className={cn(
+                  "slot-landscape-jackpot",
+                  `slot-landscape-jackpot--${jackpotTier.toLowerCase()}`
+                )}
+              >
+                {formatJackpotBanner(jackpotTier)}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <aside className="slot-landscape-panel slot-landscape-panel--right">
+          <SlotFinanceHud
+            balance={balance}
+            hideBalance
+            balanceNode={<AnimatedBalance value={balance} className="slot-balance-value" />}
+            bet={bet}
+            win={lastWin}
+            winPending={awaitingStop}
+            freeMode={freeMode}
+            lineCount={game.paylineCount}
+          />
+          <div className="slot-landscape-bets">
+            <BetControls
+              bet={bet}
+              options={betOptions}
+              disabled={spinning || awaitingStop || freeMode}
+              onSelect={setBet}
+            />
+          </div>
+          <div className="slot-landscape-spin-wrap">
+            <SpinButton
+              label={awaitingStop ? "GIRANDO" : freeMode ? "GRATIS" : "GIRAR"}
+              spinning={awaitingStop}
+              ready={!spinning && !awaitingStop && (freeMode || balance >= bet)}
+              disabled={spinning || awaitingStop || (!freeMode && balance < bet)}
+              onClick={() => void spin()}
+              aria-busy={awaitingStop}
+            />
+          </div>
+          <div className="slot-landscape-actions">
+            <button
+              type="button"
+              className="slot-rules-btn"
+              onClick={() => {
+                setRulesSection("rules");
+                setRulesOpen(true);
+              }}
+            >
+              Reglas
+            </button>
+            <button
+              type="button"
+              className="slot-rules-btn slot-rules-btn--secondary"
+              onClick={() => {
+                setRulesSection("paytable");
+                setRulesOpen(true);
+              }}
+            >
+              Pagos
+            </button>
+            <button
+              type="button"
+              className="slot-rules-btn slot-rules-btn--secondary"
+              disabled={spinning || awaitingStop || freeMode}
+              onClick={maxBet}
+            >
+              Máx
+            </button>
+          </div>
+          <div className="slot-landscape-result" aria-live="polite">
+            {showWinResult && <p className="slot-result-strip slot-result-strip--win">Ganaste {formatMoney(lastWin ?? 0)}</p>}
+            {showNoPrizeResult && <p className="slot-result-strip slot-result-strip--neutral">Sin premio este giro</p>}
+            {showBonusMessage && <p className="slot-result-strip slot-result-strip--bonus">{message}</p>}
+            {error && <p className="slot-result-strip slot-result-strip--error">{error}</p>}
+          </div>
+        </aside>
       </div>
+
+      <SlotRulesPanel
+        open={rulesOpen}
+        onClose={() => setRulesOpen(false)}
+        gameId={gameId}
+        bet={bet}
+        initialSection={rulesSection}
+      />
     </div>
   );
 }
