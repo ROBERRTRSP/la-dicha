@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { PAYLINES_5x3 } from "@/lib/slots/paylines";
 import { cn } from "@/lib/utils";
 
@@ -52,6 +52,12 @@ function linePath(rows: number[]): string {
     .join(" ");
 }
 
+function linePoints(rows: number[]) {
+  const colX = (col: number) => 10 + col * 20;
+  const rowY = (row: number) => 16.67 + row * 33.33;
+  return rows.map((row, col) => ({ x: colX(col), y: rowY(row) }));
+}
+
 export function SlotPaylineFrame({
   children,
   activeLineIndices = [],
@@ -84,11 +90,25 @@ export function SlotPaylineFrame({
         >
           {lines.map((rows, index) =>
             activeSet.has(index) ? (
-              <path
-                key={index}
-                d={linePath(rows)}
-                className="slot-payline-path slot-payline-path--active"
-              />
+              <g key={index} style={{ "--line-delay": `${index * 70}ms` } as CSSProperties}>
+                <path
+                  d={linePath(rows)}
+                  className="slot-payline-path slot-payline-path--glow"
+                />
+                <path
+                  d={linePath(rows)}
+                  className="slot-payline-path slot-payline-path--active"
+                />
+                {linePoints(rows).map((point, pointIndex) => (
+                  <circle
+                    key={`${index}-${pointIndex}`}
+                    cx={point.x}
+                    cy={point.y}
+                    r={1.45}
+                    className="slot-payline-node"
+                  />
+                ))}
+              </g>
             ) : null
           )}
         </svg>

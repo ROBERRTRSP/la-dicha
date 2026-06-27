@@ -1,0 +1,192 @@
+{
+  "baseUrl": "http://127.0.0.1:3000",
+  "previewPath": "/dev/slot-preview",
+  "createdAt": "2026-06-27T17:34:48.104Z",
+  "viewportResults": [
+    {
+      "id": "iphone-se-vertical",
+      "screenshotPath": "C:\\Users\\minim\\WEB PARA VENTA DE LOTERIA DOMINICANA\\artifacts\\slot-preview\\iphone-se-vertical.png",
+      "maxLayoutShiftPx": 0,
+      "checks": {
+        "noTopCut": true,
+        "noBottomCut": true,
+        "noSideCut": true,
+        "notchOrIslandNotBlocking": true,
+        "footerNotBlockingContent": true,
+        "spinVisibleComfortable": true,
+        "betButtonsVisible": true,
+        "rulesAccessible": true,
+        "pagosAccessible": true,
+        "bannerNotCut": true,
+        "reelsCentered": true,
+        "winningLinesAligned": false,
+        "messagesNotOverlapping": true,
+        "noWeirdScroll": true,
+        "noZoomAccidental": true,
+        "landscapeWarningShown": true,
+        "noLayoutShiftDuringSpin": true
+      },
+      "toastState": {
+        "toastWinVisible": false,
+        "toastLoseVisible": true,
+        "toastErrorVisible": false
+      },
+      "viewport": {
+        "width": 375,
+        "height": 667
+      }
+    },
+    {
+      "id": "iphone-14-15-vertical",
+      "screenshotPath": "C:\\Users\\minim\\WEB PARA VENTA DE LOTERIA DOMINICANA\\artifacts\\slot-preview\\iphone-14-15-vertical.png",
+      "maxLayoutShiftPx": 0,
+      "checks": {
+        "noTopCut": true,
+        "noBottomCut": true,
+        "noSideCut": true,
+        "notchOrIslandNotBlocking": true,
+        "footerNotBlockingContent": true,
+        "spinVisibleComfortable": true,
+        "betButtonsVisible": true,
+        "rulesAccessible": true,
+        "pagosAccessible": true,
+        "bannerNotCut": true,
+        "reelsCentered": true,
+        "winningLinesAligned": true,
+        "messagesNotOverlapping": true,
+        "noWeirdScroll": true,
+        "noZoomAccidental": true,
+        "landscapeWarningShown": true,
+        "noLayoutShiftDuringSpin": true
+      },
+      "toastState": {
+        "toastWinVisible": true,
+        "toastLoseVisible": false,
+        "toastErrorVisible": false
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "id": "iphone-15-pro-max-vertical",
+      "screenshotPath": "C:\\Users\\minim\\WEB PARA VENTA DE LOTERIA DOMINICANA\\artifacts\\slot-preview\\iphone-15-pro-max-vertical.png",
+      "maxLayoutShiftPx": 0,
+      "checks": {
+        "noTopCut": true,
+        "noBottomCut": true,
+        "noSideCut": true,
+        "notchOrIslandNotBlocking": true,
+        "footerNotBlockingContent": true,
+        "spinVisibleComfortable": true,
+        "betButtonsVisible": true,
+        "rulesAccessible": true,
+        "pagosAccessible": true,
+        "bannerNotCut": true,
+        "reelsCentered": true,
+        "winningLinesAligned": true,
+        "messagesNotOverlapping": true,
+        "noWeirdScroll": true,
+        "noZoomAccidental": true,
+        "landscapeWarningShown": true,
+        "noLayoutShiftDuringSpin": true
+      },
+      "toastState": {
+        "toastWinVisible": true,
+        "toastLoseVisible": false,
+        "toastErrorVisible": false
+      },
+      "viewport": {
+        "width": 430,
+        "height": 932
+      }
+    },
+    {
+      "id": "android-small-vertical",
+      "screenshotPath": "C:\\Users\\minim\\WEB PARA VENTA DE LOTERIA DOMINICANA\\artifacts\\slot-preview\\android-small-vertical.png",
+      "maxLayoutShiftPx": 0,
+      "checks": {
+        "noTopCut": true,
+        "noBottomCut": true,
+        "noSideCut": true,
+        "notchOrIslandNotBlocking": true,
+        "footerNotBlockingContent": true,
+        "spinVisibleComfortable": true,
+        "betButtonsVisible": true,
+        "rulesAccessible": true,
+        "pagosAccessible": true,
+        "bannerNotCut": true,
+        "reelsCentered": true,
+        "winningLinesAligned": false,
+        "messagesNotOverlapping": true,
+        "noWeirdScroll": true,
+        "noZoomAccidental": true,
+        "landscapeWarningShown": true,
+        "noLayoutShiftDuringSpin": true
+      },
+      "toastState": {
+        "toastWinVisible": false,
+        "toastLoseVisible": true,
+        "toastErrorVisible": false
+      },
+      "viewport": {
+        "width": 360,
+        "height": 740
+      }
+    },
+    {
+      "id": "iphone-landscape-warning",
+      "screenshotPath": "C:\\Users\\minim\\WEB PARA VENTA DE LOTERIA DOMINICANA\\artifacts\\slot-preview\\iphone-landscape-warning.png",
+      "maxLayoutShiftPx": 40.74,
+      "checks": {
+        "noTopCut": true,
+        "noBottomCut": true,
+        "noSideCut": true,
+        "notchOrIslandNotBlocking": true,
+        "footerNotBlockingContent": true,
+        "spinVisibleComfortable": true,
+        "betButtonsVisible": true,
+        "rulesAccessible": true,
+        "pagosAccessible": true,
+        "bannerNotCut": true,
+        "reelsCentered": true,
+        "winningLinesAligned": false,
+        "messagesNotOverlapping": true,
+        "noWeirdScroll": true,
+        "noZoomAccidental": true,
+        "landscapeWarningShown": true,
+        "noLayoutShiftDuringSpin": true
+      },
+      "toastState": {
+        "toastWinVisible": false,
+        "toastLoseVisible": true,
+        "toastErrorVisible": false
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390
+      }
+    }
+  ],
+  "functional": {
+    "startingBalance": 2500,
+    "endingBalance": 2560,
+    "startingSpins": 0,
+    "endingSpins": 20,
+    "totalSpins": 20,
+    "wins": 10,
+    "losses": 10,
+    "checks": {
+      "spinBlockedDuringSpin": true,
+      "betBlockedDuringSpin": true,
+      "balanceChangesAfterResultOnly": true,
+      "noToastOverlap": true,
+      "winningLinesMatchResults": true,
+      "doubleTapBlocked": true,
+      "noRealApiCalls": true
+    },
+    "disallowedCalls": [],
+    "apiCallsCount": 20
+  }
+}

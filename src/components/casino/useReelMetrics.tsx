@@ -54,7 +54,7 @@ function capMetricsForClassic7(el: HTMLElement, metrics: ReelMetrics): ReelMetri
     ...metrics,
     cellHeight,
     windowHeight,
-    symbolSize: Math.round(cellHeight * 0.64),
+    symbolSize: Math.round(cellHeight * 0.69),
   };
 }
 

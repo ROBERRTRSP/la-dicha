@@ -162,7 +162,7 @@ export function computeReelMetrics(viewportWidth: number, stageHeight = 0) {
     58,
     Math.min(102, Math.max(fromWidth, fromStage))
   );
-  const symbolSize = Math.round(cellHeight * 0.64);
+  const symbolSize = Math.round(cellHeight * 0.69);
   return {
     cellHeight,
     symbolSize,
@@ -209,8 +209,13 @@ export function computeSpinVelocity(
   }
   const primaryWave = Math.sin(elapsedMs * 0.012 + columnIndex * 0.73);
   const secondaryWave = Math.sin(elapsedMs * 0.027 + columnIndex * 1.17);
-  const modulation = 0.9 + primaryWave * 0.09 + secondaryWave * 0.04;
-  const clamped = Math.max(0.78, Math.min(1.1, modulation));
+  const tertiaryWave = Math.sin(elapsedMs * 0.007 + columnIndex * 0.41);
+  const modulation =
+    0.92 +
+    primaryWave * 0.08 +
+    secondaryWave * 0.035 +
+    tertiaryWave * 0.03;
+  const clamped = Math.max(0.82, Math.min(1.12, modulation));
   return maxVelocity * clamped;
 }
 

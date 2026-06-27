@@ -4,8 +4,8 @@
 .casino-machine-inner .slot-cabinet {
   flex: 1;
   min-height: 0;
-  width: min(520px, 94vw);
-  max-height: calc(100dvh - var(--casino-nav-h) - 12px);
+  width: min(520px, 100%);
+  max-height: calc(100dvh - var(--casino-nav-h) - var(--casino-safe-top) - 14px);
 }
 
 .casino-machine-inner .slot-cabinet-shell {
@@ -42,9 +42,10 @@
   align-items: center;
   gap: 5px;
   max-width: none;
-  padding: 6px 12px 6px 10px;
+  min-height: 44px;
+  padding: 0 14px 0 12px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.03em;
   color: rgba(226, 232, 240, 0.92);
@@ -82,11 +83,41 @@
   border-radius: 14px;
   overflow: hidden;
   min-height: clamp(58px, 16.5vw, 76px);
-  border: 1px solid rgba(232, 192, 90, 0.34);
+  border: 1px solid rgba(232, 192, 90, 0.46);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    inset 0 -10px 28px rgba(0, 0, 0, 0.42),
-    0 4px 18px rgba(0, 0, 0, 0.38);
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -10px 28px rgba(0, 0, 0, 0.48),
+    0 6px 22px rgba(0, 0, 0, 0.44);
+}
+
+.slot-header-banner::before {
+  content: "";
+  position: absolute;
+  inset: -6px 8px auto;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(232, 192, 90, 0.55) 0%,
+    rgba(58, 34, 10, 0.85) 100%
+  );
+  opacity: 0.75;
+  filter: blur(0.3px);
+  pointer-events: none;
+  z-index: 7;
+}
+
+.slot-header-banner::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 10px;
+  border: 1px solid rgba(232, 192, 90, 0.18);
+  box-shadow:
+    inset 0 0 16px rgba(0, 0, 0, 0.26),
+    inset 0 0 16px rgba(232, 192, 90, 0.08);
+  pointer-events: none;
+  z-index: 6;
 }
 
 .slot-header-banner-lights {
@@ -141,13 +172,15 @@
   position: relative;
   width: 100%;
   min-height: clamp(58px, 16.5vw, 76px);
+  padding: 3px 10px 6px;
+  box-sizing: border-box;
 }
 
 .slot-header-banner-image {
-  object-fit: cover;
-  object-position: center 32%;
-  transform: scale(1.08);
-  filter: saturate(1.06) brightness(1.03);
+  object-fit: contain;
+  object-position: center center;
+  transform: scale(1.01);
+  filter: saturate(1.09) contrast(1.04) brightness(1.04);
 }
 
 .slot-header-banner-vignette {
@@ -361,7 +394,7 @@
 /* Pantalla expandida · rodillos ocupan el centro */
 .slot-screen--expanded {
   flex: 1 1 auto !important;
-  min-height: clamp(220px, 42vh, 340px);
+  min-height: clamp(210px, 38dvh, 340px);
   display: flex;
   flex-direction: column;
   padding: 5px;
@@ -439,10 +472,17 @@
   min-height: 0;
   font-size: 7px;
   font-weight: 900;
-  color: rgba(148, 163, 184, 0.6);
+  color: rgba(203, 213, 225, 0.86);
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(
+    180deg,
+    rgba(20, 28, 40, 0.92) 0%,
+    rgba(8, 12, 18, 0.96) 100%
+  );
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 4px rgba(0, 0, 0, 0.38);
   font-variant-numeric: tabular-nums;
   transition:
     background 0.2s ease,
@@ -452,10 +492,17 @@
 }
 
 .slot-payline-badge--active {
-  color: #fde047;
-  background: rgba(232, 192, 90, 0.2);
-  border-color: rgba(232, 192, 90, 0.5);
-  box-shadow: 0 0 10px rgba(232, 192, 90, 0.3);
+  color: #fde68a;
+  background: linear-gradient(
+    180deg,
+    rgba(232, 192, 90, 0.32) 0%,
+    rgba(97, 62, 18, 0.78) 100%
+  );
+  border-color: rgba(253, 224, 71, 0.72);
+  box-shadow:
+    0 0 12px rgba(253, 224, 71, 0.45),
+    inset 0 0 10px rgba(253, 224, 71, 0.2);
+  animation: slot-payline-badge-pop 0.7s ease-out;
 }
 
 .slot-payline-overlay {
@@ -471,14 +518,38 @@
   stroke-width: 0;
 }
 
-.slot-payline-path--active {
-  stroke: #fde047;
-  stroke-width: 2.8;
+.slot-payline-path--glow {
+  stroke: rgba(251, 191, 36, 0.55);
+  stroke-width: 5.6;
   stroke-linecap: round;
   stroke-linejoin: round;
-  filter: drop-shadow(0 0 5px rgba(253, 224, 71, 0.75));
+  filter: blur(1.8px);
+  opacity: 0.82;
+}
+
+.slot-payline-path--active {
+  stroke: #fde68a;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter:
+    drop-shadow(0 0 6px rgba(253, 224, 71, 0.88))
+    drop-shadow(0 0 14px rgba(251, 191, 36, 0.52));
   vector-effect: non-scaling-stroke;
-  animation: slot-payline-flash 1s ease-in-out infinite alternate;
+  stroke-dasharray: 110;
+  stroke-dashoffset: 110;
+  animation:
+    slot-payline-draw 380ms cubic-bezier(0.21, 0.9, 0.24, 1) forwards,
+    slot-payline-flash 1s ease-in-out infinite alternate;
+  animation-delay: var(--line-delay, 0ms), calc(var(--line-delay, 0ms) + 200ms);
+}
+
+.slot-payline-node {
+  fill: #fde68a;
+  opacity: 0;
+  filter: drop-shadow(0 0 5px rgba(253, 224, 71, 0.85));
+  animation: slot-payline-node-pop 260ms ease-out forwards;
+  animation-delay: calc(var(--line-delay, 0ms) + 180ms);
 }
 
 @keyframes slot-payline-flash {
@@ -487,6 +558,38 @@
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes slot-payline-draw {
+  from {
+    stroke-dashoffset: 110;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes slot-payline-badge-pop {
+  0% {
+    transform: scale(0.9);
+  }
+  60% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes slot-payline-node-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -524,8 +627,8 @@
 
 .slot-control-deck-nav .slot-rules-btn {
   flex: 1;
-  min-height: 34px;
-  font-size: 9px;
+  min-height: 44px;
+  font-size: 16px;
   padding: 6px 8px;
 }
 
@@ -566,15 +669,15 @@
 }
 
 .slot-control-deck .slot-bet-btn {
-  min-height: 38px;
+  min-height: 44px;
   flex: 1 1 calc(50% - 4px);
   max-width: calc(50% - 3px);
-  font-size: clamp(11px, 2.8vw, 13px);
+  font-size: clamp(16px, 3vw, 17px);
 }
 
 .slot-control-deck .slot-spin-button {
-  width: min(108px, 28vw);
-  height: min(108px, 28vw);
+  width: min(116px, 30vw);
+  height: min(116px, 30vw);
 }
 
 /* Botones Reglas / Pagos */
@@ -583,13 +686,13 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 42px;
+  min-height: 44px;
   padding: 8px 14px;
   border-radius: 8px;
   border: 1px solid rgba(232, 192, 90, 0.22);
   background: linear-gradient(180deg, #161c28 0%, #0c1018 100%);
   color: var(--casino-gold);
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -740,14 +843,22 @@
   transform: translateX(-50%);
   z-index: 7;
   margin: 0;
-  padding: 4px 12px;
+  padding: 6px 14px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(
+    180deg,
+    rgba(18, 26, 40, 0.92) 0%,
+    rgba(8, 12, 20, 0.96) 100%
+  );
+  border: 1px solid rgba(232, 192, 90, 0.24);
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.44),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
   white-space: nowrap;
   max-width: calc(100% - 24px);
   overflow: hidden;
   text-overflow: ellipsis;
+  animation: slot-result-strip-in 220ms ease-out;
 }
 
 .slot-result-strip {
@@ -764,11 +875,37 @@
 }
 
 .slot-result-strip--bonus {
-  color: #f472b6;
+  color: #f5d0fe;
+  border-color: rgba(216, 180, 254, 0.48);
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 18px rgba(168, 85, 247, 0.25);
 }
 
 .slot-result-strip--error {
   color: #fca5a5;
+  border-color: rgba(248, 113, 113, 0.48);
+}
+
+.slot-result-strip--win {
+  color: #fde68a;
+  border-color: rgba(253, 224, 71, 0.65);
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 22px rgba(253, 224, 71, 0.28);
+}
+
+@keyframes slot-result-strip-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
 }
 
 @media (max-width: 380px) {
@@ -785,14 +922,14 @@
   }
 
   .slot-control-deck .slot-spin-button {
-    width: min(96px, 26vw);
-    height: min(96px, 26vw);
+    width: min(102px, 28vw);
+    height: min(102px, 28vw);
   }
 }
 
 @media (max-height: 700px) {
   .slot-screen--expanded {
-    min-height: clamp(200px, 38vh, 300px);
+    min-height: clamp(194px, 35dvh, 300px);
   }
 
   .slot-finance-cell {

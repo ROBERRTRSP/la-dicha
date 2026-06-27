@@ -68,8 +68,15 @@
 .casino-machine--classic7 .casino-machine-inner.classic7-inner {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
-  padding: 6px 8px var(--classic7-nav-clearance);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding:
+    calc(6px + var(--casino-safe-top))
+    calc(8px + var(--casino-safe-right))
+    var(--classic7-nav-clearance)
+    calc(8px + var(--casino-safe-left));
   position: relative;
   display: flex;
   flex-direction: column;
@@ -124,10 +131,10 @@
 }
 
 .classic7-back {
-  min-height: 34px;
-  padding: 0 12px;
+  min-height: 44px;
+  padding: 0 14px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 700;
   border: 1px solid rgba(232, 192, 90, 0.35);
   background: rgba(0, 0, 0, 0.45);
@@ -515,7 +522,7 @@
 }
 
 .classic7-spin-row .slot-spin-button--spinning .slot-spin-button-label {
-  font-size: clamp(11px, 3vw, 14px);
+  font-size: clamp(16px, 3.2vw, 17px);
   letter-spacing: 0.08em;
 }
 
@@ -550,7 +557,7 @@
   border: 1px solid rgba(232, 192, 90, 0.35);
   background: linear-gradient(180deg, #2a1010 0%, #1a0808 100%);
   color: var(--classic7-gold-bright);
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 800;
   letter-spacing: 0.04em;
 }
@@ -583,7 +590,7 @@
 .classic7-bet-readout strong {
   margin-top: 2px;
   color: #fff7ad;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
 }
@@ -868,7 +875,11 @@
   }
 
   .casino-machine--classic7 .casino-machine-inner.classic7-inner {
-    padding: 4px 6px var(--classic7-nav-clearance);
+    padding:
+      calc(4px + var(--casino-safe-top))
+      calc(6px + var(--casino-safe-right))
+      var(--classic7-nav-clearance)
+      calc(6px + var(--casino-safe-left));
   }
 
   .classic7-cabinet {
@@ -885,9 +896,9 @@
   }
 
   .classic7-back {
-    min-height: 30px;
-    padding: 0 10px;
-    font-size: 10px;
+    min-height: 44px;
+    padding: 0 12px;
+    font-size: 16px;
   }
 
   .classic7-header-badge {
@@ -988,7 +999,7 @@
   .classic7-side-btn,
   .classic7-bet-btn,
   .classic7-bet-readout {
-    min-height: 40px;
+    min-height: 44px;
   }
 
   .classic7-spin-row {

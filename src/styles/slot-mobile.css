@@ -1,8 +1,25 @@
 /* Slot · celdas y símbolos en móvil */
 
 @media (max-width: 768px) {
+  .casino-machine {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  .casino-machine button,
+  .casino-machine [role="button"] {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .casino-machine input,
+  .casino-machine select,
+  .casino-machine textarea {
+    font-size: 16px;
+  }
+
   .slot-reels-viewport {
-    --slot-symbol-max: 72%;
+    --slot-symbol-max: 78%;
     perspective: none;
   }
 
@@ -109,7 +126,7 @@
   }
 
   .slot-symbol-wrapper {
-    padding: 7%;
+    padding: 5.5%;
   }
 
   .slot-control-deck .slot-spin-button,
@@ -120,7 +137,7 @@
 
   .slot-cabinet-deck {
     gap: 8px;
-    padding-bottom: 10px;
+    padding-bottom: 12px;
   }
 
   /* Bordes neón laterales distraen y roban foco en pantalla pequeña */
@@ -175,11 +192,11 @@
   }
 
   .slot-cabinet-deck {
-    padding-bottom: 12px;
+    padding-bottom: 14px;
   }
 
   .slot-spin-button-label {
-    font-size: clamp(13px, 3.4vw, 15px);
+    font-size: clamp(16px, 4vw, 18px);
   }
 }
 
@@ -199,8 +216,9 @@
   }
 
   .slot-header--integrated .slot-header-back {
-    padding: 5px 10px 5px 8px;
-    font-size: 10px;
+    min-height: 44px;
+    padding: 0 12px 0 10px;
+    font-size: 16px;
   }
 
   .slot-jackpot-value,
@@ -210,6 +228,10 @@
 }
 
 @media (max-height: 700px) {
+  .casino-machine-inner {
+    gap: 3px;
+  }
+
   .slot-marquee-tagline,
   .slot-header-banner-tagline {
     display: none;
@@ -225,7 +247,7 @@
   }
 
   .slot-screen {
-    padding: 5px;
+    padding: 4px;
   }
 
   .slot-win-display {
@@ -234,6 +256,12 @@
 
   .slot-win-display-value {
     font-size: clamp(18px, 4.5vw, 22px);
+  }
+}
+
+@media (orientation: landscape) and (hover: none) and (pointer: coarse) and (max-height: 560px) {
+  .casino-machine-inner {
+    padding-top: calc(4px + var(--casino-safe-top));
   }
 }
 

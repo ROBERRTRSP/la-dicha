@@ -124,12 +124,14 @@ export function BetControls({
   disabled,
   onSelect,
   hideLabel,
+  testIdPrefix,
 }: {
   bet: number;
   options: readonly number[];
   disabled?: boolean;
   onSelect: (amount: number) => void;
   hideLabel?: boolean;
+  testIdPrefix?: string;
 }) {
   return (
     <div className="slot-bet-controls">
@@ -144,6 +146,7 @@ export function BetControls({
             className={cn("slot-bet-btn", bet === amount && "slot-bet-btn--active")}
             disabled={disabled}
             onClick={() => onSelect(amount)}
+            data-testid={testIdPrefix ? `${testIdPrefix}-${amount}` : undefined}
           >
             {formatMoney(amount)}
           </button>
@@ -160,6 +163,7 @@ export function SpinButton({
   disabled,
   onClick,
   "aria-busy": ariaBusy,
+  testId,
 }: {
   label: string;
   spinning?: boolean;
@@ -167,6 +171,7 @@ export function SpinButton({
   disabled?: boolean;
   onClick: () => void;
   "aria-busy"?: boolean;
+  testId?: string;
 }) {
   return (
     <button
@@ -179,6 +184,7 @@ export function SpinButton({
       disabled={disabled}
       aria-busy={ariaBusy}
       onClick={onClick}
+      data-testid={testId}
     >
       <span className="slot-spin-button-outer" aria-hidden />
       <span className="slot-spin-button-inner" aria-hidden />

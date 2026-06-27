@@ -47,6 +47,7 @@ export function BottomNav() {
             prefetch
             className={cn(
               "nav-item",
+              href === "/ruleta" && "nav-item--casino",
               active && "active",
               pending && "nav-item--pending"
             )}

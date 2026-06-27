@@ -10,10 +10,11 @@ import {
 import Link from "next/link";
 import { AiVisual } from "@/components/ui/AiVisual";
 import { SpinButton } from "../SlotCabinet";
+import { SlotOrientationNotice } from "../SlotOrientationNotice";
 import { SlotReels } from "../SlotReels";
 import { CoinBurst } from "../CoinBurst";
 import { WinCelebration } from "../WinCelebration";
-import { useSlotMobile } from "../useSlotMobile";
+import { useSlotLandscapeWarning, useSlotMobile } from "../useSlotMobile";
 import { Classic7PaytableModal } from "./Classic7PaytableModal";
 import { getSlotGame } from "@/lib/slots/games";
 import { getSlotUiPace } from "@/lib/slots/mobile-pace";
@@ -102,6 +103,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
   const autoFreeSpinTimerRef = useRef(0);
   const freeSpinFlashTimerRef = useRef(0);
   const isMobile = useSlotMobile();
+  const showLandscapeWarning = useSlotLandscapeWarning();
   const uiPace = useMemo(() => getSlotUiPace(isMobile), [isMobile]);
 
   const loadHistory = useCallback(() => {
@@ -360,7 +362,12 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
   };
 
   return (
-    <div className="casino-machine casino-machine--classic7 classic7-machine">
+    <div
+      className={cn(
+        "casino-machine casino-machine--classic7 classic7-machine",
+        showLandscapeWarning && "casino-machine--orientation-warning"
+      )}
+    >
       <div className="casino-machine-bg classic7-machine-bg" aria-hidden>
         <AiVisual
           src={C7.bg}
@@ -372,6 +379,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
         />
         <div className="classic7-bg-vignette" />
       </div>
+      <SlotOrientationNotice active={showLandscapeWarning} />
       <div className="casino-machine-inner classic7-inner">
         <CoinBurst
           active={winFlash || freeSpinFlash}

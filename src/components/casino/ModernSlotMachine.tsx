@@ -17,7 +17,8 @@ import { CoinBurst } from "./CoinBurst";
 import { AnimatedBalance } from "./WinDisplay";
 import { getSlotUiPace } from "@/lib/slots/mobile-pace";
 import { WinCelebration } from "./WinCelebration";
-import { useSlotMobile } from "./useSlotMobile";
+import { SlotOrientationNotice } from "./SlotOrientationNotice";
+import { useSlotLandscapeWarning, useSlotMobile } from "./useSlotMobile";
 import {
   BetControls,
   SlotCabinet,
@@ -41,7 +42,7 @@ import type {
   SlotGameId,
   WinCell,
 } from "@/lib/slots/types";
-import { cn } from "@/lib/utils";
+import { cn, formatMoney } from "@/lib/utils";
 
 import { formatJackpotBanner } from "@/lib/slots/jackpot-labels";
 type SpinResponse = {
@@ -151,6 +152,7 @@ export function ModernSlotMachine({
   const isLamp = gameId === "magic-lamp";
   const isWolf = gameId === "moon-wolf";
   const isMobile = useSlotMobile();
+  const showLandscapeWarning = useSlotLandscapeWarning();
   const uiPace = useMemo(() => getSlotUiPace(isMobile), [isMobile]);
 
   // El premio se aplica una sola vez y solo cuando AMBOS terminaron:
@@ -334,6 +336,16 @@ export function ModernSlotMachine({
   ]);
 
   const freeMode = bonus.freeSpinsLeft > 0;
+  const showWinResult =
+    !awaitingStop && !error && !freeSpinFlash && (lastWin ?? 0) > 0;
+  const showNoPrizeResult =
+    !awaitingStop &&
+    !error &&
+    !freeSpinFlash &&
+    (lastWin ?? 0) <= 0 &&
+    !message;
+  const showBonusMessage =
+    !freeSpinFlash && Boolean(message) && (lastWin ?? 0) <= 0;
   const activeLineIndices = useMemo(
     () => lineWins.map((w) => w.lineIndex),
     [lineWins]
@@ -348,6 +360,7 @@ export function ModernSlotMachine({
         isWolf && "casino-machine--moon-wolf",
         isWolf && freeMode && "casino-machine--moon-night",
         awaitingStop && "casino-machine--reels-active",
+        showLandscapeWarning && "casino-machine--orientation-warning",
         winFlash && "casino-machine--win"
       )}
     >
@@ -355,6 +368,7 @@ export function ModernSlotMachine({
       {isLamp && <div className="casino-machine-theme-bg" aria-hidden />}
       {isWolf && <div className="casino-machine-theme-bg" aria-hidden />}
       <div className="casino-machine-floor-glow" aria-hidden />
+      <SlotOrientationNotice active={showLandscapeWarning} />
 
       <div className="casino-machine-inner">
         <SlotCabinet themeClass={game.themeClass} winFlash={winFlash}>
@@ -450,7 +464,15 @@ export function ModernSlotMachine({
                   {formatJackpotBanner(jackpotTier)}
                 </div>
               )}
-              {!awaitingStop && lastWin === 0 && (
+              {showWinResult && (
+                <p
+                  className="slot-result-strip slot-result-strip--win slot-result-strip--overlay"
+                  aria-live="polite"
+                >
+                  Ganaste {formatMoney(lastWin ?? 0)}
+                </p>
+              )}
+              {showNoPrizeResult && (
                 <p
                   className="slot-result-strip slot-result-strip--neutral slot-result-strip--overlay"
                   aria-live="polite"
@@ -458,7 +480,7 @@ export function ModernSlotMachine({
                   Sin premio este giro
                 </p>
               )}
-              {message && !freeSpinFlash && (
+              {showBonusMessage && (
                 <p className="slot-result-strip slot-result-strip--bonus slot-result-strip--overlay">
                   {message}
                 </p>

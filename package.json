@@ -20,6 +20,7 @@
     "test:slot-audit": "node scripts/verify-slot-audit.mjs",
     "test:slot-production": "node scripts/test-slot-production.mjs",
     "test:slot-1000": "tsx scripts/test-slot-1000-spins.ts",
+    "test:slot-visual-preview": "node scripts/validate-slot-preview-visual.mjs",
     "test:roulette-daily-cap": "tsx scripts/test-roulette-daily-cap.ts"
   },
   "dependencies": {
@@ -46,6 +47,7 @@
     "@types/react-dom": "^19.1.5",
     "eslint": "^9.27.0",
     "eslint-config-next": "^15.3.3",
+    "playwright": "^1.61.1",
     "prisma": "^6.19.0",
     "sharp": "^0.35.2",
     "tailwindcss": "^4.1.8",
