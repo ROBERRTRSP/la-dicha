@@ -1,6 +1,4 @@
 "use client";
-
-import { AiVisual } from "@/components/ui/AiVisual";
 import { ART } from "@/lib/visual-assets";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +21,7 @@ export function SlotPreviewBottomNav() {
             tab.active && tab.label === "Casino" && "nav-item--casino"
           )}
         >
-          <AiVisual
+          <img
             src={tab.art}
             alt=""
             width={30}

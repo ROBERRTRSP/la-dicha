@@ -8,7 +8,6 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
-import { AiVisual } from "@/components/ui/AiVisual";
 import { SlotRulesPanel, type SlotRulesSection } from "./SlotRulesPanel";
 import { SlotReels } from "./SlotReels";
 import { SlotFinanceHud } from "./SlotFinanceHud";
@@ -19,7 +18,8 @@ import { CoinBurst } from "./CoinBurst";
 import { AnimatedBalance } from "./WinDisplay";
 import { getSlotUiPace } from "@/lib/slots/mobile-pace";
 import { WinCelebration } from "./WinCelebration";
-import { useSlotMobile } from "./useSlotMobile";
+import { useSlotMobile, useSlotPortraitBlock } from "./useSlotMobile";
+import { SlotOrientationNotice } from "./SlotOrientationNotice";
 import { BetControls, SpinButton } from "./SlotCabinet";
 import { getSlotGame } from "@/lib/slots/games";
 import { preloadSlotSymbolImages } from "@/lib/slots/symbol-assets";
@@ -144,6 +144,7 @@ export function ModernSlotMachine({
   const isLamp = gameId === "magic-lamp";
   const isWolf = gameId === "moon-wolf";
   const isMobile = useSlotMobile();
+  const portraitBlocked = useSlotPortraitBlock();
   const uiPace = useMemo(() => getSlotUiPace(isMobile), [isMobile]);
 
   // El premio se aplica una sola vez y solo cuando AMBOS terminaron:
@@ -354,11 +355,17 @@ export function ModernSlotMachine({
         game.themeClass,
         isLamp && "slot-landscape-root--lamp",
         isWolf && "slot-landscape-root--wolf",
+        portraitBlocked && "slot-landscape-root--portrait",
         awaitingStop && "slot-landscape-root--spinning",
         winFlash && "slot-landscape-root--win"
       )}
     >
       <div className="slot-landscape-bg" aria-hidden />
+
+      <SlotOrientationNotice active={portraitBlocked} />
+
+      {portraitBlocked ? null : (
+      <>
       {isLamp && <AmbientLights className="slot-landscape-ambient" />}
       {isWolf && (
         <MoonWolfEffects
@@ -370,14 +377,12 @@ export function ModernSlotMachine({
       <div className="slot-landscape-shell">
         <aside className="slot-landscape-panel slot-landscape-panel--left">
           <Link href={CASINO_LOBBY_HREF} className="slot-landscape-back">
-            ← Volver al casino
+            ← Casino
           </Link>
           <div className="slot-landscape-logo-card">
-            <AiVisual
+            <img
               src={CASINO_ART.thumbs[gameId]}
               alt={game.name}
-              width={360}
-              height={130}
               className="slot-landscape-logo"
             />
             <p className="slot-landscape-tagline">{game.tagline}</p>
@@ -542,6 +547,8 @@ export function ModernSlotMachine({
         bet={bet}
         initialSection={rulesSection}
       />
+      </>
+      )}
     </div>
   );
 }

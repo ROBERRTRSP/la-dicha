@@ -20,10 +20,20 @@
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   user-select: none;
+  -webkit-user-select: none;
 }
 
 .slot-landscape-root * {
   -webkit-tap-highlight-color: transparent;
+}
+
+.slot-landscape-root button,
+.slot-landscape-root [role="button"],
+.slot-landscape-root input,
+.slot-landscape-root select,
+.slot-landscape-root textarea {
+  font-size: 16px;
+  touch-action: manipulation;
 }
 
 .slot-landscape-bg {
@@ -40,100 +50,122 @@
   opacity: 0.35;
 }
 
+.slot-landscape-bg--classic7 .classic7-bg-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .slot-landscape-ambient {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 1;
+  z-index: 0;
 }
 
+/* ===== Shell de 3 columnas (izquierda / rodillos / controles) ===== */
 .slot-landscape-shell {
   position: relative;
   z-index: 1;
   height: 100%;
   padding:
     max(8px, var(--slot-safe-top))
-    max(10px, var(--slot-safe-right))
-    max(8px, var(--slot-safe-bottom))
-    max(10px, var(--slot-safe-left));
+    max(12px, var(--slot-safe-right))
+    max(10px, var(--slot-safe-bottom))
+    max(12px, var(--slot-safe-left));
   display: grid;
-  grid-template-columns: minmax(180px, 22vw) minmax(0, 1fr) minmax(230px, 27vw);
-  gap: clamp(10px, 2.2vw, 16px);
+  grid-template-columns: minmax(150px, 18vw) minmax(0, 1fr) minmax(212px, 24vw);
+  gap: clamp(8px, 1.6vw, 14px);
+  box-sizing: border-box;
 }
 
 .slot-landscape-panel {
   min-height: 0;
-  border-radius: 18px;
+  border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: linear-gradient(
     180deg,
-    rgba(12, 17, 28, 0.88) 0%,
-    rgba(6, 9, 16, 0.94) 100%
+    rgba(12, 17, 28, 0.9) 0%,
+    rgba(6, 9, 16, 0.95) 100%
   );
   box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.45),
+    0 10px 24px rgba(0, 0, 0, 0.42),
     inset 0 1px 0 rgba(255, 255, 255, 0.07);
-  padding: clamp(10px, 1.8vw, 16px);
+  padding: clamp(8px, 1.4vw, 14px);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .slot-landscape-panel--left {
-  justify-content: space-between;
+  justify-content: flex-start;
 }
 
 .slot-landscape-back {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 44px;
   padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid rgba(232, 192, 90, 0.4);
+  border: 1px solid rgba(232, 192, 90, 0.42);
   color: #f8deb0;
-  background: rgba(0, 0, 0, 0.3);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0.5));
   text-decoration: none;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.slot-landscape-back:active {
+  transform: scale(0.97);
 }
 
 .slot-landscape-logo-card {
-  border-radius: 14px;
-  padding: 8px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  padding: 6px 8px;
   background: linear-gradient(180deg, rgba(23, 34, 53, 0.82), rgba(8, 12, 20, 0.94));
   border: 1px solid rgba(232, 192, 90, 0.25);
+  text-align: center;
 }
 
 .slot-landscape-logo {
   width: 100%;
   height: auto;
+  max-height: clamp(48px, 12vh, 84px);
   object-fit: contain;
-  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.45));
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.45));
 }
 
 .slot-landscape-tagline {
-  margin: 6px 0 0;
-  font-size: 12px;
-  color: rgba(203, 213, 225, 0.92);
-  line-height: 1.35;
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: rgba(203, 213, 225, 0.9);
+  line-height: 1.3;
 }
 
 .slot-landscape-balance-card,
 .slot-landscape-status-card,
 .slot-landscape-hud {
+  flex-shrink: 0;
   border-radius: 12px;
   border: 1px solid rgba(148, 163, 184, 0.28);
-  background: rgba(2, 6, 23, 0.75);
-  padding: 10px 12px;
+  background: rgba(2, 6, 23, 0.7);
+  padding: 8px 12px;
 }
 
 .slot-landscape-balance-card span,
 .slot-landscape-status-card p,
 .slot-landscape-hud p {
   margin: 0;
-  font-size: 13px;
+  font-size: 12px;
   color: #cbd5e1;
 }
 
@@ -141,36 +173,38 @@
 .slot-landscape-status-card strong,
 .slot-landscape-hud strong {
   color: #fde68a;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
 }
 
+/* ===== Centro · rodillos protagonistas ===== */
 .slot-landscape-center {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .slot-landscape-center-head {
-  border-radius: 14px;
+  flex-shrink: 0;
+  border-radius: 12px;
   border: 1px solid rgba(232, 192, 90, 0.28);
   background: linear-gradient(180deg, rgba(36, 22, 12, 0.88), rgba(15, 11, 8, 0.94));
-  padding: 8px 14px;
+  padding: 6px 14px;
 }
 
 .slot-landscape-center-head h1 {
   margin: 0;
   color: #fde68a;
-  font-size: clamp(20px, 2.5vw, 28px);
+  font-size: clamp(16px, 2.2vw, 24px);
   line-height: 1.05;
 }
 
 .slot-landscape-center-head p {
-  margin: 2px 0 0;
-  color: rgba(254, 240, 138, 0.82);
-  font-size: 12px;
+  margin: 1px 0 0;
+  color: rgba(254, 240, 138, 0.8);
+  font-size: 11px;
   letter-spacing: 0.04em;
 }
 
@@ -178,19 +212,21 @@
   position: relative;
   flex: 1;
   min-height: 0;
-  border-radius: 18px;
+  border-radius: 16px;
   border: 1px solid rgba(232, 192, 90, 0.35);
-  background: linear-gradient(180deg, rgba(12, 16, 26, 0.96), rgba(7, 11, 18, 0.98));
+  background: linear-gradient(180deg, rgba(14, 19, 30, 0.94), rgba(9, 13, 21, 0.96));
   box-shadow:
-    inset 0 0 30px rgba(0, 0, 0, 0.75),
-    0 20px 42px rgba(0, 0, 0, 0.5);
-  padding: clamp(8px, 1.2vw, 12px);
+    inset 0 0 18px rgba(0, 0, 0, 0.45),
+    0 16px 34px rgba(0, 0, 0, 0.45);
+  padding: clamp(6px, 1vw, 10px);
   overflow: hidden;
+  display: flex;
 }
 
 .slot-landscape-machine .slot-payline-frame {
   height: 100%;
   min-height: 0;
+  width: 100%;
 }
 
 .slot-landscape-machine .slot-payline-reels {
@@ -200,10 +236,26 @@
 .slot-landscape-machine .slot-reels {
   height: 100%;
   min-height: 100%;
+  max-height: 100%;
 }
 
 .slot-landscape-machine .slot-payline-rail {
   min-height: auto;
+}
+
+/* Suaviza la viñeta interna de los rodillos para que no aparezca como
+   una "columna oscura" que tape los símbolos en landscape. */
+.slot-landscape-machine .slot-reels::after {
+  box-shadow:
+    inset 0 12px 18px rgba(0, 0, 0, 0.4),
+    inset 0 -12px 18px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.32) 0%,
+    transparent 20%,
+    transparent 80%,
+    rgba(0, 0, 0, 0.32) 100%
+  );
 }
 
 .slot-landscape-machine--settle {
@@ -212,7 +264,7 @@
 
 @keyframes slotLandscapeSettle {
   0% {
-    filter: brightness(1.06);
+    filter: brightness(1.05);
   }
   100% {
     filter: brightness(1);
@@ -221,30 +273,34 @@
 
 .slot-landscape-jackpot {
   position: absolute;
-  top: 10px;
+  top: 8px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 8;
-  padding: 7px 14px;
+  padding: 6px 14px;
   border-radius: 999px;
   background: linear-gradient(180deg, #fde68a 0%, #f59e0b 100%);
   color: #3f1e00;
   font-weight: 900;
-  font-size: 14px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  font-size: 13px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
 }
 
+/* ===== Panel derecho · controles ===== */
 .slot-landscape-panel--right {
-  gap: 12px;
+  gap: 8px;
+  justify-content: flex-start;
 }
 
 .slot-landscape-root .slot-finance-hud {
+  flex-shrink: 0;
   border-radius: 12px;
   background: linear-gradient(180deg, rgba(3, 10, 20, 0.94), rgba(3, 7, 14, 0.98));
   border: 1px solid rgba(148, 163, 184, 0.22);
 }
 
 .slot-landscape-bets {
+  flex-shrink: 0;
   border-radius: 12px;
   border: 1px solid rgba(148, 163, 184, 0.2);
   background: rgba(7, 11, 18, 0.9);
@@ -262,16 +318,20 @@
 }
 
 .slot-landscape-spin-wrap {
+  flex: 1;
+  min-height: 0;
   display: flex;
+  align-items: center;
   justify-content: center;
 }
 
 .slot-landscape-root .slot-spin-button {
-  width: clamp(108px, 11vw, 132px);
-  height: clamp(108px, 11vw, 132px);
+  width: clamp(96px, 12vh, 126px);
+  height: clamp(96px, 12vh, 126px);
 }
 
 .slot-landscape-actions {
+  flex-shrink: 0;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
@@ -280,14 +340,18 @@
 .slot-landscape-actions .slot-rules-btn {
   min-height: 44px;
   font-size: 16px;
+  padding: 6px 8px;
 }
 
 .slot-landscape-result {
-  min-height: 46px;
+  flex-shrink: 0;
+  min-height: 40px;
   border-radius: 12px;
   border: 1px solid rgba(148, 163, 184, 0.24);
   background: rgba(3, 7, 14, 0.84);
   padding: 8px;
+  display: flex;
+  align-items: center;
 }
 
 .slot-landscape-result .slot-result-strip {
@@ -309,6 +373,7 @@
   color: #fca5a5;
 }
 
+/* ===== Classic 7 ===== */
 .slot-landscape-shell--classic7 .slot-landscape-center-head {
   border-color: rgba(239, 68, 68, 0.4);
   background: linear-gradient(180deg, rgba(87, 11, 16, 0.9), rgba(30, 6, 8, 0.96));
@@ -322,12 +387,27 @@
   border-color: rgba(239, 68, 68, 0.48);
 }
 
+.classic7-reel-frame-deco {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.5;
+}
+
+.classic7-reel-frame-art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .slot-landscape-classic-reels {
   position: relative;
+  flex: 1;
   height: 100%;
   border-radius: 12px;
   overflow: hidden;
-  background: rgba(10, 8, 8, 0.8);
+  background: rgba(10, 8, 8, 0.55);
 }
 
 .slot-landscape-machine--classic7 .slot-screen-viewport {
@@ -337,18 +417,21 @@
 }
 
 .slot-landscape-classic-bets {
+  flex-shrink: 0;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
 .slot-landscape-history {
+  flex-shrink: 0;
   border-radius: 12px;
   border: 1px solid rgba(148, 163, 184, 0.2);
   background: rgba(8, 11, 18, 0.88);
   padding: 8px;
-  max-height: 130px;
+  max-height: 110px;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .slot-landscape-history p {
@@ -373,54 +456,181 @@
 
 .slot-landscape-modals {
   position: relative;
-  z-index: 9;
+  z-index: 12;
 }
 
-@media (max-width: 980px) {
-  .slot-landscape-shell {
-    grid-template-columns: minmax(160px, 24vw) minmax(0, 1fr) minmax(210px, 29vw);
-    gap: 10px;
-  }
+/* ===== Overlay de rotación (cuando el teléfono está en vertical) ===== */
+.slot-landscape-root--portrait {
+  overflow: hidden;
+}
 
-  .slot-landscape-root .slot-spin-button {
-    width: 100px;
-    height: 100px;
+.slot-rotate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding:
+    max(16px, var(--slot-safe-top))
+    max(20px, var(--slot-safe-right))
+    max(16px, var(--slot-safe-bottom))
+    max(20px, var(--slot-safe-left));
+  background:
+    radial-gradient(circle at 50% 30%, rgba(40, 16, 30, 0.96), rgba(4, 6, 12, 0.99));
+  backdrop-filter: blur(6px);
+}
+
+.slot-rotate-card {
+  width: min(340px, 100%);
+  border-radius: 20px;
+  padding: 26px 22px 24px;
+  text-align: center;
+  border: 1px solid rgba(232, 192, 90, 0.45);
+  background: linear-gradient(180deg, rgba(18, 24, 38, 0.96), rgba(6, 9, 16, 0.98));
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.65),
+    0 0 34px rgba(232, 192, 90, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.slot-rotate-icon {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slot-rotate-phone {
+  width: 34px;
+  height: 60px;
+  border-radius: 8px;
+  border: 3px solid #fde68a;
+  box-shadow: 0 0 14px rgba(253, 224, 71, 0.4);
+  animation: slotRotatePhone 2.4s ease-in-out infinite;
+}
+
+.slot-rotate-arrow {
+  position: absolute;
+  right: 2px;
+  top: 6px;
+  width: 22px;
+  height: 22px;
+  border: 3px solid rgba(125, 211, 252, 0.9);
+  border-left-color: transparent;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  transform: rotate(45deg);
+}
+
+@keyframes slotRotatePhone {
+  0%,
+  40% {
+    transform: rotate(0deg);
+  }
+  60%,
+  100% {
+    transform: rotate(-90deg);
   }
 }
 
-@media (max-height: 460px) {
+.slot-rotate-title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  color: #fde68a;
+}
+
+.slot-rotate-copy {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: rgba(226, 232, 240, 0.9);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slot-rotate-phone {
+    animation: none;
+    transform: rotate(-90deg);
+  }
+}
+
+/* ===== Breakpoints reales para iPhone landscape ===== */
+
+/* iPhone 14/15/Pro Max landscape y similares (altura media) */
+@media (orientation: landscape) and (max-height: 440px) {
   .slot-landscape-shell {
-    grid-template-columns: minmax(150px, 22vw) minmax(0, 1fr) minmax(200px, 29vw);
+    grid-template-columns: minmax(140px, 17vw) minmax(0, 1fr) minmax(200px, 23vw);
     gap: 8px;
   }
 
   .slot-landscape-panel {
     padding: 8px;
-    gap: 8px;
+    gap: 6px;
   }
 
   .slot-landscape-center-head {
-    padding: 6px 10px;
+    padding: 5px 12px;
+  }
+
+  .slot-landscape-logo {
+    max-height: clamp(40px, 16vh, 64px);
   }
 }
 
-@media (orientation: portrait) {
+/* iPhone SE landscape (altura muy baja) */
+@media (orientation: landscape) and (max-height: 380px) {
   .slot-landscape-shell {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    grid-template-columns: minmax(128px, 20vw) minmax(0, 1fr) minmax(186px, 26vw);
+    gap: 6px;
+    padding:
+      max(4px, var(--slot-safe-top))
+      max(8px, var(--slot-safe-right))
+      max(6px, var(--slot-safe-bottom))
+      max(8px, var(--slot-safe-left));
   }
 
-  .slot-landscape-panel--left,
-  .slot-landscape-panel--right {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
+  .slot-landscape-center-head h1 {
+    font-size: 15px;
   }
 
-  .slot-landscape-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    width: 100%;
+  .slot-landscape-center-head p,
+  .slot-landscape-tagline {
+    display: none;
+  }
+
+  .slot-landscape-logo {
+    max-height: 48px;
+  }
+
+  .slot-landscape-balance-card,
+  .slot-landscape-status-card {
+    padding: 6px 10px;
+  }
+
+  .slot-landscape-root .slot-spin-button {
+    width: clamp(84px, 24vh, 104px);
+    height: clamp(84px, 24vh, 104px);
+  }
+
+  .slot-landscape-actions .slot-rules-btn {
+    font-size: 16px;
+    padding: 4px 6px;
+  }
+
+  .slot-landscape-result {
+    min-height: 36px;
+    padding: 6px;
+  }
+}
+
+/* Pantallas anchas (Pro Max) pueden permitirse más aire */
+@media (orientation: landscape) and (min-width: 900px) and (min-height: 410px) {
+  .slot-landscape-shell {
+    grid-template-columns: minmax(170px, 18vw) minmax(0, 1fr) minmax(230px, 23vw);
   }
 }

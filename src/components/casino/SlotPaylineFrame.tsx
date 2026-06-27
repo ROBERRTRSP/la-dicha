@@ -104,7 +104,7 @@ export function SlotPaylineFrame({
                     key={`${index}-${pointIndex}`}
                     cx={point.x}
                     cy={point.y}
-                    r={1.45}
+                    r={0.9}
                     className="slot-payline-node"
                   />
                 ))}

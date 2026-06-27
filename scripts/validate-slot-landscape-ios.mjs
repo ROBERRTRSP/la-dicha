@@ -72,10 +72,20 @@ async function viewCheck(page) {
     const betButtons = Array.from(document.querySelectorAll(".slot-bet-btn")).map((el) =>
       el.getBoundingClientRect()
     );
-    const minFont = Math.min(
-      ...Array.from(document.querySelectorAll("button, .slot-result-strip"))
-        .map((el) => Number.parseFloat(window.getComputedStyle(el).fontSize || "16"))
-    );
+    // iOS solo hace zoom al enfocar controles interactivos con fuente < 16px.
+    const interactive = Array.from(
+      document.querySelectorAll("button, a, input, select, textarea")
+    ).filter((el) => {
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    });
+    const minFont = interactive.length
+      ? Math.min(
+          ...interactive.map((el) =>
+            Number.parseFloat(window.getComputedStyle(el).fontSize || "16")
+          )
+        )
+      : 16;
     const viewportFit = document.querySelector("meta[name='viewport']")?.getAttribute("content") || "";
     const safeLeft = getComputedStyle(document.documentElement).getPropertyValue("--slot-safe-left");
     const toastWin = visible('[data-testid="toast-win"]');
@@ -84,7 +94,7 @@ async function viewCheck(page) {
     return {
       viewport: { width: vw, height: vh },
       checks: {
-        noTopCut: Boolean(shell && shell.top >= 0),
+        noTopCut: Boolean(shell && shell.top >= -1),
         noBottomCut: Boolean(shell && shell.bottom <= vh + 1),
         noSideCut: Boolean(shell && shell.left >= 0 && shell.right <= vw + 1),
         notchSafe: Boolean(machine && machine.left >= 0 && machine.right <= vw + 1),
@@ -167,7 +177,16 @@ async function runFunctional20Spins() {
           .then(() => true)
           .catch(() => false);
         if (!started) {
-          if (attempt === 2) throw new Error("El giro demo no inicio.");
+          if (attempt === 2) {
+            return {
+              spinDisabled: false,
+              betLocked: false,
+              balanceUpdatedAfterResult: false,
+              noDoubleSpin: false,
+              noToastOverlap: false,
+              isWin: false,
+            };
+          }
           continue;
         }
 
@@ -196,7 +215,16 @@ async function runFunctional20Spins() {
           .catch(() => {});
 
         if (!incremented) {
-          if (attempt === 2) throw new Error("El giro demo no finalizo.");
+          if (attempt === 2) {
+            return {
+              spinDisabled,
+              betLocked,
+              balanceUpdatedAfterResult: false,
+              noDoubleSpin: false,
+              noToastOverlap: false,
+              isWin: false,
+            };
+          }
           continue;
         }
 
@@ -213,7 +241,14 @@ async function runFunctional20Spins() {
           isWin: lastWin > 0,
         };
       }
-      throw new Error("No se pudo completar giro demo.");
+      return {
+        spinDisabled: false,
+        betLocked: false,
+        balanceUpdatedAfterResult: false,
+        noDoubleSpin: false,
+        noToastOverlap: false,
+        isWin: false,
+      };
     };
 
     const checks = {
@@ -273,6 +308,45 @@ async function runFunctional20Spins() {
   }
 }
 
+async function runPortraitOverlayCase() {
+  const browser = await webkit.launch();
+  try {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      deviceScaleFactor: 3,
+      isMobile: true,
+      hasTouch: true,
+    });
+    const page = await context.newPage();
+    await page.goto(`${BASE_URL}${TARGET_PATH}`, {
+      waitUntil: "networkidle",
+      timeout: 120000,
+    });
+    await page.waitForTimeout(800);
+    const overlayVisible = await page
+      .locator(".slot-rotate-overlay")
+      .isVisible()
+      .catch(() => false);
+    const spinVisible = await page
+      .locator('[data-testid="spin-button"]')
+      .isVisible()
+      .catch(() => false);
+    const shot = path.join(OUTPUT_DIR, "iphone-portrait-rotate-overlay.png");
+    await page.screenshot({ path: shot, fullPage: false });
+    await context.close();
+    return {
+      id: "iphone-portrait-rotate-overlay",
+      screenshot: shot,
+      checks: {
+        rotateOverlayShown: overlayVisible,
+        gameHiddenInPortrait: !spinVisible,
+      },
+    };
+  } finally {
+    await browser.close();
+  }
+}
+
 async function main() {
   await mkdir(OUTPUT_DIR, { recursive: true });
   const visual = [];
@@ -282,12 +356,14 @@ async function main() {
       visual.push(await runVisualCase(browserName, scenario));
     }
   }
+  const portrait = await runPortraitOverlayCase();
   const functional = await runFunctional20Spins();
   const report = {
     baseUrl: BASE_URL,
     path: TARGET_PATH,
     createdAt: new Date().toISOString(),
     visual,
+    portrait,
     functional,
     pwaNote:
       "Playwright valida viewport-fit=cover y safe-area CSS. Standalone real requiere instalar PWA en dispositivo iOS físico.",

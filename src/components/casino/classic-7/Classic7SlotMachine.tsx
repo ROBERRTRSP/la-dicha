@@ -8,12 +8,12 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
-import { AiVisual } from "@/components/ui/AiVisual";
 import { SpinButton } from "../SlotCabinet";
 import { SlotReels } from "../SlotReels";
 import { CoinBurst } from "../CoinBurst";
 import { WinCelebration } from "../WinCelebration";
-import { useSlotMobile } from "../useSlotMobile";
+import { useSlotMobile, useSlotPortraitBlock } from "../useSlotMobile";
+import { SlotOrientationNotice } from "../SlotOrientationNotice";
 import { Classic7PaytableModal } from "./Classic7PaytableModal";
 import { getSlotGame } from "@/lib/slots/games";
 import { getSlotUiPace } from "@/lib/slots/mobile-pace";
@@ -102,6 +102,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
   const autoFreeSpinTimerRef = useRef(0);
   const freeSpinFlashTimerRef = useRef(0);
   const isMobile = useSlotMobile();
+  const portraitBlocked = useSlotPortraitBlock();
   const uiPace = useMemo(() => getSlotUiPace(isMobile), [isMobile]);
 
   const loadHistory = useCallback(() => {
@@ -363,25 +364,28 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
     <div
       className={cn(
         "slot-landscape-root slot-landscape-root--classic7",
+        portraitBlocked && "slot-landscape-root--portrait",
         awaitingStop && "slot-landscape-root--spinning",
         winFlash && "slot-landscape-root--win"
       )}
     >
       <div className="slot-landscape-bg slot-landscape-bg--classic7" aria-hidden>
-        <AiVisual src={C7.bg} alt="" fill priority sizes="100vw" className="classic7-bg-art" />
+        <img src={C7.bg} alt="" className="classic7-bg-art" />
       </div>
+
+      <SlotOrientationNotice active={portraitBlocked} />
+
+      {portraitBlocked ? null : (
+      <>
       <div className="slot-landscape-shell slot-landscape-shell--classic7">
         <aside className="slot-landscape-panel slot-landscape-panel--left">
           <Link href={CASINO_LOBBY_HREF} className="slot-landscape-back">
-            ← Volver al casino
+            ← Casino
           </Link>
           <div className="slot-landscape-logo-card slot-landscape-logo-card--classic7">
-            <AiVisual
+            <img
               src={C7.logo}
               alt="Clásica 7"
-              width={440}
-              height={120}
-              priority
               className="slot-landscape-logo"
             />
             <p className="slot-landscape-tagline">Slot clásica premium · 1 línea central</p>
@@ -409,11 +413,9 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
           </header>
           <div className="slot-landscape-machine slot-landscape-machine--classic7">
             <div className="classic7-reel-frame-deco" aria-hidden>
-              <AiVisual
+              <img
                 src={C7.cabinetFrame}
                 alt=""
-                fill
-                sizes="(max-width: 980px) 70vw, 820px"
                 className="classic7-reel-frame-art"
               />
             </div>
@@ -554,6 +556,8 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
           bet={bet}
         />
       </div>
+      </>
+      )}
     </div>
   );
 }

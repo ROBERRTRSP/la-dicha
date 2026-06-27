@@ -77,3 +77,44 @@ export function useSlotLandscapeWarning(): boolean {
 
   return showWarning;
 }
+
+/**
+ * Bloqueo de orientación para juegos landscape-first:
+ * - En teléfonos táctiles en modo vertical, se debe ocultar el juego
+ *   y mostrar solo el aviso de rotación.
+ * - En pantallas grandes (tablet/desktop) nunca se bloquea.
+ *
+ * Devuelve `true` cuando hay que mostrar el overlay y NO renderizar el juego.
+ */
+export function useSlotPortraitBlock(): boolean {
+  const [blocked, setBlocked] = useState(false);
+
+  useEffect(() => {
+    const portraitMq = window.matchMedia("(orientation: portrait)");
+    const touchMq = window.matchMedia("(hover: none) and (pointer: coarse)");
+    // Solo consideramos "teléfono": viewport corto en su lado menor.
+    const phoneMq = window.matchMedia("(max-width: 900px)");
+
+    const update = () => {
+      setBlocked(
+        portraitMq.matches && touchMq.matches && phoneMq.matches
+      );
+    };
+
+    update();
+    const stopPortrait = listenMediaChange(portraitMq, update);
+    const stopTouch = listenMediaChange(touchMq, update);
+    const stopPhone = listenMediaChange(phoneMq, update);
+    window.addEventListener("orientationchange", update);
+    window.addEventListener("resize", update);
+    return () => {
+      stopPortrait();
+      stopTouch();
+      stopPhone();
+      window.removeEventListener("orientationchange", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
+  return blocked;
+}

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
-import { AiVisual } from "@/components/ui/AiVisual";
 import { SlotRulesPanel, type SlotRulesSection } from "../SlotRulesPanel";
 import { SlotReels } from "../SlotReels";
 import { SlotFinanceHud } from "../SlotFinanceHud";
@@ -9,7 +8,8 @@ import { SlotPaylineFrame } from "../SlotPaylineFrame";
 import { CoinBurst } from "../CoinBurst";
 import { AnimatedBalance } from "../WinDisplay";
 import { WinCelebration } from "../WinCelebration";
-import { useSlotMobile } from "../useSlotMobile";
+import { useSlotMobile, useSlotPortraitBlock } from "../useSlotMobile";
+import { SlotOrientationNotice } from "../SlotOrientationNotice";
 import { BetControls, SpinButton } from "../SlotCabinet";
 import { CASINO_ART } from "@/lib/casino-art";
 import { getSlotGame } from "@/lib/slots/games";
@@ -89,6 +89,7 @@ export function SlotVisualPreviewMachine() {
   );
   const freeMode = bonus.freeSpinsLeft > 0;
   const isMobile = useSlotMobile();
+  const portraitBlocked = useSlotPortraitBlock();
   const uiPace = useMemo(() => getSlotUiPace(isMobile), [isMobile]);
   const pendingResult = useRef<PreviewSpinResponse | null>(null);
   const reelsStoppedRef = useRef(false);
@@ -202,19 +203,23 @@ export function SlotVisualPreviewMachine() {
         "slot-landscape-root",
         game.themeClass,
         "slot-landscape-root--preview",
+        portraitBlocked && "slot-landscape-root--portrait",
         awaitingStop && "slot-landscape-root--spinning",
         winFlash && "slot-landscape-root--win"
       )}
     >
       <div className="slot-landscape-bg" aria-hidden />
+
+      <SlotOrientationNotice active={portraitBlocked} />
+
+      {portraitBlocked ? null : (
+      <>
       <div className="slot-landscape-shell">
         <aside className="slot-landscape-panel slot-landscape-panel--left">
           <div className="slot-landscape-logo-card">
-            <AiVisual
+            <img
               src={CASINO_ART.thumbs[PREVIEW_GAME_ID]}
               alt={`${game.name} preview`}
-              width={360}
-              height={130}
               className="slot-landscape-logo"
             />
             <p className="slot-landscape-tagline">Preview visual segura · demo aislada</p>
@@ -410,6 +415,8 @@ export function SlotVisualPreviewMachine() {
         bet={bet}
         initialSection={rulesSection}
       />
+      </>
+      )}
     </div>
   );
 }
