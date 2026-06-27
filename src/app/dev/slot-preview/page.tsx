@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { SlotPreviewBottomNav } from "@/components/casino/preview/SlotPreviewBottomNav";
 import { SlotVisualPreviewMachine } from "@/components/casino/preview/SlotVisualPreviewMachine";
 import { isSlotVisualPreviewEnabled } from "@/lib/slots/preview-access";
 
@@ -19,12 +18,5 @@ export default function SlotPreviewPage() {
     notFound();
   }
 
-  return (
-    <div className="player-shell slot-preview-shell">
-      <main className="player-content slot-preview-content">
-        <SlotVisualPreviewMachine />
-      </main>
-      <SlotPreviewBottomNav />
-    </div>
-  );
+  return <SlotVisualPreviewMachine />;
 }

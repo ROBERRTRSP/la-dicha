@@ -6,6 +6,26 @@ const BASE_URL = process.env.SLOT_PREVIEW_BASE_URL ?? "http://127.0.0.1:3000";
 const TARGET_PATH = "/dev/slot-preview";
 const OUTPUT_DIR = path.resolve("artifacts", "slot-landscape-ios");
 
+const PORTRAIT_CASES = [
+  {
+    id: "iphone-se-portrait",
+    viewport: { width: 375, height: 667 },
+    scale: 2,
+    browsers: ["webkit"],
+  },
+  {
+    id: "iphone-14-15-portrait",
+    viewport: { width: 390, height: 844 },
+    scale: 3,
+    browsers: ["webkit", "chromium"],
+  },
+  {
+    id: "iphone-pro-max-portrait",
+    viewport: { width: 430, height: 932 },
+    scale: 3,
+    browsers: ["webkit"],
+  },
+];
 const LANDSCAPE_CASES = [
   {
     id: "iphone-se-landscape",
@@ -32,7 +52,7 @@ const toNum = (value) => Number(String(value ?? "").replace(/[^\d.-]/g, ""));
 async function waitForReady(page) {
   for (let attempt = 0; attempt < 4; attempt++) {
     const response = await page.goto(`${BASE_URL}${TARGET_PATH}`, {
-      waitUntil: "networkidle",
+      waitUntil: "domcontentloaded",
       timeout: 120000,
     });
     const status = response?.status() ?? 0;
@@ -112,6 +132,7 @@ async function viewCheck(page) {
 }
 
 async function runVisualCase(browserType, scenario) {
+  console.log(`[visual] ${scenario.id} · ${browserType}`);
   const browser = await (browserType === "webkit" ? webkit : chromium).launch();
   try {
     const context = await browser.newContext({
@@ -308,21 +329,19 @@ async function runFunctional20Spins() {
   }
 }
 
-async function runPortraitOverlayCase() {
-  const browser = await webkit.launch();
+async function runPortraitPlayableCase(browserType, scenario) {
+  console.log(`[portrait] ${scenario.id} · ${browserType}`);
+  const browser = await (browserType === "webkit" ? webkit : chromium).launch();
   try {
     const context = await browser.newContext({
-      viewport: { width: 390, height: 844 },
-      deviceScaleFactor: 3,
+      viewport: scenario.viewport,
+      deviceScaleFactor: scenario.scale,
       isMobile: true,
       hasTouch: true,
     });
     const page = await context.newPage();
-    await page.goto(`${BASE_URL}${TARGET_PATH}`, {
-      waitUntil: "networkidle",
-      timeout: 120000,
-    });
-    await page.waitForTimeout(800);
+    await waitForReady(page);
+
     const overlayVisible = await page
       .locator(".slot-rotate-overlay")
       .isVisible()
@@ -331,15 +350,28 @@ async function runPortraitOverlayCase() {
       .locator('[data-testid="spin-button"]')
       .isVisible()
       .catch(() => false);
-    const shot = path.join(OUTPUT_DIR, "iphone-portrait-rotate-overlay.png");
+
+    await page.getByTestId("mode-win").click({ force: true });
+    await page.getByTestId("spin-button").click({ force: true });
+    await page.waitForFunction(
+      () => document.querySelector('[data-testid="preview-awaiting"]')?.textContent === "0",
+      undefined,
+      { timeout: 30000 }
+    );
+
+    const snapshot = await viewCheck(page);
+    const shot = path.join(OUTPUT_DIR, `${scenario.id}-${browserType}.png`);
     await page.screenshot({ path: shot, fullPage: false });
     await context.close();
     return {
-      id: "iphone-portrait-rotate-overlay",
+      id: scenario.id,
+      browser: browserType,
       screenshot: shot,
       checks: {
-        rotateOverlayShown: overlayVisible,
-        gameHiddenInPortrait: !spinVisible,
+        ...snapshot.checks,
+        noRotateOverlay: !overlayVisible,
+        gamePlayableInPortrait: spinVisible,
+        machineVisible: snapshot.checks.notchSafe,
       },
     };
   } finally {
@@ -348,6 +380,7 @@ async function runPortraitOverlayCase() {
 }
 
 async function main() {
+  console.log("Slot orientation validation starting…");
   await mkdir(OUTPUT_DIR, { recursive: true });
   const visual = [];
   for (const scenario of LANDSCAPE_CASES) {
@@ -356,7 +389,13 @@ async function main() {
       visual.push(await runVisualCase(browserName, scenario));
     }
   }
-  const portrait = await runPortraitOverlayCase();
+  const portrait = [];
+  for (const scenario of PORTRAIT_CASES) {
+    for (const browserName of scenario.browsers) {
+      // eslint-disable-next-line no-await-in-loop
+      portrait.push(await runPortraitPlayableCase(browserName, scenario));
+    }
+  }
   const functional = await runFunctional20Spins();
   const report = {
     baseUrl: BASE_URL,

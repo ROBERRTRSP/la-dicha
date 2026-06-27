@@ -79,7 +79,9 @@ export function ReelMetricsProvider({
 
   const syncMetrics = useCallback((el: HTMLElement) => {
     const stage = (el.closest(".slot-screen-viewport") ??
-      el.closest(".classic7-screen")) as HTMLElement | null;
+      el.closest(".classic7-screen") ??
+      el.closest(".slot-payline-reels") ??
+      el.closest(".slot-landscape-machine")) as HTMLElement | null;
     const w = el.clientWidth || stage?.clientWidth || 320;
     const stageH = stage?.clientHeight ?? 0;
     const m = capMetricsForClassic7(el, computeMetrics(w, stageH));
@@ -109,7 +111,9 @@ export function ReelMetricsProvider({
     if (!el) return;
 
     const stage = (el.closest(".slot-screen-viewport") ??
-      el.closest(".classic7-screen")) as HTMLElement | null;
+      el.closest(".classic7-screen") ??
+      el.closest(".slot-payline-reels") ??
+      el.closest(".slot-landscape-machine")) as HTMLElement | null;
 
     const update = () => syncMetrics(el);
 

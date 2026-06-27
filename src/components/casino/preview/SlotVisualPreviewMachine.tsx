@@ -8,8 +8,7 @@ import { SlotPaylineFrame } from "../SlotPaylineFrame";
 import { CoinBurst } from "../CoinBurst";
 import { AnimatedBalance } from "../WinDisplay";
 import { WinCelebration } from "../WinCelebration";
-import { useSlotMobile, useSlotPortraitBlock } from "../useSlotMobile";
-import { SlotOrientationNotice } from "../SlotOrientationNotice";
+import { useSlotMobile } from "../useSlotMobile";
 import { BetControls, SpinButton } from "../SlotCabinet";
 import { CASINO_ART } from "@/lib/casino-art";
 import { getSlotGame } from "@/lib/slots/games";
@@ -89,7 +88,6 @@ export function SlotVisualPreviewMachine() {
   );
   const freeMode = bonus.freeSpinsLeft > 0;
   const isMobile = useSlotMobile();
-  const portraitBlocked = useSlotPortraitBlock();
   const uiPace = useMemo(() => getSlotUiPace(isMobile), [isMobile]);
   const pendingResult = useRef<PreviewSpinResponse | null>(null);
   const reelsStoppedRef = useRef(false);
@@ -203,17 +201,13 @@ export function SlotVisualPreviewMachine() {
         "slot-landscape-root",
         game.themeClass,
         "slot-landscape-root--preview",
-        portraitBlocked && "slot-landscape-root--portrait",
         awaitingStop && "slot-landscape-root--spinning",
         winFlash && "slot-landscape-root--win"
       )}
     >
       <div className="slot-landscape-bg" aria-hidden />
+      <div className="slot-landscape-vignette" aria-hidden />
 
-      <SlotOrientationNotice active={portraitBlocked} />
-
-      {portraitBlocked ? null : (
-      <>
       <div className="slot-landscape-shell">
         <aside className="slot-landscape-panel slot-landscape-panel--left">
           <div className="slot-landscape-logo-card">
@@ -244,7 +238,7 @@ export function SlotVisualPreviewMachine() {
         <section className="slot-landscape-center">
           <header className="slot-landscape-center-head">
             <h1>{game.name} Preview</h1>
-            <p>{game.paylineCount} líneas · iPhone landscape demo</p>
+            <p>{game.paylineCount} líneas · demo responsive</p>
           </header>
           <div className="slot-landscape-machine">
             <div className="slot-preview-observer" aria-hidden>
@@ -415,8 +409,6 @@ export function SlotVisualPreviewMachine() {
         bet={bet}
         initialSection={rulesSection}
       />
-      </>
-      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 {
   "baseUrl": "http://127.0.0.1:3010",
   "path": "/dev/slot-preview",
-  "createdAt": "2026-06-27T18:38:50.512Z",
+  "createdAt": "2026-06-27T19:59:12.194Z",
   "visual": [
     {
       "id": "iphone-se-landscape",
@@ -12,18 +12,18 @@
         "height": 375
       },
       "checks": {
-        "noTopCut": true,
+        "noTopCut": false,
         "noBottomCut": true,
         "noSideCut": true,
         "notchSafe": true,
-        "spinVisibleComfortable": true,
-        "betButtonsVisible": true,
+        "spinVisibleComfortable": false,
+        "betButtonsVisible": false,
         "rulesAccessible": true,
         "noWeirdScroll": true,
         "noZoomAccidental": false,
         "toastsNotOverlap": true,
         "viewportFitCover": true,
-        "safeAreaVarsPresent": true
+        "safeAreaVarsPresent": false
       }
     },
     {
@@ -35,18 +35,18 @@
         "height": 375
       },
       "checks": {
-        "noTopCut": true,
+        "noTopCut": false,
         "noBottomCut": true,
         "noSideCut": true,
         "notchSafe": true,
-        "spinVisibleComfortable": true,
-        "betButtonsVisible": true,
+        "spinVisibleComfortable": false,
+        "betButtonsVisible": false,
         "rulesAccessible": true,
         "noWeirdScroll": true,
         "noZoomAccidental": false,
         "toastsNotOverlap": true,
         "viewportFitCover": true,
-        "safeAreaVarsPresent": true
+        "safeAreaVarsPresent": false
       }
     },
     {
@@ -58,18 +58,18 @@
         "height": 390
       },
       "checks": {
-        "noTopCut": true,
+        "noTopCut": false,
         "noBottomCut": true,
         "noSideCut": true,
         "notchSafe": true,
-        "spinVisibleComfortable": true,
-        "betButtonsVisible": true,
+        "spinVisibleComfortable": false,
+        "betButtonsVisible": false,
         "rulesAccessible": true,
         "noWeirdScroll": true,
         "noZoomAccidental": false,
         "toastsNotOverlap": true,
         "viewportFitCover": true,
-        "safeAreaVarsPresent": true
+        "safeAreaVarsPresent": false
       }
     },
     {
@@ -81,18 +81,18 @@
         "height": 390
       },
       "checks": {
-        "noTopCut": true,
+        "noTopCut": false,
         "noBottomCut": true,
         "noSideCut": true,
         "notchSafe": true,
-        "spinVisibleComfortable": true,
-        "betButtonsVisible": true,
+        "spinVisibleComfortable": false,
+        "betButtonsVisible": false,
         "rulesAccessible": true,
         "noWeirdScroll": true,
         "noZoomAccidental": false,
         "toastsNotOverlap": true,
         "viewportFitCover": true,
-        "safeAreaVarsPresent": true
+        "safeAreaVarsPresent": false
       }
     },
     {
@@ -104,18 +104,18 @@
         "height": 430
       },
       "checks": {
-        "noTopCut": true,
+        "noTopCut": false,
         "noBottomCut": true,
         "noSideCut": true,
         "notchSafe": true,
-        "spinVisibleComfortable": true,
-        "betButtonsVisible": true,
+        "spinVisibleComfortable": false,
+        "betButtonsVisible": false,
         "rulesAccessible": true,
         "noWeirdScroll": true,
         "noZoomAccidental": false,
         "toastsNotOverlap": true,
         "viewportFitCover": true,
-        "safeAreaVarsPresent": true
+        "safeAreaVarsPresent": false
       }
     },
     {
@@ -127,44 +127,126 @@
         "height": 430
       },
       "checks": {
-        "noTopCut": true,
+        "noTopCut": false,
         "noBottomCut": true,
         "noSideCut": true,
         "notchSafe": true,
-        "spinVisibleComfortable": true,
-        "betButtonsVisible": true,
+        "spinVisibleComfortable": false,
+        "betButtonsVisible": false,
         "rulesAccessible": true,
         "noWeirdScroll": true,
         "noZoomAccidental": false,
         "toastsNotOverlap": true,
         "viewportFitCover": true,
-        "safeAreaVarsPresent": true
+        "safeAreaVarsPresent": false
       }
     }
   ],
-  "portrait": {
-    "id": "iphone-portrait-rotate-overlay",
-    "screenshot": "C:\\Users\\minim\\WEB PARA VENTA DE LOTERIA DOMINICANA\\artifacts\\slot-landscape-ios\\iphone-portrait-rotate-overlay.png",
-    "checks": {
-      "rotateOverlayShown": true,
-      "gameHiddenInPortrait": true
+  "portrait": [
+    {
+      "id": "iphone-se-portrait",
+      "browser": "webkit",
+      "screenshot": "C:\\Users\\minim\\WEB PARA VENTA DE LOTERIA DOMINICANA\\artifacts\\slot-landscape-ios\\iphone-se-portrait-webkit.png",
+      "checks": {
+        "noTopCut": false,
+        "noBottomCut": true,
+        "noSideCut": true,
+        "notchSafe": true,
+        "spinVisibleComfortable": false,
+        "betButtonsVisible": false,
+        "rulesAccessible": true,
+        "noWeirdScroll": false,
+        "noZoomAccidental": false,
+        "toastsNotOverlap": true,
+        "viewportFitCover": true,
+        "safeAreaVarsPresent": false,
+        "noRotateOverlay": true,
+        "gamePlayableInPortrait": true,
+        "machineVisible": true
+      }
+    },
+    {
+      "id": "iphone-14-15-portrait",
+      "browser": "webkit",
+      "screenshot": "C:\\Users\\minim\\WEB PARA VENTA DE LOTERIA DOMINICANA\\artifacts\\slot-landscape-ios\\iphone-14-15-portrait-webkit.png",
+      "checks": {
+        "noTopCut": false,
+        "noBottomCut": true,
+        "noSideCut": true,
+        "notchSafe": true,
+        "spinVisibleComfortable": false,
+        "betButtonsVisible": false,
+        "rulesAccessible": true,
+        "noWeirdScroll": false,
+        "noZoomAccidental": false,
+        "toastsNotOverlap": true,
+        "viewportFitCover": true,
+        "safeAreaVarsPresent": false,
+        "noRotateOverlay": true,
+        "gamePlayableInPortrait": true,
+        "machineVisible": true
+      }
+    },
+    {
+      "id": "iphone-14-15-portrait",
+      "browser": "chromium",
+      "screenshot": "C:\\Users\\minim\\WEB PARA VENTA DE LOTERIA DOMINICANA\\artifacts\\slot-landscape-ios\\iphone-14-15-portrait-chromium.png",
+      "checks": {
+        "noTopCut": false,
+        "noBottomCut": true,
+        "noSideCut": true,
+        "notchSafe": true,
+        "spinVisibleComfortable": false,
+        "betButtonsVisible": false,
+        "rulesAccessible": true,
+        "noWeirdScroll": false,
+        "noZoomAccidental": false,
+        "toastsNotOverlap": true,
+        "viewportFitCover": true,
+        "safeAreaVarsPresent": false,
+        "noRotateOverlay": true,
+        "gamePlayableInPortrait": true,
+        "machineVisible": true
+      }
+    },
+    {
+      "id": "iphone-pro-max-portrait",
+      "browser": "webkit",
+      "screenshot": "C:\\Users\\minim\\WEB PARA VENTA DE LOTERIA DOMINICANA\\artifacts\\slot-landscape-ios\\iphone-pro-max-portrait-webkit.png",
+      "checks": {
+        "noTopCut": false,
+        "noBottomCut": true,
+        "noSideCut": true,
+        "notchSafe": true,
+        "spinVisibleComfortable": false,
+        "betButtonsVisible": false,
+        "rulesAccessible": true,
+        "noWeirdScroll": true,
+        "noZoomAccidental": false,
+        "toastsNotOverlap": true,
+        "viewportFitCover": true,
+        "safeAreaVarsPresent": false,
+        "noRotateOverlay": true,
+        "gamePlayableInPortrait": true,
+        "machineVisible": true
+      }
     }
-  },
+  ],
   "functional": {
     "spins": 20,
-    "wins": 10,
+    "wins": 0,
     "losses": 10,
     "checks": {
-      "spinBlockedDuringSpin": true,
-      "betBlockedDuringSpin": true,
-      "balanceChangesAfterResultOnly": true,
-      "noToastOverlap": true,
-      "noDoubleTapSpin": true,
+      "spinBlockedDuringSpin": false,
+      "betBlockedDuringSpin": false,
+      "balanceChangesAfterResultOnly": false,
+      "noToastOverlap": false,
+      "noDoubleTapSpin": false,
       "winningLinesMatch": true,
       "noRealApiCalls": true
     },
     "disallowedCalls": [],
-    "apiCalls": 20
+    "apiCalls": 0
   },
   "pwaNote": "Playwright valida viewport-fit=cover y safe-area CSS. Standalone real requiere instalar PWA en dispositivo iOS físico."
 }

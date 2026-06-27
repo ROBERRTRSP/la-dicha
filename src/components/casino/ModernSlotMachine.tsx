@@ -18,8 +18,7 @@ import { CoinBurst } from "./CoinBurst";
 import { AnimatedBalance } from "./WinDisplay";
 import { getSlotUiPace } from "@/lib/slots/mobile-pace";
 import { WinCelebration } from "./WinCelebration";
-import { useSlotMobile, useSlotPortraitBlock } from "./useSlotMobile";
-import { SlotOrientationNotice } from "./SlotOrientationNotice";
+import { useSlotMobile } from "./useSlotMobile";
 import { BetControls, SpinButton } from "./SlotCabinet";
 import { getSlotGame } from "@/lib/slots/games";
 import { preloadSlotSymbolImages } from "@/lib/slots/symbol-assets";
@@ -144,7 +143,6 @@ export function ModernSlotMachine({
   const isLamp = gameId === "magic-lamp";
   const isWolf = gameId === "moon-wolf";
   const isMobile = useSlotMobile();
-  const portraitBlocked = useSlotPortraitBlock();
   const uiPace = useMemo(() => getSlotUiPace(isMobile), [isMobile]);
 
   // El premio se aplica una sola vez y solo cuando AMBOS terminaron:
@@ -355,17 +353,13 @@ export function ModernSlotMachine({
         game.themeClass,
         isLamp && "slot-landscape-root--lamp",
         isWolf && "slot-landscape-root--wolf",
-        portraitBlocked && "slot-landscape-root--portrait",
         awaitingStop && "slot-landscape-root--spinning",
         winFlash && "slot-landscape-root--win"
       )}
     >
       <div className="slot-landscape-bg" aria-hidden />
+      <div className="slot-landscape-vignette" aria-hidden />
 
-      <SlotOrientationNotice active={portraitBlocked} />
-
-      {portraitBlocked ? null : (
-      <>
       {isLamp && <AmbientLights className="slot-landscape-ambient" />}
       {isWolf && (
         <MoonWolfEffects
@@ -417,7 +411,7 @@ export function ModernSlotMachine({
           <header className="slot-landscape-center-head">
             <h1>{game.name}</h1>
             <p>
-              {game.cols}x{game.rows} · perfil iPhone landscape
+              {game.cols}x{game.rows} · {game.paylineCount} líneas activas
             </p>
           </header>
           <div className={cn("slot-landscape-machine", settleFlash && "slot-landscape-machine--settle")}>
@@ -547,8 +541,6 @@ export function ModernSlotMachine({
         bet={bet}
         initialSection={rulesSection}
       />
-      </>
-      )}
     </div>
   );
 }
