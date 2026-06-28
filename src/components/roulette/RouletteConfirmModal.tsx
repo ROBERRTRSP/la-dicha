@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { formatBetLabel, type RouletteBetType } from "@/lib/roulette";
+import { setRouletteConfirmSkipped } from "@/lib/roulette-preferences";
 import { formatMoney } from "@/lib/utils";
 
 type BetRow = {
@@ -23,9 +25,11 @@ export function RouletteConfirmModal({
   totalStake: number;
   balanceBefore: number;
   loading: boolean;
-  onConfirm: () => void;
+  onConfirm: (skipNextTime: boolean) => void;
   onClose: () => void;
 }) {
+  const [skipNext, setSkipNext] = useState(false);
+
   if (!open) return null;
 
   const balanceAfterMin = balanceBefore - totalStake;
@@ -85,10 +89,21 @@ export function RouletteConfirmModal({
         </div>
 
         <div className="grid grid-cols-1 gap-2">
+          <label className="roulette-skip-confirm">
+            <input
+              type="checkbox"
+              checked={skipNext}
+              onChange={(e) => setSkipNext(e.target.checked)}
+            />
+            No volver a preguntar
+          </label>
           <button
             type="button"
             className="roulette-spin-btn min-h-[48px]"
-            onClick={onConfirm}
+            onClick={() => {
+              if (skipNext) setRouletteConfirmSkipped(true);
+              onConfirm(skipNext);
+            }}
             disabled={loading}
           >
             {loading ? "Procesando…" : "Sí, girar ruleta"}

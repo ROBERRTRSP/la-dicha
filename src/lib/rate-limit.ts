@@ -28,8 +28,9 @@ export function getClientIp(request: Request): string {
 export function getRateLimitStatus(
   key: string,
   maxAttempts: number,
-  windowMs: number
+  _windowMs: number
 ): { ok: true } | { ok: false; retryAfterSec: number } {
+  void _windowMs;
   cleanupExpired();
   const now = Date.now();
   const bucket = buckets.get(key);
@@ -83,3 +84,41 @@ export function rateLimitResponse(retryAfterSec: number) {
 
 /** 5 fallos por IP cada 15 minutos en rutas de login. */
 export const LOGIN_RATE = { maxAttempts: 5, windowMs: 15 * 60 * 1000 };
+
+/** Giros de slot: 90/min por jugador (anti-bot post-login). */
+export const SLOT_SPIN_RATE = { maxAttempts: 90, windowMs: 60 * 1000 };
+
+/** Giros de ruleta: 24/min por jugador. */
+export const ROULETTE_SPIN_RATE = { maxAttempts: 24, windowMs: 60 * 1000 };
+
+/**
+ * Consume un intento autorizado (p. ej. giro). Devuelve false si se superó el cupo.
+ */
+export function consumeRateLimit(
+  key: string,
+  maxAttempts: number,
+  windowMs: number
+): { ok: true } | { ok: false; retryAfterSec: number } {
+  cleanupExpired();
+  const now = Date.now();
+  const bucket = buckets.get(key);
+
+  if (!bucket || bucket.resetAt <= now) {
+    buckets.set(key, { count: 1, resetAt: now + windowMs });
+    return { ok: true };
+  }
+
+  if (bucket.count >= maxAttempts) {
+    return {
+      ok: false,
+      retryAfterSec: Math.max(1, Math.ceil((bucket.resetAt - now) / 1000)),
+    };
+  }
+
+  bucket.count += 1;
+  return { ok: true };
+}
+
+export function spinRateLimitKey(userId: string, action: "slot" | "roulette"): string {
+  return `spin:${action}:${userId}`;
+}

@@ -53,14 +53,12 @@ export function SlotSymbolSvg({
   const imgSrc = getSlotSymbolImage(gameId, symbolId);
   const [imgFailed, setImgFailed] = useState(false);
 
-  // Classic 7: arte vectorial transparente (evita PNG con fondo negro pegado).
-  const useRasterSymbol = gameId !== "classic-7" && Boolean(imgSrc) && !imgFailed;
-
-  if (useRasterSymbol) {
-    const src = imgSrc as string;
+  if (imgSrc && !imgFailed) {
     return (
+      // Símbolos dinámicos en carretes: img nativo evita layout shift con tamaños CSS variables.
+      // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={src}
+        src={imgSrc}
         alt={sym?.label ?? symbolId}
         draggable={false}
         loading={isCell ? "eager" : "lazy"}

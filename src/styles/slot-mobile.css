@@ -1,17 +1,23 @@
 /* Slot · celdas y símbolos en móvil */
 
 @media (max-width: 768px) {
+  .slot-landscape-root,
   .casino-machine {
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
   }
 
+  .slot-landscape-root button,
+  .slot-landscape-root [role="button"],
   .casino-machine button,
   .casino-machine [role="button"] {
     min-height: 44px;
     font-size: 16px;
   }
 
+  .slot-landscape-root input,
+  .slot-landscape-root select,
+  .slot-landscape-root textarea,
   .casino-machine input,
   .casino-machine select,
   .casino-machine textarea {
@@ -49,8 +55,8 @@
 
   .slot-reel-strip--motion .slot-reel-cell--spinning .slot-symbol-wrapper {
     filter: none !important;
-    transform: scaleY(1.045);
-    opacity: 0.92;
+    transform: scaleY(1.08);
+    opacity: 0.88;
   }
 
   .slot-reel-strip--motion .slot-reel-cell--stripe-a:not(.slot-reel-cell--win):not(.slot-reel-cell--scatter) {
@@ -111,7 +117,7 @@
   }
 
   .slot-reel-col--stopping .slot-reel-drum {
-    animation: none !important;
+    animation: slot-reel-digital-lock 0.18s ease-out !important;
   }
 
   .slot-symbol-image,
@@ -272,7 +278,7 @@
 
   .slot-reel-col--spinning .slot-reel-drum,
   .slot-reel-col--stopping .slot-reel-drum {
-    animation: none !important;
+    animation: slot-reel-digital-lock 0.18s ease-out !important;
   }
 
   .slot-spin-button--ready .slot-spin-button-outer,

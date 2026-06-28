@@ -1,26 +1,5 @@
 /* ===== Magic Lamp · tema premium ===== */
 
-.casino-machine--magic-lamp .casino-machine-bg {
-  background:
-    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(168, 85, 247, 0.22), transparent 55%),
-    radial-gradient(ellipse 70% 50% at 15% 80%, rgba(99, 102, 241, 0.15), transparent 50%),
-    radial-gradient(ellipse 60% 45% at 85% 70%, rgba(232, 121, 249, 0.12), transparent 45%),
-    linear-gradient(180deg, #0b1020 0%, #12082a 45%, #071821 100%);
-}
-
-.casino-machine--magic-lamp .casino-machine-theme-bg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  opacity: 0.5;
-  background: url("/casino/magic-lamp-bg.svg") center / cover no-repeat;
-  pointer-events: none;
-}
-
-.casino-machine--magic-lamp .casino-machine-floor-glow {
-  background: radial-gradient(ellipse, rgba(168, 85, 247, 0.35) 0%, transparent 70%);
-}
-
 .slot-theme--lamp.slot-cabinet {
   --slot-neon-primary: #a855f7;
   --slot-neon-secondary: #6366f1;

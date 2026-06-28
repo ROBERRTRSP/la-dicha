@@ -1,0 +1,56 @@
+/**
+ * Touch targets, safe-area en modales y overflow horizontal · fase cierre auditoría.
+ */
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.player-shell {
+  max-width: 100vw;
+}
+
+.admin-modal,
+.cajero-vq-modal,
+.cajero-pos-modal,
+.cajero-qr-scanner,
+.ticket-sheet {
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+.roulette-scroll {
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (max-width: 430px) {
+  .login-form-card,
+  .admin-login-content > form {
+    width: min(100%, calc(100vw - 32px));
+  }
+
+  .roulette-num-btn,
+  .roulette-outside-btn {
+    min-height: 44px;
+  }
+
+  .slot-landscape-back {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+@media (max-height: 430px) and (orientation: landscape) {
+  .slot-rotate-overlay {
+    padding: max(12px, env(safe-area-inset-top, 0px))
+      max(12px, env(safe-area-inset-right, 0px))
+      max(12px, env(safe-area-inset-bottom, 0px))
+      max(12px, env(safe-area-inset-left, 0px));
+  }
+
+  .roulette-hero--focus {
+    min-height: min(42vh, 320px);
+  }
+}

@@ -197,9 +197,7 @@ function StripButton({
       title={label}
     >
       {multi && selected && (
-        <span className="cajero-vq-strip-check" aria-hidden>
-          ✓
-        </span>
+        <span className="cajero-vq-strip-check" aria-hidden />
       )}
       {logos}
       <span className="cajero-vq-strip-label">{label}</span>

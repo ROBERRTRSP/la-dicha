@@ -21,6 +21,7 @@ export function SlotPreviewBottomNav() {
             tab.active && tab.label === "Casino" && "nav-item--casino"
           )}
         >
+          {/* eslint-disable-next-line @next/next/no-img-element -- preview dev only */}
           <img
             src={tab.art}
             alt=""

@@ -1,4 +1,5 @@
 import type { SlotGameId } from "./types";
+import { rasterAsset } from "../raster-asset";
 
 /**
  * Mapa de imágenes premium por símbolo. La clave externa es el `SlotGameId` y la
@@ -68,13 +69,14 @@ export function getSlotSymbolImage(
   gameId: SlotGameId,
   symbolId: string
 ): string | null {
-  return SLOT_SYMBOL_IMAGES[gameId]?.[symbolId] ?? null;
+  const png = SLOT_SYMBOL_IMAGES[gameId]?.[symbolId];
+  return png ? rasterAsset(png) : null;
 }
 
-/** Precarga los PNG del juego activo para reducir parpadeos en el primer giro. */
+/** Precarga los WebP del juego activo para reducir parpadeos en el primer giro. */
 export function preloadSlotSymbolImages(gameId: SlotGameId): void {
   if (typeof window === "undefined") return;
-  const urls = Object.values(SLOT_SYMBOL_IMAGES[gameId] ?? {});
+  const urls = Object.values(SLOT_SYMBOL_IMAGES[gameId] ?? {}).map(rasterAsset);
   for (const src of urls) {
     const img = new window.Image();
     img.decoding = "async";

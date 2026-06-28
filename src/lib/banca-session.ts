@@ -12,7 +12,6 @@ import {
 import { formatMoney } from "./utils";
 import {
   loadPlayLimitContext,
-  type PlayLimitContext,
 } from "./play-limit-context";
 
 export type BancaSettingsView = {

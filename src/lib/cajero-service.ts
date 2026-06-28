@@ -121,21 +121,6 @@ export async function adjustPlayerWallet(
   });
 }
 
-/** @deprecated Use adjustPlayerWallet */
-export async function depositToPlayer(
-  playerId: string,
-  amount: number,
-  note?: string
-) {
-  const result = await adjustPlayerWallet(playerId, amount, "add", note);
-  return {
-    deposited: result.amount,
-    balanceBefore: result.balanceBefore,
-    balanceAfter: result.balanceAfter,
-    username: result.username,
-  };
-}
-
 type TicketWithItems = {
   id: string;
   ticketNumber: string;
@@ -255,7 +240,7 @@ export async function getTicketReceiptForCajero(query: string): Promise<{
   };
 }
 
-export async function getCajeroDashboardStats(_cajeroId: string) {
+export async function getCajeroDashboardStats() {
   const today = dayStartInTz();
   const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
   const cashDayFilter = {

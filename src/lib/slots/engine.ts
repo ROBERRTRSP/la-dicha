@@ -73,7 +73,7 @@ function evaluateLine(
   };
 }
 
-function oxFireMultiplier(grid: Grid, game: SlotGameConfig): number {
+function oxFireMultiplier(grid: Grid): number {
   const fires = countScatters(grid, ["FIRE"]);
   if (fires >= 5) return 10;
   if (fires >= 4) return 5;
@@ -205,7 +205,7 @@ export function evaluateSpin(
   }
 
   if (game.bonus.type === "ox_jackpot") {
-    multiplierApplied = oxFireMultiplier(grid, game);
+    multiplierApplied = oxFireMultiplier(grid);
     const jp = rollOxJackpot(betAmount);
     jackpotTier = jp.tier;
     jackpotAmount = jp.amount;

@@ -25,11 +25,6 @@ export function genInternalTicketCode(): string {
   return `${prefix}-${TERMINAL}-${seq}`;
 }
 
-/** @deprecated Usar allocateTicketNumbers — mantiene compatibilidad temporal. */
-export function genPosTicketNumber(): string {
-  return genInternalTicketCode();
-}
-
 export function genVerificationHash(ticketRef: string, userId: string): string {
   return createHash("sha256")
     .update(`${ticketRef}|${userId}|${Date.now()}|LA-DICHA`)

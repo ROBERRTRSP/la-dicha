@@ -2,10 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 import type { BetTypeCode } from "./bet-parser";
 import { validateAndNormalizeCart } from "./cart-validation";
-import {
-  cartLineTotal,
-  type CartLine,
-} from "./cart-line";
+import type { CartLine } from "./cart-line";
 import { getSuperPaleDefinition, superPaleReceiptTitle } from "./super-pale";
 import { allocateTicketNumbers } from "./ticket-allocation";
 

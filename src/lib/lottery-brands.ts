@@ -39,5 +39,5 @@ export function getLotteryBrand(code: string, name?: string): LotteryBrand {
 }
 
 export function getLotteryLogoPath(code: string) {
-  return `/logos/${code}.png`;
+  return `/logos/${code}.svg`;
 }

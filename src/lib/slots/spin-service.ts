@@ -12,8 +12,11 @@ import {
   saveBonusState,
   validateSlotBet,
 } from "./settings";
+import {
+  AUTO_FREE_SPIN_EVERY_PAID_SPINS,
+  computeAutoFreeSpinProgress,
+} from "./auto-free-spin";
 
-const AUTO_FREE_SPIN_EVERY_PAID_SPINS = 4;
 const AUTO_FREE_SPIN_AWARD = 1;
 
 export async function placeSlotSpin(userId: string, gameId: string, betAmount: number) {
@@ -61,16 +64,21 @@ export async function placeSlotSpin(userId: string, gameId: string, betAmount: n
     const balanceBefore = wallet.balance;
     const bonusAfter = { ...baseBonusAfter };
     let autoFreeSpinsAwarded = 0;
+    let paidSpinsAfter = 0;
+
+    const paidSpinsBefore = await tx.slotSpin.count({
+      where: { userId, gameId, isFreeSpin: false },
+    });
 
     if (!isFreeSpin) {
-      const paidSpinsBefore = await tx.slotSpin.count({
-        where: { userId, gameId, isFreeSpin: false },
-      });
       const paidSpinsAfterCurrent = paidSpinsBefore + 1;
+      paidSpinsAfter = paidSpinsAfterCurrent;
       if (paidSpinsAfterCurrent % AUTO_FREE_SPIN_EVERY_PAID_SPINS === 0) {
         autoFreeSpinsAwarded = AUTO_FREE_SPIN_AWARD;
         bonusAfter.freeSpinsLeft += autoFreeSpinsAwarded;
       }
+    } else {
+      paidSpinsAfter = paidSpinsBefore;
     }
 
     // Congelar / mantener / limpiar la apuesta de la ronda de giros gratis.
@@ -192,6 +200,7 @@ export async function placeSlotSpin(userId: string, gameId: string, betAmount: n
       bonusTriggered,
       freeSpinsAwarded: result.freeSpinsAwarded,
       autoFreeSpinsAwarded,
+      autoFreeSpinProgress: computeAutoFreeSpinProgress(paidSpinsAfter),
       jackpotTier: result.jackpotTier,
       jackpotAmount: result.jackpotAmount,
       multiplierApplied: result.multiplierApplied,
@@ -200,6 +209,20 @@ export async function placeSlotSpin(userId: string, gameId: string, betAmount: n
       isFreeSpin,
     };
   });
+}
+
+export async function getPaidSpinCount(userId: string, gameId: string) {
+  return prisma.slotSpin.count({
+    where: { userId, gameId, isFreeSpin: false },
+  });
+}
+
+export async function getAutoFreeSpinProgressForUser(
+  userId: string,
+  gameId: string
+) {
+  const paidTotal = await getPaidSpinCount(userId, gameId);
+  return computeAutoFreeSpinProgress(paidTotal);
 }
 
 export async function getSlotSpinHistory(

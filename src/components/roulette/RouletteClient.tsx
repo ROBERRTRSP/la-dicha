@@ -25,6 +25,14 @@ import {
 } from "@/lib/roulette-validation";
 import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { isRouletteConfirmSkipped } from "@/lib/roulette-preferences";
+import {
+  unlockSlotAudio,
+  playRouletteBallStop,
+  playRouletteSpinStart,
+  playRouletteWin,
+} from "@/lib/slot-sounds";
+import { isSlotSoundMuted } from "@/lib/slot-haptics";
 
 type HistoryItem = {
   id: string;
@@ -377,6 +385,11 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
       if (result.promoMessage) {
         setInfoMessage(result.promoMessage);
       }
+      if (!isSlotSoundMuted()) {
+        unlockSlotAudio();
+        if (result.won) playRouletteWin();
+        else playRouletteBallStop();
+      }
       setSelectedBets([]);
       loadHistory();
       refreshStatus();
@@ -406,6 +419,10 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
     }
     if (totalStake > balance) {
       showError("Saldo insuficiente para estas apuestas.", true);
+      return;
+    }
+    if (isRouletteConfirmSkipped()) {
+      void executeSpin();
       return;
     }
     setConfirmOpen(true);
@@ -464,6 +481,10 @@ export function RouletteClient({ balance: initialBalance }: { balance: number })
       resultTimerRef.current = null;
     }
     setShowingResult(false);
+    if (!isSlotSoundMuted()) {
+      unlockSlotAudio();
+      playRouletteSpinStart();
+    }
     setSpinning(true);
     setLastResult(null);
     setTargetNumber(null);

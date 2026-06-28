@@ -10,9 +10,18 @@ import {
 import Link from "next/link";
 import { SpinButton } from "../SlotCabinet";
 import { SlotReels } from "../SlotReels";
+import { SlotFinanceHud } from "../SlotFinanceHud";
+import { WinDisplay } from "../WinDisplay";
+import { SlotAutoFreeProgress } from "../SlotAutoFreeProgress";
+import { SlotFreeModeBanner } from "../SlotFreeModeBanner";
+import { SlotOnboarding, SlotSoundToggle } from "../SlotOnboarding";
+import { useSlotEngagement } from "../useSlotEngagement";
+import type { AutoFreeSpinProgress } from "@/lib/slots/auto-free-spin";
 import { CoinBurst } from "../CoinBurst";
 import { WinCelebration } from "../WinCelebration";
-import { useSlotMobile } from "../useSlotMobile";
+import { useSlotMobile, useSlotPortraitBlock } from "../useSlotMobile";
+import { SlotOrientationNotice } from "../SlotOrientationNotice";
+import { AppImage } from "@/components/ui/AppImage";
 import { Classic7PaytableModal } from "./Classic7PaytableModal";
 import { getSlotGame } from "@/lib/slots/games";
 import { getSlotUiPace } from "@/lib/slots/mobile-pace";
@@ -39,6 +48,7 @@ type SpinResponse = {
   isFreeSpin?: boolean;
   freeSpinsAwarded?: number;
   autoFreeSpinsAwarded?: number;
+  autoFreeSpinProgress?: AutoFreeSpinProgress;
 };
 
 type SpinHistoryEntry = {
@@ -86,6 +96,8 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
   const [history, setHistory] = useState<SpinHistoryEntry[]>([]);
   const [maxBetAmount, setMaxBetAmount] = useState(10);
   const [minBetAmount, setMinBetAmount] = useState(1);
+  const [autoFreeProgress, setAutoFreeProgress] = useState<AutoFreeSpinProgress | null>(null);
+  const [progressPulse, setProgressPulse] = useState(false);
 
   const betOptions = useMemo(
     () =>
@@ -100,7 +112,9 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
   const spinIdempotencyRef = useRef<string | null>(null);
   const autoFreeSpinTimerRef = useRef(0);
   const freeSpinFlashTimerRef = useRef(0);
+  const engagement = useSlotEngagement();
   const isMobile = useSlotMobile();
+  const portraitBlock = useSlotPortraitBlock();
   const uiPace = useMemo(() => getSlotUiPace(isMobile), [isMobile]);
 
   const loadHistory = useCallback(() => {
@@ -131,6 +145,9 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
         if (typeof d.maxBetAmount === "number") setMaxBetAmount(d.maxBetAmount);
         if (typeof d.minBetAmount === "number") setMinBetAmount(d.minBetAmount);
         if (d.bonusStates?.["classic-7"]) setBonus(d.bonusStates["classic-7"]);
+        if (d.autoFreeSpinProgress?.["classic-7"]) {
+          setAutoFreeProgress(d.autoFreeSpinProgress["classic-7"]);
+        }
       })
       .catch(() => {});
     loadHistory();
@@ -154,8 +171,24 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
     setLastWin(result.payout);
     setWinCells(result.winningCells ?? []);
     if (result.message) setMessage(result.message);
+    if (result.autoFreeSpinProgress) {
+      setAutoFreeProgress(result.autoFreeSpinProgress);
+    }
 
     const payout = result.payout;
+    const scatterAward = result.freeSpinsAwarded ?? 0;
+    const autoAward = result.autoFreeSpinsAwarded ?? 0;
+    const totalFreeAward =
+      !result.isFreeSpin && (scatterAward > 0 || autoAward > 0)
+        ? scatterAward + autoAward
+        : 0;
+
+    if (autoAward > 0) {
+      setProgressPulse(true);
+      window.setTimeout(() => setProgressPulse(false), 900);
+      engagement.playFreeSpinAward();
+    }
+
     if (payout > 0) {
       setWinFlash(true);
       const flashMs =
@@ -167,14 +200,13 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
         setWinFlash(false);
         setBigWin(false);
       }, flashMs);
+      engagement.playWin(payout, bet);
+    } else if (totalFreeAward > 0) {
+      engagement.playFreeSpinAward();
+    } else {
+      engagement.playNoWin();
     }
 
-    const scatterAward = result.freeSpinsAwarded ?? 0;
-    const autoAward = result.autoFreeSpinsAwarded ?? 0;
-    const totalFreeAward =
-      !result.isFreeSpin && (scatterAward > 0 || autoAward > 0)
-        ? scatterAward + autoAward
-        : 0;
     if (totalFreeAward > 0) {
       setLastFreeSpinsAwarded(totalFreeAward);
       setFreeSpinAutoBonus(autoAward > 0);
@@ -204,7 +236,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
     setAwaitingStop(false);
     inFlightRef.current = false;
     spinIdempotencyRef.current = null;
-  }, [bet, loadHistory, uiPace]);
+  }, [bet, engagement, loadHistory, uiPace]);
 
   const failSpin = useCallback(
     (msg: string, opts?: { retainIdempotency?: boolean }) => {
@@ -253,6 +285,8 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
     reelsStoppedRef.current = false;
     apiResolvedRef.current = false;
     setResultReady(false);
+    engagement.ensureAudio();
+    engagement.playSpinStart();
     setSpinning(true);
     setAwaitingStop(true);
     setStopGeneration((g) => g + 1);
@@ -291,12 +325,15 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
     } finally {
       window.clearTimeout(timeout);
     }
-  }, [balance, bet, bonus.freeSpinsLeft, failSpin, spinning, tryFinalizeSpin]);
+  }, [balance, bet, bonus.freeSpinsLeft, engagement, failSpin, spinning, tryFinalizeSpin]);
 
   const handleAllStopped = useCallback(() => {
     reelsStoppedRef.current = true;
+    for (let i = 0; i < 5; i++) {
+      window.setTimeout(() => engagement.playReelStop(), i * 120);
+    }
     tryFinalizeSpin();
-  }, [tryFinalizeSpin]);
+  }, [engagement, tryFinalizeSpin]);
 
   useEffect(() => {
     window.clearTimeout(autoFreeSpinTimerRef.current);
@@ -358,6 +395,14 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
     setBet(affordable ?? betOptions[0]);
   };
 
+  if (portraitBlock) {
+    return (
+      <div className="slot-landscape-root slot-landscape-root--classic7">
+        <SlotOrientationNotice active />
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -366,8 +411,18 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
         winFlash && "slot-landscape-root--win"
       )}
     >
+      <SlotSoundToggle muted={engagement.muted} onToggle={engagement.toggleMute} />
+      <SlotOnboarding gameId="classic-7" />
+
       <div className="slot-landscape-bg slot-landscape-bg--classic7" aria-hidden>
-        <img src={C7.bg} alt="" className="classic7-bg-art" />
+        <AppImage
+          src={C7.bg}
+          alt=""
+          fill
+          className="classic7-bg-art"
+          sizes="100vw"
+          priority
+        />
       </div>
       <div className="slot-landscape-vignette" aria-hidden />
 
@@ -377,10 +432,13 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
             ← Casino
           </Link>
           <div className="slot-landscape-logo-card slot-landscape-logo-card--classic7">
-            <img
+            <AppImage
               src={C7.logo}
               alt="Clásica 7"
+              width={120}
+              height={120}
               className="slot-landscape-logo"
+              priority
             />
             <p className="slot-landscape-tagline">Slot clásica premium · 1 línea central</p>
           </div>
@@ -388,6 +446,11 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
             <span>Saldo</span>
             <strong>{formatMoney(balance)}</strong>
           </div>
+          <SlotAutoFreeProgress
+            progress={autoFreeProgress}
+            freeMode={freeMode}
+            pulse={progressPulse}
+          />
           <div className="slot-landscape-status-card">
             <p>
               Apuesta actual: <strong>{formatMoney(bet)}</strong>
@@ -406,10 +469,13 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
             <p>Cabina vintage · vertical u horizontal</p>
           </header>
           <div className="slot-landscape-machine slot-landscape-machine--classic7">
+            <SlotFreeModeBanner freeSpinsLeft={bonus.freeSpinsLeft} />
             <div className="classic7-reel-frame-deco" aria-hidden>
-              <img
+              <AppImage
                 src={C7.cabinetFrame}
                 alt=""
+                width={400}
+                height={280}
                 className="classic7-reel-frame-art"
               />
             </div>
@@ -457,21 +523,21 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
               freeSpins={lastFreeSpinsAwarded}
               autoBonus={freeSpinAutoBonus}
             />
+            <WinDisplay amount={lastWin ?? 0} generation={stopGeneration} />
           </div>
         </section>
 
         <aside className="slot-landscape-panel slot-landscape-panel--right">
-          <div className="slot-landscape-hud">
-            <p>
-              Balance <strong>{formatMoney(balance)}</strong>
-            </p>
-            <p>
-              Apuesta <strong>{formatMoney(bet)}</strong>
-            </p>
-            <p>
-              Premio <strong>{formatMoney(awaitingStop ? 0 : lastWin ?? 0)}</strong>
-            </p>
-          </div>
+          <SlotFinanceHud
+            balance={balance}
+            hideBalance
+            bet={bet}
+            win={lastWin}
+            winPending={awaitingStop}
+            freeMode={freeMode}
+            lineCount={1}
+            winGeneration={stopGeneration}
+          />
           <div className="slot-landscape-classic-bets">
             <button type="button" className="slot-rules-btn slot-rules-btn--secondary" onClick={decBet} disabled={spinning || awaitingStop || freeMode}>
               −

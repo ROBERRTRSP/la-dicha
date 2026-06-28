@@ -36,7 +36,9 @@ export function useReelMetrics() {
 const VISIBLE_ROWS = 3;
 
 function readClassic7ReelCap(el: HTMLElement): number | null {
-  const machine = el.closest(".casino-machine--classic7") as HTMLElement | null;
+  const machine = (el.closest(".slot-landscape-root--classic7") ??
+    el.closest(".slot-landscape-machine--classic7") ??
+    el.closest(".casino-machine--classic7")) as HTMLElement | null;
   if (!machine) return null;
   const raw = getComputedStyle(machine).getPropertyValue("--classic7-reel-max-h").trim();
   if (!raw) return null;

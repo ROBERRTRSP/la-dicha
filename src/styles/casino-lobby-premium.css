@@ -1,0 +1,128 @@
+/**
+ * Lobby casino · estética Vegas premium
+ */
+
+.casino-lobby {
+  background:
+    radial-gradient(ellipse 120% 70% at 50% -10%, rgba(251, 191, 36, 0.14), transparent 55%),
+    radial-gradient(circle at 8% 100%, rgba(255, 61, 154, 0.1), transparent 42%),
+    radial-gradient(circle at 92% 88%, rgba(0, 232, 255, 0.08), transparent 38%),
+    linear-gradient(180deg, #070b14 0%, #0a1020 45%, #060810 100%);
+}
+
+.casino-lobby-bg {
+  opacity: 0.42;
+  mix-blend-mode: luminosity;
+}
+
+.casino-lobby-content {
+  position: relative;
+}
+
+.casino-lobby-content::before {
+  content: "";
+  position: absolute;
+  inset: -20px 0 auto;
+  height: 120px;
+  pointer-events: none;
+  background: radial-gradient(ellipse 80% 100% at 50% 0%, rgba(253, 224, 71, 0.08), transparent 70%);
+}
+
+.casino-lobby-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  text-shadow: 0 0 16px rgba(253, 224, 71, 0.25);
+}
+
+.casino-lobby-section::before {
+  content: "";
+  width: 4px;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fde68a, #f59e0b);
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.45);
+}
+
+.casino-game-card {
+  border: 1px solid rgba(251, 191, 36, 0.38);
+  background:
+    linear-gradient(135deg, rgba(255, 61, 154, 0.08) 0%, rgba(15, 23, 42, 0.92) 42%, rgba(0, 232, 255, 0.06) 100%);
+  box-shadow:
+    0 10px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 24px rgba(251, 191, 36, 0.08);
+}
+
+.casino-game-card--roulette {
+  border-color: rgba(239, 68, 68, 0.55);
+  background:
+    linear-gradient(135deg, rgba(127, 29, 29, 0.88) 0%, rgba(15, 23, 42, 0.94) 55%, rgba(251, 191, 36, 0.06) 100%);
+  box-shadow:
+    0 10px 32px rgba(0, 0, 0, 0.45),
+    0 0 28px rgba(220, 38, 38, 0.15);
+}
+
+.casino-game-card-art {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    inset 0 0 20px rgba(0, 0, 0, 0.25);
+}
+
+.casino-game-card-cta {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fde68a 0%, #f59e0b 100%);
+  color: #422006;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+}
+
+.casino-slot-tile {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  transition: transform 0.18s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.casino-slot-tile:hover,
+.casino-slot-tile:focus-visible {
+  transform: translateY(-2px);
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.5),
+    0 0 28px rgba(255, 209, 102, 0.12);
+}
+
+.casino-slot-tile:focus-visible {
+  outline: 2px solid #00e8ff;
+  outline-offset: 2px;
+}
+
+.casino-slot-tile-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.casino-slot-tile-badge {
+  z-index: 2;
+  backdrop-filter: blur(6px);
+}
+
+.casino-slot-tile:last-child:nth-child(odd) {
+  border-color: rgba(239, 68, 68, 0.45);
+  background:
+    linear-gradient(135deg, rgba(92, 10, 10, 0.92) 0%, rgba(15, 23, 42, 0.94) 55%, rgba(251, 191, 36, 0.08) 100%);
+}
+
+.casino-slot-tile:last-child:nth-child(odd) .casino-slot-tile-title {
+  color: #ffe7a3;
+}

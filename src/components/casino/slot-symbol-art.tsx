@@ -1,4 +1,5 @@
 /** Ilustraciones vectoriales para símbolos de tragamonedas (sin texto crudo). */
+import { CardRankGlyph } from "./symbols/symbol-glyphs";
 export function SlotSymbolArt({
   symbolId,
   uid,
@@ -254,27 +255,13 @@ function renderIcon(symbolId: string, uid: string, accent: string) {
 }
 
 function renderCardRank(rank: string, accent: string) {
-  const colors: Record<string, string> = {
-    A: "#ef4444",
-    K: "#3b82f6",
-    Q: "#a855f7",
-    J: "#22c55e",
-  };
-  const fill = colors[rank] ?? accent;
+  if (rank !== "A" && rank !== "K" && rank !== "Q" && rank !== "J") {
+    return <circle cx="50" cy="50" r="16" fill={accent} opacity="0.6" />;
+  }
   return (
     <g>
-      <rect x="30" y="30" width="40" height="40" rx="8" fill={fill} stroke="#fff" strokeWidth="2" opacity="0.95" />
-      <text
-        x="50"
-        y="58"
-        textAnchor="middle"
-        fontSize="26"
-        fontWeight="900"
-        fill="#fff"
-        fontFamily="system-ui, sans-serif"
-      >
-        {rank}
-      </text>
+      <rect x="30" y="30" width="40" height="40" rx="8" fill={accent} stroke="#fff" strokeWidth="2" opacity="0.95" />
+      <CardRankGlyph rank={rank} fill="#fff" />
     </g>
   );
 }

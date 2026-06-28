@@ -1,0 +1,432 @@
+/**
+ * Temas Vegas premium · layout slot-landscape
+ * Conecta identidad por juego al shell activo en producción.
+ */
+
+/* ===== Tokens base por tema ===== */
+.slot-landscape-root {
+  --slot-theme-accent: var(--slot-neon-gold);
+  --slot-theme-accent-soft: rgba(255, 209, 102, 0.82);
+  --slot-theme-glow-a: var(--slot-glow-pink);
+  --slot-theme-glow-b: var(--slot-glow-cyan);
+  --slot-theme-panel-border: rgba(255, 209, 102, 0.28);
+  --slot-theme-machine-border: rgba(255, 209, 102, 0.32);
+  --slot-theme-head-bg: linear-gradient(
+    135deg,
+    rgba(255, 61, 154, 0.14) 0%,
+    rgba(12, 16, 28, 0.92) 42%,
+    rgba(0, 232, 255, 0.08) 100%
+  );
+}
+
+/* ===== Magic Lamp · púrpura místico ===== */
+.slot-landscape-root--lamp {
+  background:
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(168, 85, 247, 0.28), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 15% 80%, rgba(99, 102, 241, 0.18), transparent 50%),
+    radial-gradient(ellipse 60% 45% at 85% 70%, rgba(232, 121, 249, 0.14), transparent 45%),
+    linear-gradient(168deg, #0b1020 0%, #12082a 45%, #071821 100%);
+  --slot-theme-accent: #c4b5fd;
+  --slot-theme-accent-soft: rgba(196, 181, 253, 0.88);
+  --slot-theme-glow-a: rgba(168, 85, 247, 0.38);
+  --slot-theme-glow-b: rgba(99, 102, 241, 0.28);
+  --slot-theme-panel-border: rgba(168, 85, 247, 0.35);
+  --slot-theme-machine-border: rgba(168, 85, 247, 0.42);
+  --slot-theme-head-bg: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.22) 0%,
+    rgba(18, 8, 42, 0.94) 48%,
+    rgba(99, 102, 241, 0.12) 100%
+  );
+}
+
+.slot-landscape-root--lamp .slot-landscape-bg {
+  opacity: 0.52;
+  background:
+    url("/casino/magic-lamp-bg.svg") center / cover no-repeat,
+    radial-gradient(circle at 50% 20%, rgba(168, 85, 247, 0.2), transparent 55%);
+}
+
+.slot-landscape-root--lamp .slot-landscape-panel {
+  border-color: rgba(168, 85, 247, 0.28);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.48),
+    inset 0 1px 0 rgba(233, 213, 255, 0.1),
+    0 0 24px rgba(168, 85, 247, 0.12);
+}
+
+.slot-landscape-root--lamp .slot-landscape-back {
+  border-color: rgba(196, 181, 253, 0.45);
+  color: #e9d5ff;
+  box-shadow: 0 0 18px rgba(168, 85, 247, 0.2);
+}
+
+.slot-landscape-root--lamp .slot-landscape-center-head {
+  border-color: rgba(168, 85, 247, 0.35);
+  background: var(--slot-theme-head-bg);
+}
+
+.slot-landscape-root--lamp .slot-landscape-center-head h1 {
+  color: #e9d5ff;
+  text-shadow: 0 0 22px rgba(168, 85, 247, 0.45);
+}
+
+.slot-landscape-root--lamp .slot-landscape-machine {
+  border-color: var(--slot-theme-machine-border);
+  box-shadow:
+    inset 0 0 24px rgba(0, 0, 0, 0.5),
+    0 0 36px var(--slot-theme-glow-a),
+    0 16px 34px rgba(0, 0, 0, 0.45);
+}
+
+/* ===== Moon Wolf · nocturno lunar ===== */
+.slot-landscape-root--wolf {
+  background:
+    radial-gradient(ellipse 70% 45% at 78% 8%, rgba(147, 197, 253, 0.24), transparent 52%),
+    radial-gradient(ellipse 55% 40% at 12% 75%, rgba(99, 102, 241, 0.16), transparent 48%),
+    radial-gradient(ellipse 80% 55% at 50% 110%, rgba(56, 189, 248, 0.12), transparent 55%),
+    linear-gradient(168deg, #0c1830 0%, #081020 45%, #060910 100%);
+  --slot-theme-accent: #93c5fd;
+  --slot-theme-accent-soft: rgba(147, 197, 253, 0.88);
+  --slot-theme-glow-a: rgba(99, 102, 241, 0.32);
+  --slot-theme-glow-b: rgba(147, 197, 253, 0.22);
+  --slot-theme-panel-border: rgba(147, 197, 253, 0.28);
+  --slot-theme-machine-border: rgba(147, 197, 253, 0.38);
+  --slot-theme-head-bg: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.18) 0%,
+    rgba(8, 16, 32, 0.94) 48%,
+    rgba(147, 197, 253, 0.1) 100%
+  );
+}
+
+.slot-landscape-root--wolf .slot-landscape-bg {
+  opacity: 0.46;
+  background:
+    url("/casino/moon-wolf-bg.svg") center top / cover no-repeat,
+    radial-gradient(circle at 72% 10%, rgba(191, 219, 254, 0.16), transparent 48%);
+}
+
+.slot-landscape-root--wolf .slot-landscape-panel {
+  border-color: rgba(147, 197, 253, 0.24);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.48),
+    inset 0 1px 0 rgba(191, 219, 254, 0.08),
+    0 0 24px rgba(99, 102, 241, 0.14);
+}
+
+.slot-landscape-root--wolf .slot-landscape-back {
+  border-color: rgba(147, 197, 253, 0.42);
+  color: #bfdbfe;
+}
+
+.slot-landscape-root--wolf .slot-landscape-center-head h1 {
+  color: #bfdbfe;
+  text-shadow: 0 0 22px rgba(147, 197, 253, 0.4);
+}
+
+.slot-landscape-root--wolf .slot-landscape-machine {
+  border-color: var(--slot-theme-machine-border);
+  box-shadow:
+    inset 0 0 24px rgba(0, 0, 0, 0.5),
+    0 0 36px var(--slot-theme-glow-a),
+    0 16px 34px rgba(0, 0, 0, 0.45);
+}
+
+/* ===== Treasure Skunk · bosque esmeralda ===== */
+.slot-landscape-root--skunk {
+  background:
+    radial-gradient(ellipse 80% 55% at 50% -15%, rgba(74, 222, 128, 0.18), transparent 52%),
+    radial-gradient(ellipse 60% 45% at 10% 90%, rgba(34, 197, 94, 0.14), transparent 48%),
+    radial-gradient(ellipse 55% 40% at 90% 75%, rgba(120, 200, 140, 0.1), transparent 45%),
+    linear-gradient(168deg, #071008 0%, #0a140e 42%, #040806 100%);
+  --slot-theme-accent: #86efac;
+  --slot-theme-accent-soft: rgba(134, 239, 172, 0.88);
+  --slot-theme-glow-a: rgba(74, 222, 128, 0.28);
+  --slot-theme-glow-b: rgba(34, 197, 94, 0.18);
+  --slot-theme-panel-border: rgba(120, 200, 140, 0.3);
+  --slot-theme-machine-border: rgba(74, 222, 128, 0.35);
+  --slot-theme-head-bg: linear-gradient(
+    135deg,
+    rgba(74, 222, 128, 0.16) 0%,
+    rgba(10, 20, 14, 0.94) 48%,
+    rgba(34, 197, 94, 0.08) 100%
+  );
+}
+
+.slot-landscape-root--skunk .slot-landscape-bg {
+  background:
+    radial-gradient(circle at 22% 78%, rgba(74, 222, 128, 0.16), transparent 42%),
+    radial-gradient(circle at 78% 18%, rgba(163, 230, 53, 0.12), transparent 38%),
+    repeating-linear-gradient(
+      135deg,
+      rgba(74, 222, 128, 0.03) 0 2px,
+      transparent 2px 18px
+    );
+}
+
+.slot-landscape-root--skunk .slot-landscape-panel {
+  border-color: rgba(120, 200, 140, 0.26);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.48),
+    inset 0 1px 0 rgba(134, 239, 172, 0.08),
+    0 0 20px rgba(74, 222, 128, 0.1);
+}
+
+.slot-landscape-root--skunk .slot-landscape-back {
+  border-color: rgba(134, 239, 172, 0.4);
+  color: #bbf7d0;
+}
+
+.slot-landscape-root--skunk .slot-landscape-center-head h1 {
+  color: #bbf7d0;
+  text-shadow: 0 0 20px rgba(74, 222, 128, 0.35);
+}
+
+.slot-landscape-root--skunk .slot-landscape-machine {
+  border-color: var(--slot-theme-machine-border);
+  box-shadow:
+    inset 0 0 24px rgba(0, 0, 0, 0.5),
+    0 0 32px var(--slot-theme-glow-a),
+    0 16px 34px rgba(0, 0, 0, 0.45);
+}
+
+.slot-landscape-root--skunk .slot-landscape-machine .slot-reels {
+  background: linear-gradient(180deg, #0a140e 0%, #060a08 100%);
+}
+
+/* ===== Golden Ox · oro ardiente ===== */
+.slot-landscape-root--ox {
+  background:
+    radial-gradient(ellipse 85% 60% at 50% -12%, rgba(251, 191, 36, 0.22), transparent 52%),
+    radial-gradient(ellipse 60% 45% at 88% 82%, rgba(234, 88, 12, 0.16), transparent 48%),
+    radial-gradient(ellipse 55% 40% at 8% 70%, rgba(232, 192, 90, 0.12), transparent 45%),
+    linear-gradient(168deg, #120c06 0%, #1a1008 42%, #0c0806 100%);
+  --slot-theme-accent: #fde68a;
+  --slot-theme-accent-soft: rgba(253, 230, 138, 0.9);
+  --slot-theme-glow-a: rgba(251, 191, 36, 0.32);
+  --slot-theme-glow-b: rgba(234, 88, 12, 0.2);
+  --slot-theme-panel-border: rgba(232, 192, 90, 0.32);
+  --slot-theme-machine-border: rgba(251, 191, 36, 0.38);
+  --slot-theme-head-bg: linear-gradient(
+    135deg,
+    rgba(251, 191, 36, 0.18) 0%,
+    rgba(26, 16, 8, 0.94) 48%,
+    rgba(234, 88, 12, 0.1) 100%
+  );
+}
+
+.slot-landscape-root--ox .slot-landscape-bg {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(253, 224, 71, 0.14), transparent 50%),
+    radial-gradient(circle at 80% 85%, rgba(234, 88, 12, 0.12), transparent 42%),
+    conic-gradient(from 210deg at 50% 120%, rgba(251, 191, 36, 0.08), transparent 35%);
+}
+
+.slot-landscape-root--ox .slot-landscape-panel {
+  border-color: rgba(232, 192, 90, 0.28);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.48),
+    inset 0 1px 0 rgba(253, 224, 71, 0.1),
+    0 0 24px rgba(251, 191, 36, 0.12);
+}
+
+.slot-landscape-root--ox .slot-landscape-back {
+  border-color: rgba(253, 224, 71, 0.45);
+  color: #fde68a;
+}
+
+.slot-landscape-root--ox .slot-landscape-center-head h1 {
+  color: #fde68a;
+  text-shadow: 0 0 22px rgba(251, 191, 36, 0.4);
+}
+
+.slot-landscape-root--ox .slot-landscape-machine {
+  border-color: var(--slot-theme-machine-border);
+  box-shadow:
+    inset 0 0 24px rgba(0, 0, 0, 0.5),
+    0 0 36px var(--slot-theme-glow-a),
+    0 16px 34px rgba(0, 0, 0, 0.45);
+}
+
+.slot-landscape-root--ox .slot-landscape-machine .slot-reels {
+  background: linear-gradient(180deg, #1a1008 0%, #0c0806 100%);
+}
+
+/* ===== Classic 7 · variables en layout activo ===== */
+.slot-landscape-root--classic7 {
+  --classic7-reel-max-h: 204px;
+  background:
+    radial-gradient(ellipse 80% 55% at 50% -10%, rgba(220, 38, 38, 0.22), transparent 52%),
+    radial-gradient(ellipse 60% 45% at 12% 88%, rgba(127, 29, 29, 0.18), transparent 48%),
+    linear-gradient(168deg, #1a0606 0%, #0c0202 45%, #060101 100%);
+}
+
+@media (orientation: landscape) and (max-height: 440px) {
+  .slot-landscape-root--classic7 {
+    --classic7-reel-max-h: 190px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 390px) {
+  .slot-landscape-root--classic7 {
+    --classic7-reel-max-h: 178px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 360px) {
+  .slot-landscape-root--classic7 {
+    --classic7-reel-max-h: 168px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 320px) {
+  .slot-landscape-root--classic7 {
+    --classic7-reel-max-h: 158px;
+  }
+}
+
+/* ===== Elementos compartidos tematizados ===== */
+.slot-landscape-root[class*="slot-landscape-root--"] .slot-landscape-center-head {
+  border-color: var(--slot-theme-panel-border);
+  background: var(--slot-theme-head-bg);
+}
+
+.slot-landscape-root[class*="slot-landscape-root--"] .slot-landscape-center-head p {
+  color: var(--slot-theme-accent-soft);
+}
+
+.slot-landscape-root[class*="slot-landscape-root--"] .slot-landscape-balance-card strong,
+.slot-landscape-root[class*="slot-landscape-root--"] .slot-balance-value {
+  color: var(--slot-theme-accent);
+}
+
+.slot-landscape-root[class*="slot-landscape-root--"] .slot-landscape-logo-card {
+  border-color: var(--slot-theme-panel-border);
+}
+
+/* Marquesina Vegas en cabina */
+.slot-landscape-machine::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.slot-landscape-root--spinning .slot-landscape-machine {
+  box-shadow:
+    inset 0 0 24px rgba(0, 0, 0, 0.5),
+    0 0 48px var(--slot-theme-glow-a),
+    0 0 64px var(--slot-theme-glow-b),
+    0 16px 34px rgba(0, 0, 0, 0.45);
+}
+
+.slot-landscape-root--win .slot-landscape-machine {
+  animation: slotVegasWinCabinet 680ms ease-out;
+}
+
+@keyframes slotVegasWinCabinet {
+  0% {
+    filter: brightness(1.15) saturate(1.2);
+    box-shadow:
+      inset 0 0 24px rgba(0, 0, 0, 0.5),
+      0 0 56px var(--slot-theme-glow-a),
+      0 0 80px var(--slot-theme-glow-b);
+  }
+  100% {
+    filter: brightness(1) saturate(1);
+  }
+}
+
+/* ===== Jackpot tiers · estilo Vegas ===== */
+.slot-landscape-jackpot--minor {
+  background: linear-gradient(180deg, #fde68a 0%, #f59e0b 100%);
+  color: #422006;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.4),
+    0 0 24px rgba(245, 158, 11, 0.45);
+}
+
+.slot-landscape-jackpot--major {
+  background: linear-gradient(180deg, #fdba74 0%, #ea580c 55%, #c2410c 100%);
+  color: #fff7ed;
+  font-size: 14px;
+  padding: 7px 18px;
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.45),
+    0 0 32px rgba(234, 88, 12, 0.55);
+  animation: slotJackpotMajorPulse 1.2s ease-in-out infinite alternate;
+}
+
+.slot-landscape-jackpot--grand {
+  background: linear-gradient(
+    135deg,
+    #fef08a 0%,
+    #f59e0b 25%,
+    #ef4444 55%,
+    #a855f7 100%
+  );
+  color: #fff;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  padding: 8px 20px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(251, 191, 36, 0.6),
+    0 0 60px rgba(168, 85, 247, 0.35);
+  animation: slotJackpotGrandShine 1.8s linear infinite;
+}
+
+@keyframes slotJackpotMajorPulse {
+  from {
+    transform: translateX(-50%) scale(1);
+  }
+  to {
+    transform: translateX(-50%) scale(1.04);
+  }
+}
+
+@keyframes slotJackpotGrandShine {
+  0% {
+    filter: brightness(1) hue-rotate(0deg);
+  }
+  50% {
+    filter: brightness(1.12) hue-rotate(12deg);
+  }
+  100% {
+    filter: brightness(1) hue-rotate(0deg);
+  }
+}
+
+/* ===== Accesibilidad · foco visible ===== */
+.slot-landscape-root a:focus-visible,
+.slot-landscape-root button:focus-visible,
+.slot-landscape-root .slot-bet-chip:focus-visible {
+  outline: 2px solid var(--slot-neon-cyan);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 232, 255, 0.22);
+}
+
+/* ===== Legibilidad HUD en landscape ===== */
+.slot-landscape-root .slot-finance-label {
+  font-size: 10px;
+  color: rgba(203, 213, 225, 0.95);
+}
+
+.slot-landscape-root .slot-finance-meta {
+  font-size: 10px;
+  color: rgba(253, 224, 71, 0.82);
+}
+
+.slot-landscape-root .slot-payline-rail-title {
+  font-size: 9px;
+  color: rgba(253, 224, 71, 0.78);
+}
+
+.slot-landscape-root .slot-payline-badge {
+  font-size: 9px;
+}

@@ -1,7 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 import { validateAndNormalizeCart } from "./cart-validation";
-import type { CartLine } from "./cart-line";
 import { roundMoney } from "./cajero-banca-config";
 import { dateKeyInTz } from "./timezone";
 import {

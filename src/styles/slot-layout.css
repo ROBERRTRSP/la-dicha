@@ -310,7 +310,7 @@
 }
 
 .slot-header-balance-pill-label {
-  font-size: 7px;
+  font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -358,11 +358,11 @@
 }
 
 .slot-finance-label {
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(148, 163, 184, 0.88);
+  color: rgba(203, 213, 225, 0.95);
 }
 
 .slot-finance-value {
@@ -385,9 +385,9 @@
 }
 
 .slot-finance-meta {
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 600;
-  color: rgba(148, 163, 184, 0.65);
+  color: rgba(253, 224, 71, 0.82);
   letter-spacing: 0.04em;
 }
 
@@ -448,11 +448,11 @@
 }
 
 .slot-payline-rail-title {
-  font-size: 6px;
+  font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(247, 201, 72, 0.55);
+  color: rgba(253, 224, 71, 0.78);
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   text-align: center;
@@ -470,7 +470,7 @@
   justify-content: center;
   width: 100%;
   min-height: 0;
-  font-size: 7px;
+  font-size: 9px;
   font-weight: 900;
   color: rgba(203, 213, 225, 0.86);
   border-radius: 4px;
@@ -704,6 +704,12 @@
   box-shadow: 0 1px 0 #050810;
 }
 
+.slot-rules-btn:focus-visible {
+  outline: 2px solid #00e8ff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 232, 255, 0.2);
+}
+
 .slot-rules-btn-icon {
   font-size: 14px;
   line-height: 1;
@@ -912,7 +918,7 @@
   }
 
   .slot-payline-badge {
-    font-size: 6px;
+    font-size: 8px;
   }
 
   .slot-header-balance-pill {

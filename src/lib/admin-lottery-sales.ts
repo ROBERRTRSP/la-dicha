@@ -3,7 +3,7 @@ import { prisma } from "./db";
 import { roundMoney } from "./cajero-banca-config";
 import { betTypeLabel, type BetTypeCode } from "./bet-parser";
 import { dedupeDrawsForDisplay } from "./results-sync";
-import { dateKeyInTz, dayStartInTz, nowInTz, TZ } from "./timezone";
+import { dateKeyInTz, nowInTz, TZ } from "./timezone";
 
 export type PaymentFilter = "ALL" | "WALLET" | "CASH";
 

@@ -3,17 +3,17 @@
 export const SLOT_MOBILE_MAX_WIDTH = 768;
 
 export const MOBILE_REEL_PACE = {
-  cycleTargetMs: 5400,
-  minTotalSpinMs: 4600,
-  velocityFactor: 0.86,
-  accelFactor: 1.06,
-  columnDelayFactor: 1.18,
-  decelFactor: 1.08,
+  cycleTargetMs: 3200,
+  minTotalSpinMs: 2800,
+  velocityFactor: 0.92,
+  accelFactor: 1,
+  columnDelayFactor: 1.06,
+  decelFactor: 1.04,
 } as const;
 
 export const DESKTOP_REEL_PACE = {
-  cycleTargetMs: 5000,
-  minTotalSpinMs: 4000,
+  cycleTargetMs: 2800,
+  minTotalSpinMs: 2400,
 } as const;
 
 export type SlotUiPace = {

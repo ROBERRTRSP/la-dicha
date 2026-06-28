@@ -211,6 +211,7 @@ export function SlotVisualPreviewMachine() {
       <div className="slot-landscape-shell">
         <aside className="slot-landscape-panel slot-landscape-panel--left">
           <div className="slot-landscape-logo-card">
+            {/* eslint-disable-next-line @next/next/no-img-element -- preview dev only */}
             <img
               src={CASINO_ART.thumbs[PREVIEW_GAME_ID]}
               alt={`${game.name} preview`}

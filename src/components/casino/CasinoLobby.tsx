@@ -31,9 +31,14 @@ export function CasinoLobby({
       <BrandHeader balance={balance} title="Casino La Dicha" compact variant="casino" />
 
       <div className="casino-lobby-content">
-        <p className="casino-lobby-welcome">
-          Ruleta europea y tragamonedas premium
-        </p>
+        <div className="casino-lobby-hero">
+          <p className="casino-lobby-welcome">
+            Ruleta europea y tragamonedas premium estilo Vegas
+          </p>
+          <p className="casino-lobby-sub">
+            Elige tu mesa · giros desde {formatMoney(1)}
+          </p>
+        </div>
 
         {rouletteActive && (
           <section className="casino-lobby-section-block" aria-labelledby="casino-roulette-heading">

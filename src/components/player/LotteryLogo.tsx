@@ -6,11 +6,12 @@ import { getLotteryBrand } from "@/lib/lottery-brands";
 import { cn } from "@/lib/utils";
 
 function logoCandidates(code: string, logoUrl?: string | null) {
+  const svg = `/logos/${code}.svg`;
   const official = `/logos/${code}.png`;
   return [
+    svg,
     official,
-    logoUrl && logoUrl !== official ? logoUrl : null,
-    `/logos/${code}.svg`,
+    logoUrl && logoUrl !== svg && logoUrl !== official ? logoUrl : null,
   ].filter((s): s is string => Boolean(s));
 }
 

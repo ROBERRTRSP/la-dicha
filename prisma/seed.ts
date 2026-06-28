@@ -44,7 +44,7 @@ async function main() {
   });
 
   for (const lot of LOTTERIES) {
-    const logoUrl = `/logos/${lot.code}.png`;
+    const logoUrl = `/logos/${lot.code}.svg`;
     const lottery = await prisma.lottery.upsert({
       where: { code: lot.code },
       update: {

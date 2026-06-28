@@ -17,6 +17,20 @@ export function finalOffset(stripLen: number, cellH: number): number {
   return Math.max(0, (stripLen - VISIBLE_ROWS) * cellH);
 }
 
+/** True si la celda intersecta la ventana visible del carrete. */
+export function cellInViewport(
+  stripIndex: number,
+  offset: number,
+  cellH: number
+): boolean {
+  if (cellH <= 0) return false;
+  const windowTop = offset;
+  const windowBottom = offset + VISIBLE_ROWS * cellH;
+  const cellTop = stripIndex * cellH;
+  const cellBottom = cellTop + cellH;
+  return cellBottom > windowTop + 0.5 && cellTop < windowBottom - 0.5;
+}
+
 export function drumCellTransform(
   stripIndex: number,
   offset: number,
@@ -24,21 +38,16 @@ export function drumCellTransform(
   isMotion: boolean,
   visibleRow: number
 ): string | undefined {
-  if (cellH <= 0) return undefined;
+  if (cellH <= 0 || isMotion) return undefined;
+  if (visibleRow < 0 || visibleRow >= VISIBLE_ROWS) return undefined;
 
   const windowH = VISIBLE_ROWS * cellH;
   const cellCenterY = stripIndex * cellH + cellH * 0.5 - offset;
   const norm = (cellCenterY - windowH * 0.5) / (cellH * 1.05);
+  const clamped = Math.max(-1.1, Math.min(1.1, norm));
+  const scale = 1 - Math.abs(clamped) * 0.04;
 
-  if (!isMotion && (visibleRow < 0 || visibleRow >= VISIBLE_ROWS)) {
-    return undefined;
-  }
-
-  const clamped = Math.max(-1.35, Math.min(1.35, norm));
-  const rotateX = clamped * -24;
-  const scale = 1 - Math.abs(clamped) * 0.16;
-
-  return `perspective(680px) rotateX(${rotateX}deg) scale(${scale})`;
+  return scale < 0.999 ? `scale(${scale})` : undefined;
 }
 
 export function drumCellOpacity(
@@ -47,12 +56,10 @@ export function drumCellOpacity(
   cellH: number,
   isMotion: boolean
 ): number | undefined {
-  if (!isMotion || cellH <= 0) return undefined;
+  if (isMotion || cellH <= 0) return undefined;
+  if (!cellInViewport(stripIndex, offset, cellH)) return undefined;
 
-  const windowH = VISIBLE_ROWS * cellH;
-  const cellCenterY = stripIndex * cellH + cellH * 0.5 - offset;
-  const norm = Math.abs((cellCenterY - windowH * 0.5) / (cellH * 1.05));
-  return Math.max(0.55, 1 - norm * 0.35);
+  return 1;
 }
 
 export function buildLoopSegment(allIds: string[], rng: () => number): string[] {
@@ -112,13 +119,19 @@ export function computeDecelOffsets(
   return { startOffset, snapOffset: targetOffset };
 }
 
+/** Curva expo-out — parada digital tipo video slot de casino. */
+export function easeOutExpo(t: number): number {
+  const c = Math.max(0, Math.min(1, t));
+  return c === 1 ? 1 : 1 - Math.pow(2, -10 * c);
+}
+
 /** Curva ease-out para deceleración en rAF (Safari iOS). */
 export function easeOutCubic(t: number): number {
   const c = Math.max(0, Math.min(1, t));
   return 1 - Math.pow(1 - c, 3);
 }
 
-/** Curva con ligero overshoot — sensación de freno mecánico al parar. */
+/** Curva con ligero overshoot — reservada para efectos UI, no carretes. */
 export function easeOutBack(t: number, overshoot = 1.15): number {
   const c = Math.max(0, Math.min(1, t));
   const inv = c - 1;
@@ -131,26 +144,22 @@ export function interpolateDecelOffset(
   progress: number
 ): number {
   const t = Math.max(0, Math.min(1, progress));
-  const eased =
-    t < 0.92
-      ? easeOutCubic(t / 0.92) * 0.92
-      : 0.92 + easeOutBack((t - 0.92) / 0.08, 0.9) * 0.08;
-  return start + (end - start) * eased;
+  return start + (end - start) * easeOutExpo(t);
 }
 
-/** Rebote final del strip tras la deceleración (px desde arriba). */
+/** Snap final mínimo tras deceleración (sin rebote mecánico). */
 export function settleBounceOffset(
   finalOffsetPx: number,
   cellHeight: number,
   progress: number
 ): number {
   const t = Math.max(0, Math.min(1, progress));
-  const overshoot = Math.sin(t * Math.PI) * cellHeight * 0.06 * (1 - t * 0.55);
+  const overshoot = Math.sin(t * Math.PI) * cellHeight * 0.012 * (1 - t);
   return finalOffsetPx - overshoot;
 }
 
-export const SETTLE_BOUNCE_MS = 260;
-export const MIN_REEL_TOTAL_SPIN_MS = 4000;
+export const SETTLE_BOUNCE_MS = 60;
+export const MIN_REEL_TOTAL_SPIN_MS = 2400;
 export const REDUCED_MOTION_SPIN_FACTOR = 0.58;
 export const REDUCED_MOTION_DECEL_FACTOR = 0.72;
 
@@ -195,28 +204,33 @@ export function columnStopAtMs(
 }
 
 /**
- * Modulación sutil para evitar giro totalmente lineal/robótico.
- * Mantiene velocidad estable con pequeñas variaciones de inercia.
+ * Velocidad constante en fase spin — video slots modernos (Vegas).
  */
 export function computeSpinVelocity(
   maxVelocity: number,
-  elapsedMs: number,
-  columnIndex: number,
+  _elapsedMs: number,
+  _columnIndex: number,
   reducedMotion = false
 ): number {
   if (reducedMotion) {
     return maxVelocity * REDUCED_MOTION_SPIN_FACTOR;
   }
-  const primaryWave = Math.sin(elapsedMs * 0.012 + columnIndex * 0.73);
-  const secondaryWave = Math.sin(elapsedMs * 0.027 + columnIndex * 1.17);
-  const tertiaryWave = Math.sin(elapsedMs * 0.007 + columnIndex * 0.41);
-  const modulation =
-    0.92 +
-    primaryWave * 0.08 +
-    secondaryWave * 0.035 +
-    tertiaryWave * 0.03;
-  const clamped = Math.max(0.82, Math.min(1.12, modulation));
-  return maxVelocity * clamped;
+  return maxVelocity;
+}
+
+/** Acelera el carrete con curva ease-out rápida. */
+export function computeAccelVelocity(
+  maxVelocity: number,
+  elapsedMs: number,
+  accelMs: number,
+  reducedMotion = false
+): number {
+  const duration = reducedMotion
+    ? Math.max(120, Math.round(accelMs * 0.75))
+    : accelMs;
+  const cap = reducedMotion ? maxVelocity * REDUCED_MOTION_SPIN_FACTOR : maxVelocity;
+  const t = Math.min(1, elapsedMs / Math.max(1, duration));
+  return cap * (1 - Math.pow(1 - t, 3));
 }
 
 export function decelDurationMs(
@@ -372,9 +386,16 @@ export class ReelMotionSimulator {
 
     if (this.phase === "accel") {
       const elapsed = now - this.accelStart;
-      const t = Math.min(1, elapsed / this.anim.accelMs);
-      this.velocity = this.anim.maxVelocity * t * t;
-      if (elapsed >= this.anim.accelMs) {
+      this.velocity = computeAccelVelocity(
+        this.anim.maxVelocity,
+        elapsed,
+        this.anim.accelMs,
+        this.reducedMotion
+      );
+      const accelMs = this.reducedMotion
+        ? Math.max(120, Math.round(this.anim.accelMs * 0.75))
+        : this.anim.accelMs;
+      if (elapsed >= accelMs) {
         this.phase = "spin";
         this.spinStart = now;
       }
@@ -390,8 +411,12 @@ export class ReelMotionSimulator {
     if (this.phase === "accel" || this.phase === "spin") {
       this.totalOffset += this.velocity * dt;
       const loopH = loopHeightPx(this.cellH);
-      this.offset =
-        loopH > 0 ? this.totalOffset % loopH : this.totalOffset;
+      if (loopH > 0) {
+        while (this.totalOffset >= loopH) {
+          this.totalOffset -= loopH;
+        }
+      }
+      this.offset = this.totalOffset;
 
       if (now >= this.stopAt) {
         this.wantStop = true;

@@ -8,13 +8,17 @@ import {
   saveSlotSpinResponse,
 } from "@/lib/slot-idempotency";
 import { SLOT_GAME_LIST } from "@/lib/slots/games";
-import { getBonusState, getSlotSettings, isSlotsActive, placeSlotSpin } from "@/lib/slots/spin-service";
+import { getBonusState, getSlotSettings, isSlotsActive, placeSlotSpin, getAutoFreeSpinProgressForUser } from "@/lib/slots/spin-service";
+import { enforceSpinRateLimit } from "@/lib/spin-rate-limit";
 
 export async function POST(request: Request) {
   const user = await requirePlayer();
   if (!user) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
+
+  const rateLimited = enforceSpinRateLimit(request, user.id, "slot");
+  if (rateLimited) return rateLimited;
 
   let idempotencyKey: string | null = null;
 
@@ -64,8 +68,16 @@ export async function GET() {
   const settings = await getSlotSettings();
   const active = await isSlotsActive();
   const bonusStates: Record<string, Awaited<ReturnType<typeof getBonusState>>> = {};
+  const autoFreeSpinProgress: Record<
+    string,
+    Awaited<ReturnType<typeof getAutoFreeSpinProgressForUser>>
+  > = {};
   for (const game of SLOT_GAME_LIST) {
     bonusStates[game.id] = await getBonusState(user.id, game.id);
+    autoFreeSpinProgress[game.id] = await getAutoFreeSpinProgressForUser(
+      user.id,
+      game.id
+    );
   }
 
   const wallet = await prisma.wallet.findUnique({ where: { userId: user.id } });
@@ -76,5 +88,6 @@ export async function GET() {
     minBetAmount: settings.minBetAmount,
     maxBetAmount: settings.maxBetAmount,
     bonusStates,
+    autoFreeSpinProgress,
   });
 }

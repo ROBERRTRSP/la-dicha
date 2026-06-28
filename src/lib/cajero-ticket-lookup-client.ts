@@ -134,8 +134,3 @@ export async function fetchDuplicateTicketApply(input: {
 
   return { ok: true as const, data: data as DuplicateTicketApplyData };
 }
-
-/** @deprecated Usar fetchDuplicateTicketPreview + fetchDuplicateTicketApply */
-export async function fetchCajeroTicketDuplicate(raw: string) {
-  return fetchDuplicateTicketPreview(raw);
-}

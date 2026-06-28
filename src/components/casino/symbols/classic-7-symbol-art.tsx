@@ -1,6 +1,12 @@
 "use client";
 
-/** Arte vectorial premium para Classic 7 — sin emojis ni texto HTML suelto. */
+import {
+  ClassicBarGlyphs,
+  ClassicSevenGlyph,
+  SymbolUnknownGlyph,
+} from "./symbol-glyphs";
+
+/** Arte vectorial premium para Classic 7 — sin emojis ni texto SVG. */
 export function Classic7SymbolArt({
   symbolId,
   uid,
@@ -19,19 +25,33 @@ export function Classic7SymbolArt({
             <stop offset="55%" stopColor="#c41e1e" />
             <stop offset="100%" stopColor="#7f0f0f" />
           </linearGradient>
+          <linearGradient id={`${uid}-7g-stroke`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#fff8e7" />
+            <stop offset="100%" stopColor="#ffd54f" />
+          </linearGradient>
           <filter id={`${uid}-7s`}>
             <feDropShadow dx="0" dy="3" stdDeviation="2" floodColor="#000" floodOpacity="0.55" />
             <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#ffd54f" floodOpacity="0.35" />
           </filter>
         </defs>
-        <rect x="8" y="14" width="84" height="72" rx="14" fill={`url(#${uid}-7g)`} stroke="#ffd54f" strokeWidth="3" filter={`url(#${uid}-7s)`} />
-        <text x="50" y="68" textAnchor="middle" fontSize="52" fontWeight="900" fill="#fff8e7" fontFamily="Georgia, serif">7</text>
+        <rect
+          x="8"
+          y="14"
+          width="84"
+          height="72"
+          rx="14"
+          fill={`url(#${uid}-7g)`}
+          stroke="#ffd54f"
+          strokeWidth="3"
+          filter={`url(#${uid}-7s)`}
+        />
+        <ClassicSevenGlyph strokeId={`${uid}-7g-stroke`} />
       </g>
     );
   }
 
   if (id === "single-bar" || id === "double-bar" || id === "triple-bar") {
-    const label = id === "single-bar" ? "BAR" : id === "double-bar" ? "BAR BAR" : "BAR BAR BAR";
+    const count = id === "single-bar" ? 1 : id === "double-bar" ? 2 : 3;
     return (
       <g>
         <defs>
@@ -42,7 +62,7 @@ export function Classic7SymbolArt({
         </defs>
         <rect x="6" y="22" width="88" height="56" rx="8" fill={`url(#${uid}-bg)`} stroke="#c0c8d8" strokeWidth="2.5" />
         <rect x="10" y="26" width="80" height="48" rx="6" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
-        <text x="50" y="58" textAnchor="middle" fontSize={id === "triple-bar" ? 14 : id === "double-bar" ? 16 : 22} fontWeight="800" fill="#eef2ff" letterSpacing="1" fontFamily="Arial, sans-serif">{label}</text>
+        <ClassicBarGlyphs count={count as 1 | 2 | 3} />
       </g>
     );
   }
@@ -123,7 +143,7 @@ export function Classic7SymbolArt({
   return (
     <g>
       <rect x="12" y="20" width="76" height="60" rx="10" fill="#1a2030" stroke="#64748b" strokeWidth="2" />
-      <text x="50" y="58" textAnchor="middle" fontSize="14" fill="#94a3b8">?</text>
+      <SymbolUnknownGlyph />
     </g>
   );
 }

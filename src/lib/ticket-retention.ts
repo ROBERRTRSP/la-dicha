@@ -53,7 +53,7 @@ export function buildTicketWeekDays<T extends { createdAt: string }>(
     map.get(key)!.push(ticket);
   }
 
-  return weekDays.map((day, offset) => {
+  return weekDays.map((day) => {
     const dateKey = dateKeyInTz(day);
     const dayTickets = map.get(dateKey) ?? [];
     dayTickets.sort(

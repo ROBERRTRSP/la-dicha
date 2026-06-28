@@ -72,7 +72,11 @@ assert(/max-width:\s*768px/.test(mobileCss), "Breakpoint móvil 768px");
 assert(/slot-screen--expanded|42vh/.test(read("src/styles/slot-layout.css")), "Área rodillos expandida");
 
 console.log("\n=== 7. Barra inferior casino ===");
-assert(/player-shell:has\(\.casino-machine\)/.test(casinoCss), "Nav oscura en pantalla casino");
+const landscapeCss = read("src/styles/slot-landscape.css");
+assert(
+  /player-shell:has\(\.slot-landscape-root\)\s+\.bottom-nav/.test(landscapeCss),
+  "Nav oculta en pantalla slot (slot-landscape-root)",
+);
 
 console.log("\n=== 8. Anti doble giro + sync API ===");
 assert(/inFlightRef/.test(machine), "inFlightRef");

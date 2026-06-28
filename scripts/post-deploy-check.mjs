@@ -127,7 +127,9 @@ async function main() {
   let ticketId = null;
   let ticketBalanceAfter = null;
   {
-    const { res: drawsRes, body: drawsBody } = await fetchJson("/api/draws");
+    const { res: drawsRes, body: drawsBody } = await fetchJson("/api/draws", {
+      headers: { Cookie: playerCookie },
+    });
     const draw = drawsBody?.draws?.find?.((d) => d.status === "OPEN" || d.status === "CLOSING_SOON");
     if (!draw) {
       record("Crear jugada pequeña", false, "Sin sorteos abiertos");

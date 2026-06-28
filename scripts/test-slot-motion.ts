@@ -8,6 +8,7 @@ import {
   VISIBLE_ROWS,
   buildStrip,
   canFinalizeSpin,
+  cellInViewport,
   columnStopAtMs,
   computeDecelOffsets,
   computeReelMetrics,
@@ -85,27 +86,32 @@ assertEq(loopHeightPx(72), 12 * 72, "loopHeight = 12 celdas");
   );
 }
 
-console.log("\n=== 2b. Deceleración y rebote final ===");
+console.log("\n=== 2b. Deceleración y snap final ===");
 {
   assert(easeOutCubic(0) === 0 && easeOutCubic(1) === 1, "easeOutCubic extremos");
   assert(easeOutBack(1) === 1, "easeOutBack termina en 1");
   const mid = interpolateDecelOffset(0, 100, 0.5);
-  assert(mid > 70 && mid < 95, "interpolateDecelOffset progreso medio (curva acelerada al final)");
+  assert(mid > 88 && mid < 100, "interpolateDecelOffset expo-out acelera al final");
   const bounceStart = settleBounceOffset(500, 72, 0);
   const bounceMid = settleBounceOffset(500, 72, 0.5);
-  assert(bounceStart === 500, "rebote inicia en offset final");
-  assert(bounceMid < 500, "rebote sube ligeramente a mitad");
-  assertEq(SETTLE_BOUNCE_MS, 260, "SETTLE_BOUNCE_MS constante");
+  assert(bounceStart === 500, "snap inicia en offset final");
+  assert(bounceMid <= 500 && bounceMid >= 499, "snap mínimo sin rebote mecánico");
+  assertEq(SETTLE_BOUNCE_MS, 60, "SETTLE_BOUNCE_MS constante");
 }
 
-console.log("\n=== 2. Efecto 3D por celda durante giro ===");
+console.log("\n=== 2. Video slot plano (sin tambor 3D en giro) ===");
 {
-  const t = drumCellTransform(5, 120, 68, true, 1);
-  assert(typeof t === "string" && t.includes("rotateX"), "drumCellTransform en motion");
-  const idle = drumCellTransform(99, 5000, 68, false, -1);
-  assert(idle === undefined, "drumCellTransform oculto fuera de ventana en idle");
-  const op = drumCellOpacity(3, 100, 68, true);
-  assert(typeof op === "number" && op >= 0.55 && op <= 1, "drumCellOpacity en rango");
+  const motion = drumCellTransform(2, 120, 68, true, 1);
+  assert(motion === undefined, "sin perspectiva 3D durante giro");
+  const idle = drumCellTransform(97, 5000, 68, false, 1);
+  assert(
+    idle === undefined || idle.startsWith("scale"),
+    "idle sin tambor mecánico"
+  );
+  assert(cellInViewport(2, 120, 68), "cellInViewport detecta celda visible");
+  assert(!cellInViewport(99, 120, 68), "cellInViewport excluye celda lejana");
+  assert(drumCellOpacity(2, 120, 68, true) === undefined, "sin fade en giro");
+  assertEq(drumCellOpacity(74, 5000, 68, false), 1, "opacidad plena en reposo");
 }
 
 console.log("\n=== 3. Métricas responsive (más espacio a rodillos) ===");
@@ -226,12 +232,12 @@ for (const gameId of GAME_IDS) {
   });
   const targetMs = estimateMaxSpinDurationMs(animMobile);
   assert(
-    targetMs >= 5100 && targetMs <= 5800,
-    `${gameId}: duración objetivo móvil ~5.4s (${targetMs}ms)`
+    targetMs >= 3000 && targetMs <= 3400,
+    `${gameId}: duración objetivo móvil ~3.2s (${targetMs}ms)`
   );
   assert(
-    result.maxDurationMs >= 4600 && result.maxDurationMs <= 7000,
-    `${gameId}: simulación móvil ~5.4s (${result.maxDurationMs}ms)`
+    result.maxDurationMs >= 2800 && result.maxDurationMs <= 4000,
+    `${gameId}: simulación móvil ~3.2s (${result.maxDurationMs}ms)`
   );
 
   for (let c = 0; c < 5; c++) {
@@ -352,8 +358,8 @@ console.log("\n=== 11. Reduced motion: carretes no se congelan ===");
   assert(result.finalized, "reduced motion: ciclo completo finaliza");
   assert(result.allStopped, "reduced motion: todos los carretes paran");
   assert(
-    result.maxDurationMs >= 4000,
-    `reduced motion: duración mínima 4s (${result.maxDurationMs}ms)`
+    result.maxDurationMs >= 2400,
+    `reduced motion: duración mínima 2.4s (${result.maxDurationMs}ms)`
   );
 }
 
@@ -372,15 +378,14 @@ console.log("\n=== 12. Decel offsets: siempre avanza hacia la rejilla ===");
   assertEq(mid.snapOffset, final, "snapOffset aterriza en finalOffset");
 }
 
-console.log("\n=== 13. Móvil: deceleración rAF (interpolación) ===");
+console.log("\n=== 13. Deceleración digital (interpolación expo) ===");
 {
   const start = 120;
   const end = 6800;
   const mid = interpolateDecelOffset(start, end, 0.5);
   assert(mid > start && mid < end, "interpolación avanza sin saltos");
   assertEq(interpolateDecelOffset(start, end, 1), end, "t=1 llega al destino");
-  assertEq(easeOutCubic(0), 0, "easeOutCubic inicia en 0");
-  assertEq(easeOutCubic(1), 1, "easeOutCubic termina en 1");
+  assert(interpolateDecelOffset(start, end, 0.75) > end * 0.7, "expo-out rápido al final");
 }
 
 console.log(`\n=== RESULTADO: ${passed} passed, ${failed} failed ===\n`);

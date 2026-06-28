@@ -9,7 +9,7 @@ export async function GET() {
   }
 
   try {
-    const stats = await getCajeroDashboardStats(cajero.id);
+    const stats = await getCajeroDashboardStats();
     return NextResponse.json(stats);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Error al cargar ventas.";

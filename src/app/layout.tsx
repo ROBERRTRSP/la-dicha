@@ -1,6 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "../styles/player-shell.css";
+import "../styles/staff-login.css";
+import "../styles/roulette-screen.css";
+import "../styles/admin-panel.css";
+import "../styles/staff-layout.css";
+import "../styles/cajero-panel.css";
+import "../styles/responsive-touch.css";
 import "../styles/casino.css";
+import "../styles/casino-tokens.css";
+import "../styles/casino-lobby-premium.css";
+import "../styles/roulette-premium.css";
 import "../styles/slot-magic-lamp.css";
 import "../styles/slot-mobile.css";
 import "../styles/slot-golden-ox.css";
@@ -9,6 +19,8 @@ import "../styles/slot-wolf.css";
 import "../styles/slot-classic-7.css";
 import "../styles/slot-layout.css";
 import "../styles/slot-landscape.css";
+import "../styles/slot-landscape-themes.css";
+import "../styles/slot-engagement.css";
 
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL ?? "https://consorciobelendejudea.com";

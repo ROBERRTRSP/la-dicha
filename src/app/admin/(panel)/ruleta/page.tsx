@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { BET_TYPE_LABELS, type RouletteBetType } from "@/lib/roulette";
 import { summarizeSpinBets } from "@/lib/roulette-spin-group";
 import { formatMoney } from "@/lib/utils";
@@ -241,7 +241,7 @@ export default function AdminRuletaPage() {
     if (Array.isArray(data.spins)) setSpins(data.spins as AdminSpin[]);
   }
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/roulette");
@@ -250,11 +250,11 @@ export default function AdminRuletaPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
   async function toggleActive() {
     setToggling(true);

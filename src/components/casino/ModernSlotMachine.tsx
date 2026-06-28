@@ -15,10 +15,18 @@ import { SlotPaylineFrame } from "./SlotPaylineFrame";
 import { AmbientLights } from "./AmbientLights";
 import { MoonWolfEffects } from "./MoonWolfEffects";
 import { CoinBurst } from "./CoinBurst";
-import { AnimatedBalance } from "./WinDisplay";
+import { AnimatedBalance, WinDisplay } from "./WinDisplay";
+import { SlotAutoFreeProgress } from "./SlotAutoFreeProgress";
+import { SlotFreeModeBanner } from "./SlotFreeModeBanner";
+import { SlotFreeSpinSummary } from "./SlotFreeSpinSummary";
+import { SlotOnboarding, SlotSoundToggle } from "./SlotOnboarding";
+import { useSlotEngagement } from "./useSlotEngagement";
+import type { AutoFreeSpinProgress } from "@/lib/slots/auto-free-spin";
 import { getSlotUiPace } from "@/lib/slots/mobile-pace";
 import { WinCelebration } from "./WinCelebration";
-import { useSlotMobile } from "./useSlotMobile";
+import { useSlotMobile, useSlotPortraitBlock } from "./useSlotMobile";
+import { SlotOrientationNotice } from "./SlotOrientationNotice";
+import { AppImage } from "@/components/ui/AppImage";
 import { BetControls, SpinButton } from "./SlotCabinet";
 import { getSlotGame } from "@/lib/slots/games";
 import { preloadSlotSymbolImages } from "@/lib/slots/symbol-assets";
@@ -51,6 +59,7 @@ type SpinResponse = {
   bonusTriggered?: string | null;
   freeSpinsAwarded?: number;
   autoFreeSpinsAwarded?: number;
+  autoFreeSpinProgress?: AutoFreeSpinProgress;
 };
 
 export function ModernSlotMachine({
@@ -97,6 +106,12 @@ export function ModernSlotMachine({
   const [rulesSection, setRulesSection] = useState<SlotRulesSection>("rules");
   const [minBetAmount, setMinBetAmount] = useState(1);
   const [maxBetAmount, setMaxBetAmount] = useState(10);
+  const [autoFreeProgress, setAutoFreeProgress] = useState<AutoFreeSpinProgress | null>(null);
+  const [progressPulse, setProgressPulse] = useState(false);
+  const [freeSpinSummary, setFreeSpinSummary] = useState<{
+    totalWin: number;
+    spinsPlayed: number;
+  } | null>(null);
   const betOptions = useMemo(
     () => allowedBetOptionsForGame(gameId, minBetAmount, maxBetAmount),
     [gameId, minBetAmount, maxBetAmount]
@@ -108,6 +123,10 @@ export function ModernSlotMachine({
   const spinIdempotencyRef = useRef<string | null>(null);
   const autoFreeSpinTimerRef = useRef(0);
   const freeSpinFlashTimerRef = useRef(0);
+  const prevFreeSpinsLeftRef = useRef(0);
+  const freeSpinSessionWinRef = useRef(0);
+  const freeSpinSessionCountRef = useRef(0);
+  const engagement = useSlotEngagement();
 
   useEffect(() => {
     preloadSlotSymbolImages(gameId);
@@ -118,8 +137,21 @@ export function ModernSlotMachine({
         if (typeof d.minBetAmount === "number") setMinBetAmount(d.minBetAmount);
         if (typeof d.maxBetAmount === "number") setMaxBetAmount(d.maxBetAmount);
         if (d.bonusStates?.[gameId]) setBonus(d.bonusStates[gameId]);
+        if (d.autoFreeSpinProgress?.[gameId]) {
+          setAutoFreeProgress(d.autoFreeSpinProgress[gameId]);
+        }
       })
       .catch(() => {});
+
+    const thumb = new window.Image();
+    thumb.src = CASINO_ART.thumbs[gameId];
+    if (gameId === "magic-lamp") {
+      const bg = new window.Image();
+      bg.src = CASINO_ART.magicLampBg;
+    } else if (gameId === "moon-wolf") {
+      const bg = new window.Image();
+      bg.src = CASINO_ART.moonWolfBg;
+    }
   }, [gameId]);
 
   useEffect(() => {
@@ -129,24 +161,30 @@ export function ModernSlotMachine({
     }
   }, [bet, betOptions]);
 
-  useEffect(() => {
-    if (gameId !== "magic-lamp" && gameId !== "moon-wolf") return;
-    const thumb = new window.Image();
-    thumb.src = CASINO_ART.thumbs[gameId];
-    const bg = new window.Image();
-    bg.src =
-      gameId === "magic-lamp"
-        ? CASINO_ART.magicLampBg
-        : CASINO_ART.moonWolfBg;
-  }, [gameId]);
-
   const isLamp = gameId === "magic-lamp";
   const isWolf = gameId === "moon-wolf";
+  const isSkunk = gameId === "treasure-skunk";
+  const isOx = gameId === "golden-ox";
   const isMobile = useSlotMobile();
+  const portraitBlock = useSlotPortraitBlock();
   const uiPace = useMemo(() => getSlotUiPace(isMobile), [isMobile]);
 
-  // El premio se aplica una sola vez y solo cuando AMBOS terminaron:
-  // los carretes pararon y el servidor respondió.
+  useEffect(() => {
+    const prev = prevFreeSpinsLeftRef.current;
+    if (prev === 0 && bonus.freeSpinsLeft > 0) {
+      freeSpinSessionWinRef.current = 0;
+      freeSpinSessionCountRef.current = 0;
+      setFreeSpinSummary(null);
+    }
+    if (prev > 0 && bonus.freeSpinsLeft === 0 && freeSpinSessionCountRef.current > 0) {
+      setFreeSpinSummary({
+        totalWin: freeSpinSessionWinRef.current,
+        spinsPlayed: freeSpinSessionCountRef.current,
+      });
+    }
+    prevFreeSpinsLeftRef.current = bonus.freeSpinsLeft;
+  }, [bonus.freeSpinsLeft]);
+
   const tryFinalizeSpin = useCallback(() => {
     if (!reelsStoppedRef.current || !apiResolvedRef.current) return;
     const result = pendingResult.current;
@@ -161,9 +199,8 @@ export function ModernSlotMachine({
     setScatterCells(result.scatterCells ?? []);
     setJackpotTier(result.jackpotTier ?? null);
     if (result.message) setMessage(result.message);
-    if (result.payout > 0) {
-      setWinFlash(true);
-      window.setTimeout(() => setWinFlash(false), uiPace.winFlashMs);
+    if (result.autoFreeSpinProgress) {
+      setAutoFreeProgress(result.autoFreeSpinProgress);
     }
 
     const scatterAward = result.freeSpinsAwarded ?? 0;
@@ -172,6 +209,28 @@ export function ModernSlotMachine({
       !result.isFreeSpin && (scatterAward > 0 || autoAward > 0)
         ? scatterAward + autoAward
         : 0;
+
+    if (result.isFreeSpin) {
+      freeSpinSessionWinRef.current += result.payout;
+      freeSpinSessionCountRef.current += 1;
+    }
+
+    if (autoAward > 0) {
+      setProgressPulse(true);
+      window.setTimeout(() => setProgressPulse(false), 900);
+      engagement.playFreeSpinAward();
+    }
+
+    if (result.payout > 0) {
+      setWinFlash(true);
+      window.setTimeout(() => setWinFlash(false), uiPace.winFlashMs);
+      engagement.playWin(result.payout, bet);
+    } else if (totalFreeAward > 0) {
+      engagement.playFreeSpinAward();
+    } else {
+      engagement.playNoWin();
+    }
+
     if (totalFreeAward > 0) {
       setLastFreeSpinsAwarded(totalFreeAward);
       setFreeSpinAutoBonus(autoAward > 0);
@@ -188,7 +247,7 @@ export function ModernSlotMachine({
     spinIdempotencyRef.current = null;
     setSettleFlash(true);
     window.setTimeout(() => setSettleFlash(false), isMobile ? 520 : 380);
-  }, [isMobile, uiPace]);
+  }, [bet, engagement, isMobile, uiPace]);
 
   // Error / timeout: no aplica premio, libera el giro y re-hidrata el estado.
   const failSpin = useCallback(
@@ -209,6 +268,9 @@ export function ModernSlotMachine({
         .then((d) => {
           if (typeof d.balance === "number") setBalance(d.balance);
           if (d.bonusStates?.[gameId]) setBonus(d.bonusStates[gameId]);
+          if (d.autoFreeSpinProgress?.[gameId]) {
+            setAutoFreeProgress(d.autoFreeSpinProgress[gameId]);
+          }
         })
         .catch(() => {});
     },
@@ -242,6 +304,8 @@ export function ModernSlotMachine({
     reelsStoppedRef.current = false;
     apiResolvedRef.current = false;
     setResultReady(false);
+    engagement.ensureAudio();
+    engagement.playSpinStart();
     setSpinning(true);
     setAwaitingStop(true);
     setStopGeneration((g) => g + 1);
@@ -280,12 +344,15 @@ export function ModernSlotMachine({
     } finally {
       window.clearTimeout(timeout);
     }
-  }, [balance, bet, bonus.freeSpinsLeft, failSpin, gameId, spinning, tryFinalizeSpin]);
+  }, [balance, bet, bonus.freeSpinsLeft, engagement, failSpin, gameId, spinning, tryFinalizeSpin]);
 
   const handleAllStopped = useCallback(() => {
     reelsStoppedRef.current = true;
+    for (let i = 0; i < 5; i++) {
+      window.setTimeout(() => engagement.playReelStop(), i * 120);
+    }
     tryFinalizeSpin();
-  }, [tryFinalizeSpin]);
+  }, [engagement, tryFinalizeSpin]);
 
   useEffect(() => {
     window.clearTimeout(autoFreeSpinTimerRef.current);
@@ -346,6 +413,23 @@ export function ModernSlotMachine({
     setBet(affordable ?? betOptions[0]!);
   }, [awaitingStop, balance, betOptions, freeMode, spinning]);
 
+  if (portraitBlock) {
+    return (
+      <div
+        className={cn(
+          "slot-landscape-root",
+          game.themeClass,
+          isLamp && "slot-landscape-root--lamp",
+          isWolf && "slot-landscape-root--wolf",
+          isSkunk && "slot-landscape-root--skunk",
+          isOx && "slot-landscape-root--ox"
+        )}
+      >
+        <SlotOrientationNotice active />
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -353,10 +437,15 @@ export function ModernSlotMachine({
         game.themeClass,
         isLamp && "slot-landscape-root--lamp",
         isWolf && "slot-landscape-root--wolf",
+        isSkunk && "slot-landscape-root--skunk",
+        isOx && "slot-landscape-root--ox",
         awaitingStop && "slot-landscape-root--spinning",
         winFlash && "slot-landscape-root--win"
       )}
     >
+      <SlotSoundToggle muted={engagement.muted} onToggle={engagement.toggleMute} />
+      <SlotOnboarding gameId={gameId} />
+
       <div className="slot-landscape-bg" aria-hidden />
       <div className="slot-landscape-vignette" aria-hidden />
 
@@ -374,10 +463,13 @@ export function ModernSlotMachine({
             ← Casino
           </Link>
           <div className="slot-landscape-logo-card">
-            <img
+            <AppImage
               src={CASINO_ART.thumbs[gameId]}
               alt={game.name}
+              width={120}
+              height={120}
               className="slot-landscape-logo"
+              priority
             />
             <p className="slot-landscape-tagline">{game.tagline}</p>
           </div>
@@ -385,6 +477,11 @@ export function ModernSlotMachine({
             <span>Saldo</span>
             <AnimatedBalance value={balance} className="slot-balance-value" />
           </div>
+          <SlotAutoFreeProgress
+            progress={autoFreeProgress}
+            freeMode={freeMode}
+            pulse={progressPulse}
+          />
           <div className="slot-landscape-status-card">
             {freeMode ? (
               <p>
@@ -415,6 +512,14 @@ export function ModernSlotMachine({
             </p>
           </header>
           <div className={cn("slot-landscape-machine", settleFlash && "slot-landscape-machine--settle")}>
+            <SlotFreeModeBanner freeSpinsLeft={bonus.freeSpinsLeft} />
+            {freeSpinSummary && (
+              <SlotFreeSpinSummary
+                totalWin={freeSpinSummary.totalWin}
+                spinsPlayed={freeSpinSummary.spinsPlayed}
+                onDismiss={() => setFreeSpinSummary(null)}
+              />
+            )}
             <SlotPaylineFrame
               activeLineIndices={!awaitingStop ? activeLineIndices : []}
               paylineCount={game.paylineCount}
@@ -453,6 +558,10 @@ export function ModernSlotMachine({
               autoBonus={freeSpinAutoBonus}
               big={lastFreeSpinsAwarded >= 8}
             />
+            <WinDisplay
+              amount={lastWin ?? 0}
+              generation={stopGeneration}
+            />
             {jackpotTier && (
               <div
                 className={cn(
@@ -476,13 +585,17 @@ export function ModernSlotMachine({
             winPending={awaitingStop}
             freeMode={freeMode}
             lineCount={game.paylineCount}
+            winGeneration={stopGeneration}
           />
           <div className="slot-landscape-bets">
             <BetControls
               bet={bet}
               options={betOptions}
               disabled={spinning || awaitingStop || freeMode}
-              onSelect={setBet}
+              onSelect={(value) => {
+                engagement.playClick();
+                setBet(value);
+              }}
             />
           </div>
           <div className="slot-landscape-spin-wrap">
@@ -491,7 +604,10 @@ export function ModernSlotMachine({
               spinning={awaitingStop}
               ready={!spinning && !awaitingStop && (freeMode || balance >= bet)}
               disabled={spinning || awaitingStop || (!freeMode && balance < bet)}
-              onClick={() => void spin()}
+              onClick={() => {
+                engagement.ensureAudio();
+                void spin();
+              }}
               aria-busy={awaitingStop}
             />
           </div>

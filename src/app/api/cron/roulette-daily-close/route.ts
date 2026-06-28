@@ -2,16 +2,13 @@ import { NextResponse } from "next/server";
 import { ensureTodayRouletteSession } from "@/lib/roulette-daily";
 import { executeDailyClose } from "@/lib/roulette-daily-close";
 import { dateKeyInTz, nowInTz } from "@/lib/timezone";
+import { cronAuthResponse } from "@/lib/cron-auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  const auth = request.headers.get("authorization");
-  const secret = process.env.CRON_SECRET;
-
-  if (secret && auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "No autorizado." }, { status: 401 });
-  }
+  const denied = cronAuthResponse(request);
+  if (denied) return denied;
 
   try {
     const today = dateKeyInTz(nowInTz());

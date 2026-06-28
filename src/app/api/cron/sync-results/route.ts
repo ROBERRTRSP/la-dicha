@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server";
 import { RESULTS_WEEK_DAYS } from "@/lib/draws";
 import { repairWeekResults } from "@/lib/results-sync";
+import { cronAuthResponse } from "@/lib/cron-auth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function GET(request: Request) {
-  const auth = request.headers.get("authorization");
-  const secret = process.env.CRON_SECRET;
-
-  if (secret && auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "No autorizado." }, { status: 401 });
-  }
+  const denied = cronAuthResponse(request);
+  if (denied) return denied;
 
   try {
     const { sync: results } = await repairWeekResults(RESULTS_WEEK_DAYS);

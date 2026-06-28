@@ -1,5 +1,11 @@
 /** Símbolos premium · Golden Ox — toro dorado, fuego, jackpots */
 
+import {
+  CardRankGlyph,
+  CoinInnerGlyph,
+  SymbolBadgeGlyph,
+} from "./symbol-glyphs";
+
 function OxDefs({ uid }: { uid: string }) {
   const p = `${uid}-ox`;
   return (
@@ -95,32 +101,14 @@ export function OxSymbolPlate({
       <ellipse cx="50" cy="80" rx="24" ry="4" fill="#000" opacity="0.35" />
       <ellipse cx="34" cy="28" rx="14" ry="8" fill="#fff" opacity="0.1" />
       {variant === "wild" && (
-        <text
-          x="50"
-          y="82"
-          textAnchor="middle"
-          fontSize="6.5"
-          fontWeight="900"
-          fill="#fde047"
-          letterSpacing="0.12em"
-          fontFamily="system-ui,sans-serif"
-        >
-          COMODÍN
-        </text>
+        <g transform="translate(0,-4)">
+          <SymbolBadgeGlyph kind="wild" />
+        </g>
       )}
       {variant === "scatter" && (
-        <text
-          x="50"
-          y="82"
-          textAnchor="middle"
-          fontSize="6"
-          fontWeight="900"
-          fill="#fb923c"
-          letterSpacing="0.08em"
-          fontFamily="system-ui,sans-serif"
-        >
-          BONO
-        </text>
+        <g transform="translate(0,-4)">
+          <SymbolBadgeGlyph kind="scatter" />
+        </g>
       )}
     </>
   );
@@ -128,10 +116,10 @@ export function OxSymbolPlate({
 
 function LowCard({
   uid,
-  letter,
+  rank,
 }: {
   uid: string;
-  letter: string;
+  rank: "A" | "K" | "Q" | "J";
 }) {
   const p = `${uid}-ox`;
   return (
@@ -157,18 +145,7 @@ function LowCard({
         strokeWidth="0.8"
         opacity="0.4"
       />
-      <text
-        x="50"
-        y="62"
-        textAnchor="middle"
-        fontSize="26"
-        fontWeight="900"
-        fill={`url(#${p}-gold)`}
-        fontFamily="Georgia,serif"
-        filter={`url(#${p}-glow-gold)`}
-      >
-        {letter}
-      </text>
+      <CardRankGlyph rank={rank} fill={`url(#${p}-gold)`} />
     </g>
   );
 }
@@ -276,17 +253,7 @@ export function OxSymbolIcon({
           />
           <circle cx="50" cy="50" r="16" fill="#991b1b" stroke="#fca5a5" strokeWidth="1.5" />
           <circle cx="50" cy="50" r="9" fill="#dc2626" stroke="#fde047" strokeWidth="1.2" />
-          <text
-            x="50"
-            y="54"
-            textAnchor="middle"
-            fontSize="11"
-            fontWeight="900"
-            fill="#fde047"
-            fontFamily="system-ui,sans-serif"
-          >
-            福
-          </text>
+          <CoinInnerGlyph />
           <ellipse cx="42" cy="42" rx="7" ry="4" fill="#fff" opacity="0.2" />
         </g>
       );
@@ -310,13 +277,13 @@ export function OxSymbolIcon({
       );
 
     case "A":
-      return <LowCard uid={uid} letter="A" />;
+      return <LowCard uid={uid} rank="A" />;
     case "K":
-      return <LowCard uid={uid} letter="K" />;
+      return <LowCard uid={uid} rank="K" />;
     case "Q":
-      return <LowCard uid={uid} letter="Q" />;
+      return <LowCard uid={uid} rank="Q" />;
     case "J":
-      return <LowCard uid={uid} letter="J" />;
+      return <LowCard uid={uid} rank="J" />;
 
     default:
       return null;

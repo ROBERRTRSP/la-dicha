@@ -13,48 +13,37 @@ export type WinCelebrationMode = "win" | "free-spin";
 
 const WIN_COPY: Record<
   SlotGameId,
-  {
-    badge: string;
-    title: string;
-    megaTitle: string;
-    signature: string;
-    confettiGlyphs: readonly string[];
-  }
+  { badge: string; title: string; megaTitle: string; signature: string }
 > = {
   "treasure-skunk": {
     badge: "BOSQUE DEL TESORO",
     title: "COFRE ABIERTO",
     megaTitle: "TESORO LEGENDARIO",
     signature: "Racha de cofres",
-    confettiGlyphs: ["C", "$", "*", "+"],
   },
   "magic-lamp": {
     badge: "DESEO CUMPLIDO",
     title: "MAGIA DEL GENIO",
     megaTitle: "PODER DE LAMPARA",
     signature: "Suerte encantada",
-    confettiGlyphs: ["L", "*", "$", "~"],
   },
   "golden-ox": {
     badge: "FORTUNA DEL TORO",
     title: "FUEGO DORADO",
     megaTitle: "EMBESTIDA DE ORO",
     signature: "Ritmo de fortuna",
-    confettiGlyphs: ["O", "+", "$", "*"],
   },
   "moon-wolf": {
     badge: "NOCHE LUNAR",
     title: "AULLIDO GANADOR",
     megaTitle: "MANADA DE PREMIOS",
     signature: "Poder de la luna",
-    confettiGlyphs: ["M", "*", "+", "~"],
   },
   "classic-7": {
     badge: "CLASICA 7",
-    title: "SEVEN WIN",
-    megaTitle: "JACKPOT VINTAGE",
+    title: "SIETE GANADOR",
+    megaTitle: "JACKPOT CLASICO",
     signature: "Estilo retro premium",
-    confettiGlyphs: ["7", "*", "$", "+"],
   },
 };
 
@@ -67,7 +56,6 @@ const FREE_SPIN_COPY: Record<
     megaTitle: string;
     signature: string;
     autoSignature: string;
-    confettiGlyphs: readonly string[];
   }
 > = {
   "treasure-skunk": {
@@ -77,7 +65,6 @@ const FREE_SPIN_COPY: Record<
     megaTitle: "RACHA DE COFRES",
     signature: "Tesoro sin costo",
     autoSignature: "1 gratis cada 4 giros pagados",
-    confettiGlyphs: ["C", "G", "*", "+"],
   },
   "magic-lamp": {
     badge: "LAMPARA ACTIVA",
@@ -86,7 +73,6 @@ const FREE_SPIN_COPY: Record<
     megaTitle: "TORBELLINO MAGICO",
     signature: "Magia sin apuesta",
     autoSignature: "1 gratis cada 4 giros pagados",
-    confettiGlyphs: ["L", "G", "*", "~"],
   },
   "golden-ox": {
     badge: "FUEGO DE FORTUNA",
@@ -95,7 +81,6 @@ const FREE_SPIN_COPY: Record<
     megaTitle: "TORO DORADO",
     signature: "Gira sin pagar",
     autoSignature: "1 gratis cada 4 giros pagados",
-    confettiGlyphs: ["O", "G", "+", "*"],
   },
   "moon-wolf": {
     badge: "LUNA DE SUERTE",
@@ -104,16 +89,14 @@ const FREE_SPIN_COPY: Record<
     megaTitle: "MANADA ACTIVA",
     signature: "Noche de giros free",
     autoSignature: "1 gratis cada 4 giros pagados",
-    confettiGlyphs: ["M", "G", "*", "~"],
   },
   "classic-7": {
     badge: "CLASICA 7",
     title: "GIRO GRATIS",
     autoTitle: "BONO RETRO",
-    megaTitle: "LUCKY SEVEN",
+    megaTitle: "SIETE DE LA SUERTE",
     signature: "Estilo vintage sin costo",
     autoSignature: "1 gratis cada 4 giros pagados",
-    confettiGlyphs: ["7", "G", "*", "+"],
   },
 };
 
@@ -130,6 +113,7 @@ const CONFETTI_PIECES = Array.from({ length: 34 }, (_, i) => ({
   drift: -42 + (i * 13) % 84,
   rotate: 90 + (i * 37) % 270,
   size: 10 + (i % 4) * 3,
+  shape: i % 3,
 }));
 
 export function WinCelebration({
@@ -169,9 +153,6 @@ export function WinCelebration({
       ? freeCopy.autoSignature
       : freeCopy.signature
     : winCopy.signature;
-  const confettiGlyphs = isFreeSpin
-    ? freeCopy.confettiGlyphs
-    : winCopy.confettiGlyphs;
   const headline = isFreeSpin
     ? `${freeSpins} ${freeSpins === 1 ? "GIRO GRATIS" : "GIROS GRATIS"}`
     : formatMoney(amount);
@@ -217,7 +198,11 @@ export function WinCelebration({
         {CONFETTI_PIECES.map((piece) => (
           <span
             key={piece.id}
-            className="slot-win-celebration__confetti-piece"
+            className={cn(
+              "slot-win-celebration__confetti-piece",
+              piece.shape === 1 && "slot-win-celebration__confetti-piece--dot",
+              piece.shape === 2 && "slot-win-celebration__confetti-piece--shard"
+            )}
             style={
               {
                 "--confetti-left": `${piece.left}%`,
@@ -228,9 +213,7 @@ export function WinCelebration({
                 "--confetti-size": `${piece.size}px`,
               } as CSSProperties
             }
-          >
-            {confettiGlyphs[piece.id % confettiGlyphs.length]}
-          </span>
+          />
         ))}
       </div>
       <div className="slot-win-celebration__rays" aria-hidden />

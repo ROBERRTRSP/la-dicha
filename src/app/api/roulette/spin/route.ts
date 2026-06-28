@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { requirePlayer } from "@/lib/auth";
 import { placeRouletteBets } from "@/lib/roulette";
+import { enforceSpinRateLimit } from "@/lib/spin-rate-limit";
 
 export async function POST(request: Request) {
   const user = await requirePlayer();
   if (!user) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
+
+  const rateLimited = enforceSpinRateLimit(request, user.id, "roulette");
+  if (rateLimited) return rateLimited;
 
   try {
     const body = await request.json();

@@ -1,4 +1,5 @@
 /** Símbolos premium · Moon Wolf */
+import { CardRankGlyph } from "./symbol-glyphs";
 export function WolfSymbolPlate({
   uid,
   variant = "default",
@@ -69,7 +70,7 @@ export function WolfSymbolIcon({ symbolId }: { symbolId: string }) {
       return (
         <g>
           <rect x="32" y="32" width="36" height="36" rx="8" fill="#1e3a8a" stroke="#93c5fd" strokeWidth="2" />
-          <text x="50" y="58" textAnchor="middle" fontSize="22" fontWeight="900" fill="#e0f2fe" fontFamily="system-ui,sans-serif">{symbolId}</text>
+          <CardRankGlyph rank={symbolId as "A" | "K" | "Q" | "J"} fill="#e0f2fe" />
         </g>
       );
     default:
