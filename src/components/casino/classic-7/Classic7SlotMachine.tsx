@@ -11,7 +11,6 @@ import Link from "next/link";
 import { SpinButton } from "../SlotCabinet";
 import { SlotFinanceHud } from "../SlotFinanceHud";
 import { SlotReels } from "../SlotReels";
-import { SlotFinanceHud } from "../SlotFinanceHud";
 import { WinDisplay } from "../WinDisplay";
 import { SlotAutoFreeProgress } from "../SlotAutoFreeProgress";
 import { SlotFreeModeBanner } from "../SlotFreeModeBanner";
