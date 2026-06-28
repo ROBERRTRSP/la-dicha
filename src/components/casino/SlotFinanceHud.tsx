@@ -114,9 +114,11 @@ export function SlotFinanceHud({
           {freeMode ? "GRATIS" : formatMoney(bet)}
         </strong>
         <span className="slot-finance-meta">
-          {freeMode
-            ? `${lineCount} líneas activas`
-            : `${lineCount} líneas · ${formatMoney(betPerLine)}/línea`}
+          {lineCount === 1
+            ? "1 línea central"
+            : freeMode
+              ? `${lineCount} líneas activas`
+              : `${lineCount} líneas · ${formatMoney(betPerLine)}/línea`}
         </span>
       </div>
       <div className="slot-finance-cell slot-finance-cell--win">

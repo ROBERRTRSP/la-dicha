@@ -442,6 +442,11 @@
   .slot-landscape-result {
     grid-area: result;
   }
+
+  .slot-landscape-history {
+    grid-column: 1 / -1;
+    max-height: 64px;
+  }
 }
 
 .slot-landscape-root .slot-finance-hud {
@@ -507,6 +512,10 @@
   text-overflow: ellipsis;
 }
 
+.slot-landscape-actions--pair {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .slot-landscape-result {
   flex-shrink: 0;
   min-height: 40px;
@@ -538,6 +547,33 @@
 }
 
 /* ===== Classic 7 ===== */
+.slot-landscape-shell--classic7 {
+  grid-template-columns: minmax(128px, 16vw) minmax(0, 1fr) minmax(220px, 27vw);
+}
+
+@media (orientation: landscape) {
+  .slot-landscape-shell--classic7 {
+    grid-template-columns: minmax(124px, 15vw) minmax(0, 1fr) minmax(228px, 28vw);
+  }
+
+  .slot-landscape-shell--classic7 .slot-landscape-panel--right {
+    padding-right: max(10px, var(--slot-safe-right));
+  }
+
+  .slot-landscape-shell--classic7 .slot-finance-hud--compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .slot-landscape-shell--classic7 .slot-landscape-history {
+    grid-column: 1 / -1;
+    max-height: 64px;
+  }
+
+  .slot-landscape-shell--classic7 .slot-landscape-result:empty {
+    display: none;
+  }
+}
+
 .slot-landscape-shell--classic7 .slot-landscape-center-head {
   border-color: rgba(239, 68, 68, 0.4);
   background: linear-gradient(180deg, rgba(87, 11, 16, 0.9), rgba(30, 6, 8, 0.96));

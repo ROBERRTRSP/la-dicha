@@ -9,6 +9,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { SpinButton } from "../SlotCabinet";
+import { SlotFinanceHud } from "../SlotFinanceHud";
 import { SlotReels } from "../SlotReels";
 import { SlotFinanceHud } from "../SlotFinanceHud";
 import { WinDisplay } from "../WinDisplay";
@@ -374,6 +375,11 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
   ]);
 
   const freeMode = bonus.freeSpinsLeft > 0;
+  const hasResultStrip =
+    Boolean(error) ||
+    (freeMode && !freeSpinFlash) ||
+    (Boolean(message) && !error && !freeSpinFlash) ||
+    bigWin;
 
   const betIndex = betOptions.indexOf(bet);
   const decBet = () => {
@@ -559,7 +565,7 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
               aria-busy={awaitingStop}
             />
           </div>
-          <div className="slot-landscape-actions">
+          <div className="slot-landscape-actions slot-landscape-actions--pair">
             <button
               type="button"
               className="slot-rules-btn"
@@ -575,22 +581,24 @@ export function Classic7SlotMachine({ initialBalance }: { initialBalance: number
               Historial
             </button>
           </div>
-          <div className="slot-landscape-result" aria-live="polite">
-            {error && <p className="slot-result-strip slot-result-strip--error">{error}</p>}
-            {freeMode && (
-              <p className="slot-result-strip slot-result-strip--bonus">
-                GIRO GRATIS · {bonus.freeSpinsLeft}
-              </p>
-            )}
-            {message && !error && !freeSpinFlash && (
-              <p className="slot-result-strip slot-result-strip--neutral">{message}</p>
-            )}
-            {bigWin && (
-              <p className="slot-result-strip slot-result-strip--win">
-                BIG WIN · {formatMoney(lastWin ?? 0)}
-              </p>
-            )}
-          </div>
+          {hasResultStrip && (
+            <div className="slot-landscape-result" aria-live="polite">
+              {error && <p className="slot-result-strip slot-result-strip--error">{error}</p>}
+              {freeMode && !freeSpinFlash && (
+                <p className="slot-result-strip slot-result-strip--bonus">
+                  GIRO GRATIS · {bonus.freeSpinsLeft}
+                </p>
+              )}
+              {message && !error && !freeSpinFlash && (
+                <p className="slot-result-strip slot-result-strip--neutral">{message}</p>
+              )}
+              {bigWin && (
+                <p className="slot-result-strip slot-result-strip--win">
+                  BIG WIN · {formatMoney(lastWin ?? 0)}
+                </p>
+              )}
+            </div>
+          )}
           {historyOpen && (
             <div className="slot-landscape-history">
               <p>Historial reciente</p>
